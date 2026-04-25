@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="myo. is a premium pet care experience for daycare, overnights, sitter updates, and pet parent peace of mind." />
+  <title>myo. | Premium Pet Care</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Be+Vietnam+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            surface: "#fff4f2",
+            "surface-low": "#ffede9",
+            "surface-card": "#ffffff",
+            "surface-high": "#ffdad2",
+            primary: "#006289",
+            "primary-bright": "#00baff",
+            secondary: "#974300",
+            "secondary-soft": "#ffc5a6",
+            tertiary: "#006760",
+            "tertiary-soft": "#7fe6db",
+            ink: "#412923",
+            muted: "#72544e"
+          },
+          fontFamily: {
+            headline: ["Plus Jakarta Sans", "sans-serif"],
+            body: ["Be Vietnam Pro", "sans-serif"]
+          },
+          borderRadius: {
+            "4xl": "2rem",
+            "5xl": "3rem"
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    .material-symbols-outlined {
+      font-variation-settings: "FILL" 0, "wght" 500, "GRAD" 0, "opsz" 24;
+    }
+  </style>
+</head>
+<body class="bg-surface text-ink font-body antialiased">
+  <header class="sticky top-0 z-50 border-b border-white/60 bg-surface/85 backdrop-blur-2xl">
+    <div class="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 md:px-8">
+      <a href="/" class="font-headline text-3xl font-black tracking-tighter text-ink" aria-label="myo home">myo.</a>
+      <nav class="hidden items-center gap-8 text-sm font-bold text-muted md:flex">
+        <a class="hover:text-primary" href="#services">Services</a>
+        <a class="hover:text-primary" href="#experience">Experience</a>
+        <a class="hover:text-primary" href="#app">App preview</a>
+        <a class="hover:text-primary" href="myo/safety_first_faq/index.html">Safety</a>
+      </nav>
+      <div class="flex items-center gap-3">
+        <a class="hidden rounded-full px-5 py-3 text-sm font-bold text-primary hover:bg-white/70 sm:inline-flex" href="myo/client_journal_cute_lively/index.html">Pet parent view</a>
+        <a class="rounded-full bg-primary px-5 py-3 text-sm font-bold text-white shadow-lg shadow-sky-900/10 transition hover:-translate-y-0.5 hover:bg-primary-bright" href="myo/schedule_a_meet_greet/index.html">Book a meet &amp; greet</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="relative isolate overflow-hidden px-5 py-16 md:px-8 md:py-24">
+      <div class="absolute left-1/2 top-0 -z-10 h-[32rem] w-[32rem] -translate-x-1/2 rounded-full bg-primary-bright/20 blur-3xl"></div>
+      <div class="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[1.05fr_0.95fr]">
+        <div>
+          <p class="mb-5 inline-flex rounded-full bg-secondary-soft px-4 py-2 font-headline text-xs font-extrabold uppercase tracking-[0.2em] text-secondary">Premium pet care for real life</p>
+          <h1 class="font-headline text-5xl font-black leading-[0.95] tracking-[-0.05em] text-ink md:text-7xl lg:text-8xl">
+            Your pet's second best friend.
+          </h1>
+          <p class="mt-7 max-w-2xl text-lg leading-8 text-muted md:text-xl">
+            myo. gives an individual petsitter business a polished home base for discovery, onboarding, bookings, payments, sitter operations, and pet parent updates.
+          </p>
+          <div class="mt-10 flex flex-col gap-4 sm:flex-row">
+            <a class="inline-flex items-center justify-center rounded-full bg-secondary px-7 py-4 font-headline font-extrabold text-white shadow-xl shadow-orange-900/10 transition hover:-translate-y-0.5" href="myo/schedule_a_meet_greet/index.html">
+              Start booking
+              <span class="material-symbols-outlined ml-2 text-xl">arrow_forward</span>
+            </a>
+            <a class="inline-flex items-center justify-center rounded-full bg-white px-7 py-4 font-headline font-extrabold text-primary shadow-sm transition hover:-translate-y-0.5" href="#app">
+              Explore the app flow
+            </a>
+          </div>
+          <dl class="mt-12 grid max-w-2xl grid-cols-3 gap-4">
+            <div class="rounded-4xl bg-white/75 p-5">
+              <dt class="text-sm font-bold text-muted">Care modes</dt>
+              <dd class="mt-1 font-headline text-3xl font-black text-primary">3</dd>
+            </div>
+            <div class="rounded-4xl bg-white/75 p-5">
+              <dt class="text-sm font-bold text-muted">Prototype pages</dt>
+              <dd class="mt-1 font-headline text-3xl font-black text-primary">15+</dd>
+            </div>
+            <div class="rounded-4xl bg-white/75 p-5">
+              <dt class="text-sm font-bold text-muted">Next up</dt>
+              <dd class="mt-1 font-headline text-3xl font-black text-primary">Stripe</dd>
+            </div>
+          </dl>
+        </div>
+        <div class="relative">
+          <div class="absolute -left-8 bottom-12 z-10 max-w-52 rounded-4xl bg-white p-5 shadow-2xl">
+            <div class="mb-3 flex text-secondary">
+              <span class="material-symbols-outlined text-base" style="font-variation-settings: 'FILL' 1;">star</span>
+              <span class="material-symbols-outlined text-base" style="font-variation-settings: 'FILL' 1;">star</span>
+              <span class="material-symbols-outlined text-base" style="font-variation-settings: 'FILL' 1;">star</span>
+              <span class="material-symbols-outlined text-base" style="font-variation-settings: 'FILL' 1;">star</span>
+              <span class="material-symbols-outlined text-base" style="font-variation-settings: 'FILL' 1;">star</span>
+            </div>
+            <p class="font-headline text-sm font-extrabold">"The only place I trust with Buddy."</p>
+          </div>
+          <div class="overflow-hidden rounded-5xl bg-white p-3 shadow-2xl rotate-2">
+            <img class="aspect-[4/5] w-full rounded-[2.5rem] object-cover" src="myo/landing%20page%20image.png" alt="Happy dog enjoying a pet care stay" />
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="services" class="px-5 py-16 md:px-8">
+      <div class="mx-auto max-w-7xl">
+        <div class="mb-10 max-w-2xl">
+          <p class="font-headline text-sm font-extrabold uppercase tracking-[0.2em] text-primary">Services</p>
+          <h2 class="mt-3 font-headline text-4xl font-black tracking-tight md:text-5xl">Care offers that can grow with the business.</h2>
+        </div>
+        <div class="grid gap-6 md:grid-cols-3">
+          <article class="rounded-5xl bg-white p-8 shadow-sm">
+            <span class="material-symbols-outlined mb-8 rounded-3xl bg-sky-100 p-4 text-4xl text-primary">sunny</span>
+            <h3 class="font-headline text-2xl font-black">The Day Stay</h3>
+            <p class="mt-4 text-muted">A supervised daycare offer with play, snack rhythms, and a clear path into recurring care.</p>
+            <a class="mt-7 inline-flex font-headline font-extrabold text-primary" href="myo/the_day_stay_details/index.html">View details <span class="material-symbols-outlined ml-1">chevron_right</span></a>
+          </article>
+          <article class="rounded-5xl bg-white p-8 shadow-sm md:translate-y-8">
+            <span class="material-symbols-outlined mb-8 rounded-3xl bg-orange-100 p-4 text-4xl text-secondary">bedtime</span>
+            <h3 class="font-headline text-2xl font-black">Overnight care</h3>
+            <p class="mt-4 text-muted">Boarding experiences that pair premium hospitality with visible updates for pet parents.</p>
+            <a class="mt-7 inline-flex font-headline font-extrabold text-secondary" href="myo/checkout_recurring_booking/code.html">Preview checkout <span class="material-symbols-outlined ml-1">chevron_right</span></a>
+          </article>
+          <article class="rounded-5xl bg-white p-8 shadow-sm">
+            <span class="material-symbols-outlined mb-8 rounded-3xl bg-teal-100 p-4 text-4xl text-tertiary">visibility</span>
+            <h3 class="font-headline text-2xl font-black">Parent updates</h3>
+            <p class="mt-4 text-muted">Journals, report cards, emergency contacts, and clear trust-building touchpoints.</p>
+            <a class="mt-7 inline-flex font-headline font-extrabold text-tertiary" href="myo/client_journal_cute_lively/index.html">Open journal <span class="material-symbols-outlined ml-1">chevron_right</span></a>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="experience" class="px-5 py-16 md:px-8">
+      <div class="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[0.9fr_1.1fr]">
+        <div class="rounded-5xl bg-primary p-8 text-white md:p-12">
+          <p class="font-headline text-sm font-extrabold uppercase tracking-[0.2em] text-sky-100">Experience model</p>
+          <h2 class="mt-3 font-headline text-4xl font-black tracking-tight md:text-5xl">One landing page, many connected workflows.</h2>
+          <p class="mt-6 text-lg leading-8 text-sky-50">This root page is the public front door. The linked screens under <code class="rounded bg-white/15 px-2 py-1">myo/</code> remain the working prototype for onboarding, checkout, safety, sitter tools, and parent-facing updates.</p>
+        </div>
+        <div class="grid gap-4 sm:grid-cols-2">
+          <a class="rounded-4xl bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md" href="myo/onboarding_basic_info_final/index.html">
+            <span class="material-symbols-outlined text-primary">assignment</span>
+            <h3 class="mt-5 font-headline text-xl font-black">Onboarding</h3>
+            <p class="mt-2 text-sm leading-6 text-muted">Basic info, behavior, medical context, and emergency contact capture.</p>
+          </a>
+          <a class="rounded-4xl bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md" href="myo/checkout/index.html">
+            <span class="material-symbols-outlined text-secondary">payments</span>
+            <h3 class="mt-5 font-headline text-xl font-black">Checkout</h3>
+            <p class="mt-2 text-sm leading-6 text-muted">A ready slot for Stripe-backed deposits, packages, and recurring care.</p>
+          </a>
+          <a class="rounded-4xl bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md" href="myo/admindash/index.html">
+            <span class="material-symbols-outlined text-tertiary">dashboard</span>
+            <h3 class="mt-5 font-headline text-xl font-black">Sitter ops</h3>
+            <p class="mt-2 text-sm leading-6 text-muted">A dashboard surface for logging updates and managing daily care.</p>
+          </a>
+          <a class="rounded-4xl bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md" href="myo/stay_report_card/index.html">
+            <span class="material-symbols-outlined text-primary">fact_check</span>
+            <h3 class="mt-5 font-headline text-xl font-black">Report cards</h3>
+            <p class="mt-2 text-sm leading-6 text-muted">Pet parent trust loops with highlights, notes, and care summaries.</p>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <section id="app" class="px-5 py-16 md:px-8">
+      <div class="mx-auto max-w-7xl rounded-5xl bg-white p-6 shadow-sm md:p-10">
+        <div class="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-end">
+          <div>
+            <p class="font-headline text-sm font-extrabold uppercase tracking-[0.2em] text-primary">Prototype map</p>
+            <h2 class="mt-3 font-headline text-4xl font-black tracking-tight">Explore the connected screens.</h2>
+          </div>
+          <a class="inline-flex items-center font-headline font-extrabold text-primary" href="myo/index.html">Open original prototype index <span class="material-symbols-outlined ml-1">arrow_forward</span></a>
+        </div>
+        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <a class="rounded-3xl bg-surface-low p-4 font-bold hover:bg-surface-high" href="myo/onboarding_basic_info_final/index.html">Onboarding: Basic Info</a>
+          <a class="rounded-3xl bg-surface-low p-4 font-bold hover:bg-surface-high" href="myo/onboarding_behavior_personality_final/index.html">Onboarding: Behavior</a>
+          <a class="rounded-3xl bg-surface-low p-4 font-bold hover:bg-surface-high" href="myo/onboarding_health_medical_final/index.html">Onboarding: Health</a>
+          <a class="rounded-3xl bg-surface-low p-4 font-bold hover:bg-surface-high" href="myo/emergency_contact_setup/index.html">Emergency Setup</a>
+          <a class="rounded-3xl bg-surface-low p-4 font-bold hover:bg-surface-high" href="myo/safety_first_faq/index.html">Safety FAQ</a>
+          <a class="rounded-3xl bg-surface-low p-4 font-bold hover:bg-surface-high" href="myo/schedule_a_meet_greet/index.html">Schedule Meet &amp; Greet</a>
+          <a class="rounded-3xl bg-surface-low p-4 font-bold hover:bg-surface-high" href="myo/the_day_stay_details/index.html">The Day Stay</a>
+          <a class="rounded-3xl bg-surface-low p-4 font-bold hover:bg-surface-high" href="myo/pet_profile_cooper/index.html">Pet Profile</a>
+          <a class="rounded-3xl bg-surface-low p-4 font-bold hover:bg-surface-high" href="myo/stay_report_card/index.html">Stay Report Card</a>
+          <a class="rounded-3xl bg-surface-low p-4 font-bold hover:bg-surface-high" href="myo/client_journal_scenic_route/index.html">Client Journal</a>
+          <a class="rounded-3xl bg-surface-low p-4 font-bold hover:bg-surface-high" href="myo/checkout/index.html">Checkout</a>
+          <a class="rounded-3xl bg-surface-low p-4 font-bold hover:bg-surface-high" href="myo/admindash/index.html">Sitter Dashboard</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="px-5 py-12 md:px-8">
+    <div class="mx-auto flex max-w-7xl flex-col justify-between gap-6 border-t border-ink/10 pt-8 text-sm text-muted md:flex-row md:items-center">
+      <p><span class="font-headline text-xl font-black text-ink">myo.</span> Premium pet care experience for an individual petsitter business.</p>
+      <div class="flex flex-wrap gap-4">
+        <a class="hover:text-primary" href="myo/safety_first_faq/index.html">Safety</a>
+        <a class="hover:text-primary" href="myo/checkout/index.html">Checkout</a>
+        <a class="hover:text-primary" href="myo/admindash/index.html">Pet sitter dashboard</a>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>
