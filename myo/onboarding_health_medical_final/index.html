@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Pet Onboarding - Health &amp; Medical</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Be+Vietnam+Pro:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-container-highest": "#ffdad2",
+                    "primary": "#09658c",
+                    "outline": "#6d7881",
+                    "tertiary-container": "#6dbcb3",
+                    "on-secondary-container": "#6e2f00",
+                    "surface-bright": "#fff8f6",
+                    "on-primary": "#ffffff",
+                    "surface-container": "#ffe9e4",
+                    "primary-container": "#71b6e1",
+                    "on-tertiary-fixed": "#00201d",
+                    "background": "#fff8f6",
+                    "on-primary-fixed": "#001e2d",
+                    "surface-container-lowest": "#ffffff",
+                    "tertiary-fixed": "#a1f1e7",
+                    "secondary-container": "#fe9250",
+                    "on-primary-fixed-variant": "#004c6b",
+                    "on-tertiary-fixed-variant": "#00504a",
+                    "error": "#ba1a1a",
+                    "secondary-fixed": "#ffdbc9",
+                    "on-background": "#2b1611",
+                    "outline-variant": "#bdc8d2",
+                    "on-primary-container": "#004764",
+                    "inverse-surface": "#432a24",
+                    "surface-tint": "#09658c",
+                    "secondary-fixed-dim": "#ffb68e",
+                    "surface-container-low": "#fff1ed",
+                    "on-secondary-fixed": "#331200",
+                    "on-secondary": "#ffffff",
+                    "surface-container-high": "#ffe2db",
+                    "surface": "#fff8f6",
+                    "primary-fixed-dim": "#89cefb",
+                    "on-tertiary-container": "#004b45",
+                    "secondary": "#9a4603",
+                    "on-error": "#ffffff",
+                    "primary-fixed": "#c6e7ff",
+                    "on-secondary-fixed-variant": "#763300",
+                    "on-tertiary": "#ffffff",
+                    "inverse-primary": "#89cefb",
+                    "on-surface": "#2b1611",
+                    "inverse-on-surface": "#ffede9",
+                    "surface-variant": "#ffdad2",
+                    "on-surface-variant": "#3d4850",
+                    "error-container": "#ffdad6",
+                    "on-error-container": "#93000a",
+                    "tertiary-fixed-dim": "#85d4cb"
+            },
+            "borderRadius": {
+                    "DEFAULT": "1rem",
+                    "lg": "2rem",
+                    "xl": "3rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "container-max": "80rem",
+                    "header-height": "4.5rem",
+                    "bento-gap": "1.5rem",
+                    "inline-padding": "1rem",
+                    "nav-height": "6rem",
+                    "section-gap": "4rem"
+            },
+            "fontFamily": {
+                    "label-bold": ["Be Vietnam Pro"],
+                    "body-md": ["Be Vietnam Pro"],
+                    "body-xl": ["Be Vietnam Pro"],
+                    "headline-lg": ["Plus Jakarta Sans"],
+                    "display-xl": ["Plus Jakarta Sans"]
+            },
+            "fontSize": {
+                    "label-bold": ["0.875rem", {"letterSpacing": "0.05em", "fontWeight": "700"}],
+                    "body-md": ["1rem", {"lineHeight": "1.5", "fontWeight": "400"}],
+                    "body-xl": ["1.25rem", {"lineHeight": "1.6", "fontWeight": "500"}],
+                    "headline-lg": ["2.25rem", {"lineHeight": "1.2", "fontWeight": "700"}],
+                    "display-xl": ["4.5rem", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "800"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        .bento-card {
+            transition: all 0.3s ease;
+        }
+        .bento-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px -10px rgba(9, 101, 140, 0.1);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background font-body-md min-h-screen pb-32">
+<!-- Top Navigation (Shell Rule: Suppressed for Transactional Onboarding) -->
+<!-- However, the prompt asks for "Clean and professional but friendly" and "The Day Stay" style -->
+<!-- We use the TopAppBar structure but with a "Back" button as per task guidelines for sub-pages -->
+<nav class="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-xl border-b border-sky-100/10 shadow-sm">
+<div class="flex justify-between items-center px-6 h-16 w-full max-w-7xl mx-auto">
+<div class="flex items-center gap-4">
+<button class="p-2 hover:bg-sky-50 rounded-full transition-colors">
+<span class="material-symbols-outlined text-primary">arrow_back</span>
+</button>
+<span class="font-headline-lg text-primary text-xl tracking-tight">myo.</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="flex gap-1">
+<div class="h-1.5 w-8 rounded-full bg-primary-container/30"></div>
+<div class="h-1.5 w-8 rounded-full bg-primary"></div>
+<div class="h-1.5 w-8 rounded-full bg-primary-container/30"></div>
+<div class="h-1.5 w-8 rounded-full bg-primary-container/30"></div>
+</div>
+</div>
+</div>
+</nav>
+<main class="max-w-4xl mx-auto px-6 pt-24 pb-12">
+<!-- Header Section -->
+<header class="mb-12">
+<div class="inline-flex items-center gap-2 px-3 py-1 bg-primary-container/20 text-primary rounded-full mb-4">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">medical_services</span>
+<span class="font-label-bold text-[10px] uppercase tracking-widest">Step 2: Medical Profile</span>
+</div>
+<h1 class="font-display-xl text-headline-lg md:text-display-xl text-on-surface mb-4">Keeping them healthy</h1>
+<p class="font-body-xl text-on-surface-variant max-w-2xl">Help us provide the best care by sharing your pet's medical history and emergency contacts.</p>
+</header>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+<!-- Vaccinations Section (8 Columns) -->
+<section class="md:col-span-8 bg-surface-container-low rounded-lg p-8 bento-card border border-primary/5">
+<div class="flex items-center gap-3 mb-6">
+<div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">vaccines</span>
+</div>
+<h2 class="font-headline-lg text-xl text-on-surface">Vaccinations</h2>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+<!-- Checkbox Item -->
+<label class="group flex items-center p-4 bg-white rounded-lg border border-outline-variant/30 cursor-pointer hover:border-primary transition-all active:scale-95">
+<input checked="" class="w-5 h-5 rounded border-outline-variant text-primary focus:ring-primary mr-4" type="checkbox"/>
+<div>
+<p class="font-label-bold text-on-surface">Rabies</p>
+<p class="text-xs text-on-surface-variant">Required for all stays</p>
+</div>
+</label>
+<label class="group flex items-center p-4 bg-white rounded-lg border border-outline-variant/30 cursor-pointer hover:border-primary transition-all active:scale-95">
+<input checked="" class="w-5 h-5 rounded border-outline-variant text-primary focus:ring-primary mr-4" type="checkbox"/>
+<div>
+<p class="font-label-bold text-on-surface">Distemper</p>
+<p class="text-xs text-on-surface-variant">Annual booster</p>
+</div>
+</label>
+<label class="group flex items-center p-4 bg-white rounded-lg border border-outline-variant/30 cursor-pointer hover:border-primary transition-all active:scale-95">
+<input class="w-5 h-5 rounded border-outline-variant text-primary focus:ring-primary mr-4" type="checkbox"/>
+<div>
+<p class="font-label-bold text-on-surface">Bordetella</p>
+<p class="text-xs text-on-surface-variant">Kennel cough</p>
+</div>
+</label>
+<label class="group flex items-center p-4 bg-white rounded-lg border border-outline-variant/30 cursor-pointer hover:border-primary transition-all active:scale-95">
+<input class="w-5 h-5 rounded border-outline-variant text-primary focus:ring-primary mr-4" type="checkbox"/>
+<div>
+<p class="font-label-bold text-on-surface">Leptospirosis</p>
+<p class="text-xs text-on-surface-variant">Outdoor protection</p>
+</div>
+</label>
+</div>
+<div class="mt-6 flex items-center gap-3 p-4 bg-primary-container/10 rounded-lg border border-primary/10">
+<span class="material-symbols-outlined text-primary">cloud_upload</span>
+<p class="font-body-md text-sm text-on-primary-container">You will be asked to upload certificates in the final step.</p>
+</div>
+</section>
+<!-- Quick Tip Card (4 Columns) -->
+<div class="md:col-span-4 bg-gradient-to-br from-primary to-blue-700 rounded-lg p-8 text-white relative overflow-hidden">
+<div class="relative z-10 h-full flex flex-col justify-between">
+<div>
+<span class="material-symbols-outlined text-3xl mb-4">lightbulb</span>
+<h3 class="font-headline-lg text-lg mb-2">Why this matters</h3>
+<p class="font-body-md text-sm opacity-90 leading-relaxed">Keeping detailed health records ensures our supervisors can react quickly and safely to any situation during play-time.</p>
+</div>
+<img class="w-24 h-24 rounded-full border-4 border-white/20 mt-6 object-cover self-end" data-alt="portrait of a healthy golden retriever sitting proudly in a sunlit modern veterinary office" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC54cgBu6Guq-sWghlPtrZ3GMA6pKqsmza-OclxtfZRFmccpCbgRZKqMhzGEFAMRpsMwmlCHbLCdWdOVJjgPSh1QCwAdJ6-AfWb-eVzGfnFS-qnTC-rMwgYQdmLzuee01TbSNUBg3Z2MqIQYomgU4auP892Z73aqcFa4t-2yByno2IHa_YUO4xzPRoTO-HKDK8SghgvQiBo1sUnABSlZntVDzDlSBalXTOaQ8WnkvquHBD_vJe63kS8Xj5FFSd2WE_k1Fx5WEctNg"/>
+</div>
+<!-- Abstract Grainy Background Texture for Depth -->
+<div class="absolute inset-0 opacity-20 pointer-events-none bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-white/40 via-transparent to-transparent"></div>
+</div>
+<!-- Allergies Section (5 Columns) -->
+<section class="md:col-span-5 bg-surface-container-high rounded-lg p-8 bento-card border border-primary/5">
+<div class="flex items-center gap-3 mb-6">
+<div class="w-10 h-10 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined">warning</span>
+</div>
+<h2 class="font-headline-lg text-xl text-on-surface">Allergies</h2>
+</div>
+<div class="space-y-4">
+<label class="block">
+<span class="font-label-bold text-xs text-on-surface-variant mb-2 block uppercase">Dietary or Sensitivities</span>
+<textarea class="w-full rounded-lg border-outline-variant bg-white/50 focus:border-primary focus:ring-primary p-4 font-body-md placeholder:text-outline/50" placeholder="E.g., Grain-free only, allergic to chicken, sensitive to loud noises..." rows="4"></textarea>
+</label>
+</div>
+</section>
+<!-- Vet Contact Section (7 Columns) -->
+<section class="md:col-span-7 bg-white rounded-lg p-8 bento-card border border-outline-variant/30">
+<div class="flex items-center gap-3 mb-6">
+<div class="w-10 h-10 rounded-xl bg-tertiary/10 flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined">contact_emergency</span>
+</div>
+<h2 class="font-headline-lg text-xl text-on-surface">Primary Vet</h2>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+<label class="block">
+<span class="font-label-bold text-xs text-on-surface-variant mb-2 block uppercase">Clinic Name</span>
+<input class="w-full rounded-lg border-outline-variant bg-surface-bright focus:border-primary focus:ring-primary p-3" placeholder="Paws &amp; Claws Clinic" type="text"/>
+</label>
+<label class="block">
+<span class="font-label-bold text-xs text-on-surface-variant mb-2 block uppercase">Vet Name (Optional)</span>
+<input class="w-full rounded-lg border-outline-variant bg-surface-bright focus:border-primary focus:ring-primary p-3" placeholder="Dr. Sarah Miller" type="text"/>
+</label>
+<label class="block sm:col-span-2">
+<span class="font-label-bold text-xs text-on-surface-variant mb-2 block uppercase">Emergency Phone</span>
+<div class="relative">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-outline text-sm">call</span>
+<input class="w-full rounded-lg border-outline-variant bg-surface-bright focus:border-primary focus:ring-primary p-3 pl-10" placeholder="+1 (555) 000-0000" type="tel"/>
+</div>
+</label>
+</div>
+</section>
+<!-- Map Location Placeholder (Full Width) -->
+<section class="md:col-span-12 h-48 rounded-lg overflow-hidden relative group border border-outline-variant/20">
+<img class="w-full h-full object-cover filter saturate-50 contrast-75" data-alt="stylized birds eye view map of an urban neighborhood with soft pastel colors and clean cartography" data-location="Austin, Texas" src="https://lh3.googleusercontent.com/aida-public/AB6AXuANsdHCHwDWrkqgZIwyuOA4tJyIyNDKmc4RPQq_DqG14PwBSoEf239DpUV2jW_C4Uq8TyCwXGtqSTL4xIEaoFrUcco7ynQ1DLYRLwYvVDXyMn8mVdzqUa7xgsn2wBur7uxcAYAi0lvcWDz6NA1iRWgHBbfWoNQFKTA_MPsCwnRRmsY0qal_g0F6Vh67yMXa9m1jBl9CFmRxWnchA8gP4k5MmcBVsOfcG1HHrorEGjtFpvfc7CWUmO7hm6xmnrrbEHPOuLd9l0o8Sw"/>
+<div class="absolute inset-0 bg-primary/10 group-hover:bg-transparent transition-colors"></div>
+<div class="absolute top-4 left-4 glass-panel px-4 py-2 rounded-full border border-white/40 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-sm">location_on</span>
+<span class="font-label-bold text-xs">Verify clinic location</span>
+</div>
+</section>
+</div>
+<!-- Sticky Bottom Action Bar (Contextual FAB suppression, but custom onboarding nav) -->
+<div class="fixed bottom-0 left-0 w-full bg-white/80 backdrop-blur-xl border-t border-outline-variant/10 px-6 py-6 z-40">
+<div class="max-w-4xl mx-auto flex items-center justify-between">
+<button class="font-label-bold text-on-surface-variant px-6 py-4 hover:bg-surface-container rounded-full transition-colors active:scale-95">
+                    Save Draft
+                </button>
+<div class="flex items-center gap-4">
+<button class="hidden sm:block font-label-bold text-primary px-4">
+                        Step 2 of 4
+                    </button>
+<button class="bg-gradient-to-r from-primary to-blue-600 text-white font-label-bold px-8 py-4 rounded-full shadow-lg shadow-primary/20 hover:shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center gap-2">
+                        Continue to Personality
+                        <span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+</main>
+</body></html>

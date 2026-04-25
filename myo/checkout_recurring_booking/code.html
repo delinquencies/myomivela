@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Checkout - myo.</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Be+Vietnam+Pro:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-secondary-fixed-variant": "#863b00",
+                    "tertiary-fixed-dim": "#71d7cd",
+                    "tertiary": "#006760",
+                    "surface-tint": "#006289",
+                    "surface-container-low": "#ffede9",
+                    "error": "#b31b25",
+                    "primary-dim": "#005578",
+                    "outline-variant": "#caa59c",
+                    "tertiary-container": "#7fe6db",
+                    "secondary-fixed-dim": "#ffb287",
+                    "inverse-primary": "#00baff",
+                    "secondary-fixed": "#ffc5a6",
+                    "on-primary-fixed": "#001723",
+                    "surface": "#fff4f2",
+                    "on-background": "#412923",
+                    "on-surface-variant": "#72544e",
+                    "on-secondary-fixed": "#592500",
+                    "surface-dim": "#fec8bc",
+                    "secondary": "#974300",
+                    "primary-fixed": "#00baff",
+                    "tertiary-fixed": "#7fe6db",
+                    "on-error": "#ffefee",
+                    "on-primary": "#e8f4ff",
+                    "on-error-container": "#570008",
+                    "on-tertiary-fixed": "#003e39",
+                    "on-surface": "#412923",
+                    "error-dim": "#9f0519",
+                    "outline": "#906f68",
+                    "on-primary-container": "#003248",
+                    "primary": "#006289",
+                    "surface-container": "#ffe2db",
+                    "surface-bright": "#fff4f2",
+                    "background": "#fff4f2",
+                    "inverse-surface": "#1c0905",
+                    "surface-variant": "#ffd3c9",
+                    "surface-container-highest": "#ffd3c9",
+                    "primary-fixed-dim": "#00abeb",
+                    "secondary-container": "#ffc5a6",
+                    "error-container": "#fb5151",
+                    "on-tertiary": "#bffff7",
+                    "primary-container": "#00baff",
+                    "on-secondary-container": "#773400",
+                    "on-tertiary-container": "#00534d",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-container-high": "#ffdad2",
+                    "on-primary-fixed-variant": "#003c55",
+                    "tertiary-dim": "#005a54",
+                    "secondary-dim": "#843a00",
+                    "inverse-on-surface": "#b9958d",
+                    "on-tertiary-fixed-variant": "#005d57",
+                    "on-secondary": "#fff0e9"
+            },
+            "borderRadius": {
+                    "DEFAULT": "1rem",
+                    "lg": "2rem",
+                    "xl": "3rem",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Plus Jakarta Sans"],
+                    "body": ["Be Vietnam Pro"],
+                    "label": ["Be Vietnam Pro"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface font-body text-on-surface min-h-screen">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-[#fff4f2]/80 dark:bg-stone-900/80 backdrop-blur-xl shadow-[0_8px_32px_rgba(65,41,35,0.06)] flex items-center justify-between px-6 py-4">
+<div class="flex items-center gap-3">
+<button class="material-symbols-outlined text-on-surface-variant active:scale-95 duration-200">arrow_back</button>
+<span class="text-2xl font-black text-[#412923] dark:text-[#fff4f2] lowercase">myo.</span>
+</div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-[#412923] dark:text-[#fff4f2]">notifications</span>
+<div class="w-8 h-8 rounded-full overflow-hidden bg-surface-container">
+<img alt="Pet profile picture" class="w-full h-full object-cover" data-alt="Close-up portrait of a friendly man with a warm smile, professional lighting, soft background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCRppX3cBzH811el-CBP2w-ASDTFWKvbrtpHuBndMYuBC5Ex8Xu3fgObv1z8BaoG-fOKoLgMPtfvqYfwdbKFm9KQAO8tdmY6XGDBuJ113a-alGp3uabFAt_d7-56bTo8nQySXNW3-SqXTst2MZGTAp2qAtn25q1fUCUZ6j2hr0CKDBxZz03cPNydqLbwU_wymrySri52QEf0EIRMalb1o9IAIPV0TmBufjpEfaylHGGoO_IQIJDBSic9oewxFHv2Vkhzon9u6Hz5w"/>
+</div>
+</div>
+</header>
+<main class="pt-24 pb-32 px-6 max-w-2xl mx-auto">
+<h1 class="font-headline font-extrabold text-3xl mb-8 tracking-tight text-on-background">Review your walk</h1>
+<!-- Pet & Sitter Bento Card -->
+<section class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+<div class="md:col-span-2 bg-surface-container-lowest p-6 rounded-lg shadow-[0_8px_32px_rgba(65,41,35,0.04)] relative overflow-hidden group">
+<div class="relative z-10">
+<span class="bg-tertiary-container text-on-tertiary-container px-3 py-1 rounded-full text-xs font-bold mb-4 inline-block">Scheduled Walk</span>
+<h2 class="text-xl font-bold font-headline mb-1">Luna's Adventure</h2>
+<p class="text-on-surface-variant text-sm mb-4">60 min • Central Park Trail</p>
+<div class="flex items-center gap-2 text-primary font-semibold">
+<span class="material-symbols-outlined text-sm">calendar_today</span>
+<span class="text-sm">Today, 4:30 PM</span>
+</div>
+</div>
+<img alt="Luna" class="absolute -right-8 -bottom-8 w-40 h-40 object-cover rounded-full rotate-12 transition-transform group-hover:scale-110" data-alt="Cheerful golden retriever running through tall grass in a sunlit meadow, ears flapping, joyful expression" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCdf2m9C3dcCZuPFd-rdy4GK2YNSuoF58oxCPduZf34TmRFAVq2weK5AjIUb6MfBk14_hdqSqVsxaTK0fWATf34QbIVqRAxqVrZFKJEX_DKqqztdQ0wmd6pqN7XQeaptfwcTBlShdIJzxNSriwNSTLTqWmRtcKl1681GDVWU3ildcjxxx3l1vETr-sKJuet9rrW5Lh-DaqcM9bAAimlUvlhIYpsd2WZTuKitzWFNo_5kGolwBLHWnQuBGCSgctT6tPpXvYRaSkYtg"/>
+</div>
+<div class="bg-primary-container/10 p-6 rounded-lg flex flex-col items-center justify-center text-center border-2 border-dashed border-primary-container/30">
+<div class="w-16 h-16 rounded-full overflow-hidden mb-3 border-4 border-surface-container-lowest shadow-lg">
+<img alt="Sitter profile" class="w-full h-full object-cover" data-alt="Professional pet sitter smiling at camera, wearing a casual outdoor jacket, park background with soft bokeh" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC_xs5448TcY6RpTuSd2B5iRAGUx9QJ9JQlTL-FYNc7d57W6wvHce6BJ8OKM78QFxUgkVCEECtHv61QgCfkfoOCVYB8FEkWwCXoCZtBDEgNhjXwk__JN6KW4do6YRLnu7fOtSFnkbY29qAJ4Fl9943j_H7OmDZ127FXkyueT9lDqnB6JGo5Hnf0m0iGSO0nk1EiFAU9R9MBjP__EPft9VMSfEf6ni8y11JN5NhpAfthCwfUSew3AlO0N0gjajhgVup5-k6f_oAPLw"/>
+</div>
+<p class="text-xs font-bold text-primary mb-1 uppercase tracking-widest">Your Sitter</p>
+<p class="font-headline font-bold text-on-surface">Mark J.</p>
+</div>
+</section>
+<!-- Booking Frequency -->
+<section class="mb-10">
+<h3 class="font-headline font-bold text-lg mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">repeat</span>
+                Booking Frequency
+            </h3>
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+<label class="relative cursor-pointer group">
+<input checked="" class="peer sr-only" name="frequency" type="radio"/>
+<div class="p-4 rounded-xl border-2 border-transparent bg-surface-container-low peer-checked:bg-primary-container/20 peer-checked:border-primary-container transition-all text-center">
+<p class="font-bold text-sm">One-time</p>
+</div>
+</label>
+<label class="relative cursor-pointer group">
+<input class="peer sr-only" name="frequency" type="radio"/>
+<div class="p-4 rounded-xl border-2 border-transparent bg-surface-container-low peer-checked:bg-primary-container/20 peer-checked:border-primary-container transition-all text-center">
+<p class="font-bold text-sm">Weekly</p>
+<p class="text-[10px] text-on-surface-variant uppercase mt-1">Save 10%</p>
+</div>
+</label>
+<label class="relative cursor-pointer group">
+<input class="peer sr-only" name="frequency" type="radio"/>
+<div class="p-4 rounded-xl border-2 border-transparent bg-surface-container-low peer-checked:bg-primary-container/20 peer-checked:border-primary-container transition-all text-center">
+<p class="font-bold text-sm">Bi-weekly</p>
+<p class="text-[10px] text-on-surface-variant uppercase mt-1">Save 5%</p>
+</div>
+</label>
+</div>
+</section>
+<!-- Gratitude Selector -->
+<section class="mb-10">
+<div class="flex items-end justify-between mb-4">
+<h3 class="font-headline font-bold text-lg flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary">favorite</span>
+                    Gratitude
+                </h3>
+<span class="text-xs text-on-surface-variant italic">Sitters keep 100% of tips</span>
+</div>
+<div class="flex gap-3 overflow-x-auto hide-scrollbar pb-2">
+<button class="flex-none px-6 py-3 rounded-full bg-surface-container-lowest border-2 border-primary-container/20 font-bold text-sm text-on-surface hover:bg-primary-container/10 active:scale-90 transition-all">$0</button>
+<button class="flex-none px-6 py-3 rounded-full bg-surface-container-lowest border-2 border-primary-container/20 font-bold text-sm text-on-surface hover:bg-primary-container/10 active:scale-90 transition-all">$5</button>
+<button class="flex-none px-6 py-3 rounded-full bg-primary-container text-white font-bold text-sm shadow-md active:scale-90 transition-all">$10</button>
+<button class="flex-none px-6 py-3 rounded-full bg-surface-container-lowest border-2 border-primary-container/20 font-bold text-sm text-on-surface hover:bg-primary-container/10 active:scale-90 transition-all">$15</button>
+<button class="flex-none px-6 py-3 rounded-full bg-surface-container-lowest border-2 border-primary-container/20 font-bold text-sm text-on-surface hover:bg-primary-container/10 active:scale-90 transition-all">Custom</button>
+</div>
+</section>
+<!-- Summary -->
+<section class="bg-surface-container-lowest rounded-xl p-8 shadow-[0_16px_48px_rgba(65,41,35,0.08)]">
+<div class="space-y-4 mb-6">
+<div class="flex justify-between text-on-surface-variant">
+<span class="text-sm">60 min Walk Service</span>
+<span class="text-sm font-semibold">$35.00</span>
+</div>
+<div class="flex justify-between text-on-surface-variant">
+<span class="text-sm">Gratitude (Tip)</span>
+<span class="text-sm font-semibold">$10.00</span>
+</div>
+<div class="flex justify-between text-on-surface-variant">
+<span class="text-sm">Service Fee</span>
+<span class="text-sm font-semibold">$2.50</span>
+</div>
+</div>
+<div class="h-px bg-surface-container mb-6"></div>
+<div class="flex justify-between items-center mb-8">
+<span class="font-headline font-extrabold text-xl">Total</span>
+<span class="font-headline font-extrabold text-2xl text-primary">$47.50</span>
+</div>
+<!-- Payment Method -->
+<div class="flex items-center justify-between p-4 bg-surface-container-low rounded-lg mb-8">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-on-surface-variant">credit_card</span>
+<span class="font-bold text-sm">•••• 4242</span>
+</div>
+<button class="text-primary text-xs font-bold uppercase tracking-wider">Change</button>
+</div>
+<button class="w-full bg-gradient-to-tr from-primary-dim to-primary-container text-white py-5 rounded-full font-headline font-bold text-lg shadow-xl hover:opacity-90 active:scale-95 transition-all mb-4">
+                Confirm &amp; Pay
+            </button>
+<p class="text-[10px] text-center text-on-surface-variant px-6">
+                By tapping "Confirm &amp; Pay", you agree to myo.'s Terms of Service and Cancellation Policy.
+            </p>
+</section>
+</main>
+<!-- Navigation suppressed for transactional focused journey -->
+</body></html>

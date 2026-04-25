@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Pet Onboarding - Basic Info</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Be+Vietnam+Pro:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-highest": "#ffdad2",
+                        "primary": "#09658c",
+                        "outline": "#6d7881",
+                        "tertiary-container": "#6dbcb3",
+                        "on-secondary-container": "#6e2f00",
+                        "surface-bright": "#fff8f6",
+                        "on-primary": "#ffffff",
+                        "surface-container": "#ffe9e4",
+                        "primary-container": "#71b6e1",
+                        "on-tertiary-fixed": "#00201d",
+                        "background": "#fff8f6",
+                        "on-primary-fixed": "#001e2d",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary-fixed": "#a1f1e7",
+                        "secondary-container": "#fe9250",
+                        "on-primary-fixed-variant": "#004c6b",
+                        "on-tertiary-fixed-variant": "#00504a",
+                        "error": "#ba1a1a",
+                        "secondary-fixed": "#ffdbc9",
+                        "on-background": "#2b1611",
+                        "outline-variant": "#bdc8d2",
+                        "on-primary-container": "#004764",
+                        "inverse-surface": "#432a24",
+                        "surface-tint": "#09658c",
+                        "secondary-fixed-dim": "#ffb68e",
+                        "surface-container-low": "#fff1ed",
+                        "on-secondary-fixed": "#331200",
+                        "on-secondary": "#ffffff",
+                        "surface-container-high": "#ffe2db",
+                        "surface": "#fff8f6",
+                        "primary-fixed-dim": "#89cefb",
+                        "on-tertiary-container": "#004b45",
+                        "secondary": "#9a4603",
+                        "on-error": "#ffffff",
+                        "primary-fixed": "#c6e7ff",
+                        "on-secondary-fixed-variant": "#763300",
+                        "on-tertiary": "#ffffff",
+                        "inverse-primary": "#89cefb",
+                        "on-surface": "#2b1611",
+                        "inverse-on-surface": "#ffede9",
+                        "surface-variant": "#ffdad2",
+                        "on-surface-variant": "#3d4850",
+                        "error-container": "#ffdad6",
+                        "on-error-container": "#93000a",
+                        "tertiary-fixed-dim": "#85d4cb"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "container-max": "80rem",
+                        "header-height": "4.5rem",
+                        "bento-gap": "1.5rem",
+                        "inline-padding": "1rem",
+                        "nav-height": "6rem",
+                        "section-gap": "4rem"
+                    },
+                    "fontFamily": {
+                        "label-bold": ["Be Vietnam Pro"],
+                        "body-md": ["Be Vietnam Pro"],
+                        "body-xl": ["Be Vietnam Pro"],
+                        "headline-lg": ["Plus Jakarta Sans"],
+                        "display-xl": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "label-bold": ["0.875rem", { "letterSpacing": "0.05em", "fontWeight": "700" }],
+                        "body-md": ["1rem", { "lineHeight": "1.5", "fontWeight": "400" }],
+                        "body-xl": ["1.25rem", { "lineHeight": "1.6", "fontWeight": "500" }],
+                        "headline-lg": ["2.25rem", { "lineHeight": "1.2", "fontWeight": "700" }],
+                        "display-xl": ["4.5rem", { "lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "800" }]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .active-pill {
+            scale: 0.95;
+            transition: transform 0.2s;
+        }
+        .bento-card {
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(109, 120, 129, 0.1);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background font-body-md min-h-screen">
+<!-- Top Navigation Anchor (Manual suppression of items for transactional flow) -->
+<header class="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-xl border-b border-sky-100/10 shadow-sm">
+<div class="flex justify-between items-center px-6 h-16 w-full max-w-7xl mx-auto">
+<button class="flex items-center justify-center p-2 rounded-full hover:bg-sky-50/50 transition-colors">
+<span class="material-symbols-outlined text-primary">arrow_back</span>
+</button>
+<span class="font-headline-lg text-2xl font-black tracking-tight text-sky-500">myo.</span>
+<div class="w-10 h-10 rounded-full overflow-hidden border-2 border-primary-container">
+<img alt="User" data-alt="close-up portrait of a smiling young man in a bright studio with soft natural lighting and clean background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAvKMCsrPNYpIaFnHLrXxgtOCc7mJQYzMHFCS3GHvBT0Xperr3-FbpYZ6KX5zSIi9w06bIXht7BohwNuVn1XJfMpUN5BeoD--0ACivjdnekYkTVD7IQlsgBiPhjklir6_sCb4yGU1ilmvhPKjJ1sAZXhC5argxEq6MJ_OsxLqY6TUFfLmjqiMXy9H622RGrTQaax3yJ6wzCS3Jk4OgB6SyI8A-Wyku9ESsWk0InVrbeA_nkV-44a4f-6-omhxnANB8I3sJD8tId8w"/>
+</div>
+</div>
+</header>
+<main class="pt-24 pb-32 px-6 max-w-4xl mx-auto">
+<!-- Progress Indicator -->
+<div class="flex items-center justify-center gap-2 mb-12">
+<div class="h-2 w-12 rounded-full bg-primary shadow-sm shadow-primary/20"></div>
+<div class="h-2 w-12 rounded-full bg-outline-variant/30"></div>
+<div class="h-2 w-12 rounded-full bg-outline-variant/30"></div>
+</div>
+<!-- Header Section -->
+<div class="text-center mb-12">
+<span class="inline-block px-4 py-1.5 mb-4 rounded-full bg-primary-container/20 text-on-primary-container font-label-bold text-label-bold">STEP 1: IDENTITY</span>
+<h1 class="font-headline-lg text-headline-lg text-on-background tracking-tight">Tell us about your friend</h1>
+<p class="mt-4 font-body-xl text-body-xl text-on-surface-variant max-w-lg mx-auto">Help us get to know your pet so we can provide the best supervised care.</p>
+</div>
+<!-- Onboarding Form Bento Grid -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-bento-gap">
+<!-- Photo Upload Area -->
+<div class="md:col-span-5 flex flex-col items-center justify-center p-8 rounded-xl bg-white/40 bento-card shadow-sm text-center">
+<div class="relative group cursor-pointer">
+<div class="w-48 h-48 rounded-full border-4 border-dashed border-primary-container/40 flex items-center justify-center bg-surface-container-low overflow-hidden transition-all group-hover:border-primary">
+<div class="flex flex-col items-center gap-2 text-primary-container group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-5xl">add_a_photo</span>
+<span class="font-label-bold text-label-bold">ADD PHOTO</span>
+</div>
+</div>
+<div class="absolute bottom-2 right-2 w-12 h-12 rounded-full bg-primary text-white flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined">edit</span>
+</div>
+</div>
+<p class="mt-6 font-body-md text-body-md text-on-surface-variant italic">Show us those puppy eyes!</p>
+</div>
+<!-- Form Fields Section -->
+<div class="md:col-span-7 flex flex-col gap-bento-gap">
+<!-- Pet Name Card -->
+<div class="p-6 rounded-xl bg-white/60 bento-card shadow-sm">
+<label class="block font-label-bold text-label-bold text-on-surface-variant mb-2">PET NAME</label>
+<input class="w-full bg-surface-container-lowest border-outline-variant/30 rounded-lg p-4 focus:ring-2 focus:ring-primary focus:border-transparent transition-all font-body-xl text-body-xl text-on-surface placeholder:text-outline-variant" placeholder="e.g. Barkley" type="text"/>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-bento-gap">
+<!-- Breed Card -->
+<div class="p-6 rounded-xl bg-white/60 bento-card shadow-sm">
+<label class="block font-label-bold text-label-bold text-on-surface-variant mb-2">BREED</label>
+<div class="relative">
+<input class="w-full bg-surface-container-lowest border-outline-variant/30 rounded-lg p-4 pr-10 focus:ring-2 focus:ring-primary focus:border-transparent transition-all font-body-md text-body-md text-on-surface" placeholder="Search breeds..." type="text"/>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-outline">search</span>
+</div>
+</div>
+<!-- Age Card -->
+<div class="p-6 rounded-xl bg-white/60 bento-card shadow-sm">
+<label class="block font-label-bold text-label-bold text-on-surface-variant mb-2">AGE (YEARS)</label>
+<div class="flex items-center gap-4">
+<button class="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center text-primary hover:bg-primary hover:text-white transition-colors">
+<span class="material-symbols-outlined">remove</span>
+</button>
+<span class="flex-1 text-center font-headline-lg text-headline-lg text-on-surface">2</span>
+<button class="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center text-primary hover:bg-primary hover:text-white transition-colors">
+<span class="material-symbols-outlined">add</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Personality Tags (Bento Feature) -->
+<div class="md:col-span-12 p-8 rounded-xl bg-gradient-to-br from-surface-container to-surface-container-high bento-card shadow-sm">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+<div>
+<h3 class="font-headline-lg text-2xl text-on-background">Describe their personality</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Select all that apply to your friend.</p>
+</div>
+<div class="flex flex-wrap gap-2">
+<button class="px-6 py-2 rounded-full bg-white border border-outline-variant/20 text-on-surface font-label-bold text-label-bold hover:bg-primary-container/20 hover:border-primary-container transition-all">ENERGETIC</button>
+<button class="px-6 py-2 rounded-full bg-primary text-white font-label-bold text-label-bold shadow-md shadow-primary/20">CALM</button>
+<button class="px-6 py-2 rounded-full bg-white border border-outline-variant/20 text-on-surface font-label-bold text-label-bold hover:bg-primary-container/20 hover:border-primary-container transition-all">SHY</button>
+<button class="px-6 py-2 rounded-full bg-white border border-outline-variant/20 text-on-surface font-label-bold text-label-bold hover:bg-primary-container/20 hover:border-primary-container transition-all">PLAYFUL</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Footer Action -->
+<div class="mt-16 flex flex-col items-center gap-6">
+<button class="w-full max-w-md bg-gradient-to-br from-primary to-blue-600 text-white font-headline-lg text-xl py-5 rounded-full shadow-xl shadow-primary/30 active:scale-95 transition-all flex items-center justify-center gap-3">
+                Continue to Health
+                <span class="material-symbols-outlined">arrow_forward</span>
+</button>
+<button class="font-label-bold text-label-bold text-outline hover:text-primary transition-colors">SKIP FOR NOW</button>
+</div>
+</main>
+<!-- Decorative Elements (Lively Palette) -->
+<div class="fixed top-20 -left-20 w-64 h-64 bg-secondary-container/10 rounded-full blur-3xl pointer-events-none"></div>
+<div class="fixed bottom-20 -right-20 w-96 h-96 bg-tertiary-container/10 rounded-full blur-3xl pointer-events-none"></div>
+<!-- Background Context Image (Softly blurred in background for atmosphere) -->
+<div class="fixed inset-0 -z-10 opacity-5 pointer-events-none">
+<img alt="Pet context" class="w-full h-full object-cover" data-alt="soft focus background of two happy dogs playing in a sun-drenched green meadow during golden hour" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB6OCRHGTG6G11DhxYQRHeHvVuBfBd7tUFfSwHb99EVr2Y_ACOGiCofRs1eW5vHqsdkI7x0fWfnsVd5OvIev_HtdAl5J3e7A4VYWPV1Sw5X-9KCHJP_5YkuEs56NgdNeIKvfeJmkOnWUCRLaoNrOblqBQv3CENFXfRoiuYfwLw48k3TzKvgAW2g5yG-jM8cfg35SI2orh5TdhqG_EfKfGhASvqbM6Hfa6FPJcQMPWtdGMQvGCxzgCxP4c-q_mn9gEej9acuoywwBg"/>
+</div>
+</body></html>

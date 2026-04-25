@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+
+<html class="scroll-smooth" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>myo. - Pet Journal</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&amp;family=Be+Vietnam+Pro:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "secondary-dim": "#843a00",
+                    "tertiary-dim": "#005a54",
+                    "secondary-fixed-dim": "#ffb287",
+                    "outline": "#906f68",
+                    "on-primary-fixed-variant": "#003c55",
+                    "secondary-container": "#ffc5a6",
+                    "surface-variant": "#ffd3c9",
+                    "on-error-container": "#570008",
+                    "inverse-primary": "#00baff",
+                    "on-tertiary-container": "#00534d",
+                    "on-secondary-fixed-variant": "#863b00",
+                    "surface-dim": "#fec8bc",
+                    "error-dim": "#9f0519",
+                    "on-secondary-fixed": "#592500",
+                    "tertiary-container": "#7fe6db",
+                    "on-secondary": "#fff0e9",
+                    "secondary-fixed": "#ffc5a6",
+                    "on-error": "#ffefee",
+                    "surface-container": "#ffe2db",
+                    "surface-tint": "#006289",
+                    "on-background": "#412923",
+                    "primary-fixed-dim": "#00abeb",
+                    "inverse-surface": "#1c0905",
+                    "on-primary-container": "#003248",
+                    "surface-container-lowest": "#ffffff",
+                    "tertiary-fixed": "#7fe6db",
+                    "on-tertiary-fixed": "#003e39",
+                    "on-surface-variant": "#72544e",
+                    "primary-container": "#00baff",
+                    "surface-bright": "#fff4f2",
+                    "on-primary-fixed": "#001723",
+                    "background": "#fff4f2",
+                    "on-primary": "#e8f4ff",
+                    "surface": "#fff4f2",
+                    "surface-container-highest": "#ffd3c9",
+                    "primary-fixed": "#00baff",
+                    "primary-dim": "#005578",
+                    "on-tertiary": "#bffff7",
+                    "primary": "#006289",
+                    "surface-container-high": "#ffdad2",
+                    "inverse-on-surface": "#b9958d",
+                    "error-container": "#fb5151",
+                    "on-secondary-container": "#773400",
+                    "tertiary": "#006760",
+                    "surface-container-low": "#ffede9",
+                    "tertiary-fixed-dim": "#71d7cd",
+                    "secondary": "#974300",
+                    "on-tertiary-fixed-variant": "#005d57",
+                    "error": "#b31b25",
+                    "on-surface": "#412923",
+                    "outline-variant": "#caa59c"
+            },
+            "borderRadius": {
+                    "DEFAULT": "1rem",
+                    "lg": "2rem",
+                    "xl": "3rem",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Plus Jakarta Sans"],
+                    "body": ["Be Vietnam Pro"],
+                    "label": ["Be Vietnam Pro"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .kinetic-shadow {
+            box-shadow: 0 8px 32px rgba(65, 41, 35, 0.06);
+        }
+        .bouncy-hover {
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .bouncy-hover:active {
+            transform: scale(0.96);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface font-body text-on-surface selection:bg-primary-container/30">
+<!-- TopAppBar -->
+<header class="fixed top-0 left-0 w-full z-50 bg-[#fff4f2]/80 backdrop-blur-2xl dark:bg-stone-950/80">
+<div class="flex justify-between items-center w-full px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-container overflow-hidden border-2 border-primary-container/20">
+<img alt="Pet parent" class="w-full h-full object-cover" data-alt="close-up portrait of a smiling young woman with warm natural lighting and soft focus garden background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBAU-qVWrxErY_Q9R4aVPy88oae8YMQR2wlzraA9LIRUm3qDrDQCipK1NBI1tVK807e1UgMTM5T7SKvrziGyghH9Or_PeBX2S2M1MagaRX6WdFqLAj052L_OXEF-mi5uYxo3SiwT_L2XrvkS-UrJhTDTF5xttm2cJxFZhnQxJqhBmrbuYIvLx_BYtrR2h-l-Z-vRWGJ5jqJ11-KS3QK-rYQyT84s59HWQjtpBnWFZgs7pyWP5ue_iD4NGvdeapODqr4mGHxMUE2Sw"/>
+</div>
+</div>
+<h1 class="text-3xl font-black tracking-tighter text-stone-800 dark:text-stone-100 font-headline">myo.</h1>
+<button class="w-10 h-10 flex items-center justify-center rounded-full text-sky-500 hover:scale-95 transition-transform duration-200">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+</div>
+</header>
+<main class="pt-24 pb-32 max-w-2xl mx-auto px-4">
+<!-- Hero Branding -->
+<section class="mb-12 px-2">
+<h2 class="text-5xl font-headline font-extrabold tracking-tight text-on-surface leading-tight">
+                today's fun.
+            </h2>
+<p class="text-on-surface-variant mt-2 text-lg">Capturing every wiggle and wag.</p>
+</section>
+<!-- Vertical Journal Feed -->
+<div class="space-y-16">
+<!-- Entry 1 -->
+<article class="relative">
+<div class="bg-surface-container-lowest rounded-xl p-6 kinetic-shadow">
+<!-- Status Badge -->
+<div class="absolute -top-4 right-8 bg-gradient-to-tr from-primary-dim to-primary-container text-on-primary px-6 py-2 rounded-full font-headline font-bold text-sm shadow-lg shadow-primary/20 z-10">
+                        Happy
+                    </div>
+<!-- Asymmetric Image -->
+<div class="relative -mx-10 mb-8 rounded-lg overflow-hidden transform rotate-2 hover:rotate-0 transition-transform duration-500 shadow-xl">
+<img alt="Happy Dog" class="w-full aspect-[4/5] object-cover" data-alt="joyful golden retriever puppy running through a field of yellow wildflowers with sunlight catching its fur" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDGWX_LF30XfGBwLbKUefC5HHDpqp0HuDCYoXZzTdwsP9vzYxVdxAlo2pbBZaf94c3qzBlftXRkYJvpmCpCFurVkHq50oRwrcIME-7rJ4ZrPeHAZqA-v-yRzs4s5QgBG4smTyRHkKg4DmVCBfjsGniUD62W-agV099MZN6rkkRiJe03o12wcenRd1WgfM1VglmlK9-honJ7NLcmSQZgunOsC48hkKF0do9eGe0cIfGUDrFLlbvJ_2U1jGsrNJ4NQZt5QtT8H2e9Kw"/>
+</div>
+<!-- Content -->
+<div class="space-y-4">
+<div class="flex items-center gap-2 text-on-surface-variant font-label text-xs tracking-widest uppercase font-semibold">
+<span class="material-symbols-outlined text-[14px]" data-icon="schedule">schedule</span>
+                            08:45 AM • MORNING BLISS
+                        </div>
+<h3 class="text-2xl font-headline font-bold text-on-surface leading-tight">
+                            First ball chase of the season! 🎾
+                        </h3>
+<p class="text-on-surface-variant leading-relaxed text-lg">
+                            The grass was still a little dewy, but Cooper didn't mind one bit. He managed to find the oldest, muddiest tennis ball in the bushes. Pure gold.
+                        </p>
+<!-- Interactions -->
+<div class="flex items-center gap-4 pt-4">
+<button class="flex items-center gap-2 bg-surface-container-low px-4 py-2 rounded-full bouncy-hover">
+<span class="material-symbols-outlined text-secondary" data-icon="favorite" style="font-variation-settings: 'FILL' 1;">favorite</span>
+<span class="font-bold text-on-surface-variant">24</span>
+</button>
+<button class="flex items-center gap-2 bg-surface-container-low px-4 py-2 rounded-full bouncy-hover">
+<span class="material-symbols-outlined text-primary" data-icon="chat_bubble">chat_bubble</span>
+<span class="font-bold text-on-surface-variant">4</span>
+</button>
+</div>
+</div>
+</div>
+</article>
+<!-- Entry 2 -->
+<article class="relative">
+<div class="bg-surface-container-lowest rounded-xl p-6 kinetic-shadow">
+<!-- Status Badge -->
+<div class="absolute -top-4 right-8 bg-tertiary-container text-on-tertiary-container px-6 py-2 rounded-full font-headline font-bold text-sm shadow-lg shadow-tertiary/10 z-10">
+                        Napping
+                    </div>
+<!-- Asymmetric Image -->
+<div class="relative -mx-10 mb-8 rounded-lg overflow-hidden transform -rotate-1 hover:rotate-0 transition-transform duration-500 shadow-xl">
+<img alt="Sleeping Cat" class="w-full aspect-[16/10] object-cover" data-alt="close-up of a fluffy calico cat curled up on a soft cream-colored knit blanket in soft morning light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBWEpDU4DJwqYpoJZFvyzi1843nx_yKJEgZNmwyIp9lqYYKeYq4okqP5Hez5Il59-Uks76P1C45LUlW_uUZA9IEoTerTtWY0K8R7VZ9CS5eEnkIairprTbBlkWmglnPBSzZyclSGzrfmurjiSQVfWQ8-W1asrdgwHU2giTaQZeW6vNu3uG2Eez9mCKuysMj-pgoLOq1kL6oya9WFFnGhFpsD9LBgB2-gR1ewztCzOpnLEWJV6TWujb0T4wCI3qHeyM275FS-6X6YQ"/>
+</div>
+<!-- Content -->
+<div class="space-y-4">
+<div class="flex items-center gap-2 text-on-surface-variant font-label text-xs tracking-widest uppercase font-semibold">
+<span class="material-symbols-outlined text-[14px]" data-icon="schedule">schedule</span>
+                            02:15 PM • AFTERNOON LULL
+                        </div>
+<h3 class="text-2xl font-headline font-bold text-on-surface leading-tight">
+                            The sunbeam hunter is offline. ☀️
+                        </h3>
+<p class="text-on-surface-variant leading-relaxed text-lg">
+                            Found her in her favorite spot. It's funny how they can find that one square inch of warmth and claim it for three hours straight.
+                        </p>
+<div class="flex items-center gap-4 pt-4">
+<button class="flex items-center gap-2 bg-surface-container-low px-4 py-2 rounded-full bouncy-hover">
+<span class="material-symbols-outlined text-secondary" data-icon="favorite">favorite</span>
+<span class="font-bold text-on-surface-variant">18</span>
+</button>
+<button class="flex items-center gap-2 bg-surface-container-low px-4 py-2 rounded-full bouncy-hover">
+<span class="material-symbols-outlined text-primary" data-icon="chat_bubble">chat_bubble</span>
+<span class="font-bold text-on-surface-variant">2</span>
+</button>
+</div>
+</div>
+</div>
+</article>
+<!-- Entry 3 - Progress/Status moment -->
+<section class="bg-secondary-container/30 rounded-xl p-8 border-none">
+<div class="flex justify-between items-start mb-6">
+<div>
+<h4 class="font-headline font-extrabold text-2xl text-on-secondary-container">Daily Paw-Points</h4>
+<p class="text-on-secondary-container/70">Cooper is having a stellar day!</p>
+</div>
+<div class="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm">
+<span class="material-symbols-outlined text-secondary text-3xl" data-icon="pets" style="font-variation-settings: 'FILL' 1;">pets</span>
+</div>
+</div>
+<!-- Bubbly Progress Bar -->
+<div class="flex gap-2">
+<div class="h-4 flex-1 bg-secondary rounded-full"></div>
+<div class="h-4 flex-1 bg-secondary rounded-full"></div>
+<div class="h-4 flex-1 bg-secondary rounded-full"></div>
+<div class="h-4 flex-1 bg-secondary-fixed-dim rounded-full"></div>
+<div class="h-4 flex-1 bg-secondary-fixed-dim rounded-full opacity-30"></div>
+</div>
+<p class="mt-4 text-sm font-bold text-secondary-dim uppercase tracking-wider">3 more activities to reach Gold Level</p>
+</section>
+<!-- Entry 4 -->
+<article class="relative">
+<div class="bg-surface-container-lowest rounded-xl p-6 kinetic-shadow">
+<div class="absolute -top-4 right-8 bg-surface-variant text-on-surface-variant px-6 py-2 rounded-full font-headline font-bold text-sm shadow-lg shadow-primary/5 z-10">
+                        Refreshed
+                    </div>
+<div class="relative -mx-10 mb-8 rounded-lg overflow-hidden transform rotate-1 hover:rotate-0 transition-transform duration-500 shadow-xl">
+<img alt="Clean dog" class="w-full aspect-[4/3] object-cover" data-alt="a freshly groomed small dog with a blue bowtie sitting proudly on a wooden porch in golden afternoon light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDnH4uoiyewnDWA9ya9B31fVfuKznKcCeff5huW756fOy5auQ2Ogs82d2yYh1i1uNAsY12CMqizdVE8YO7trGRAWZ8wW8_Ty3o6mxa4neAbUmTXV2BurzbvV9o_vz2io9xDRm5L6E4WVtB0yP_8ydNqSDX_fNii_LNzVCM4JtWAYgTRUte29y17PBhoXIVyRsSpkhMzRVFBiPc6BDJA1yXUJ0TiYfJgA9RFsdCqZosVotHOrJgwA4OPYI4RL76pKcTqmhnISYJWxA"/>
+</div>
+<div class="space-y-4">
+<div class="flex items-center gap-2 text-on-surface-variant font-label text-xs tracking-widest uppercase font-semibold">
+<span class="material-symbols-outlined text-[14px]" data-icon="schedule">schedule</span>
+                            05:30 PM • SPA DAY
+                        </div>
+<h3 class="text-2xl font-headline font-bold text-on-surface leading-tight">
+                            Post-bath zoomies incoming! 🫧
+                        </h3>
+<p class="text-on-surface-variant leading-relaxed text-lg">
+                            We survived the "dreaded" soap monster. Now he's smelling like lavender and running laps around the sofa.
+                        </p>
+<div class="flex items-center gap-4 pt-4">
+<button class="flex items-center gap-2 bg-surface-container-low px-4 py-2 rounded-full bouncy-hover">
+<span class="material-symbols-outlined text-secondary" data-icon="favorite" style="font-variation-settings: 'FILL' 1;">favorite</span>
+<span class="font-bold text-on-surface-variant">42</span>
+</button>
+<button class="flex items-center gap-2 bg-surface-container-low px-4 py-2 rounded-full bouncy-hover">
+<span class="material-symbols-outlined text-primary" data-icon="chat_bubble">chat_bubble</span>
+<span class="font-bold text-on-surface-variant">12</span>
+</button>
+</div>
+</div>
+</div>
+</article>
+</div>
+</main>
+<!-- FAB (Journal Add) -->
+<button class="fixed bottom-32 right-6 w-16 h-16 rounded-full bg-gradient-to-tr from-primary to-primary-container text-white shadow-2xl shadow-primary/40 flex items-center justify-center z-[60] bouncy-hover">
+<span class="material-symbols-outlined text-3xl" data-icon="add_a_photo">add_a_photo</span>
+</button>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 bg-white/80 backdrop-blur-2xl dark:bg-stone-900/80 flex justify-around items-end px-8 pb-8 pt-2 rounded-t-[3rem] border-none shadow-[0_-8px_32px_rgba(65,41,35,0.06)]">
+<a class="flex flex-col items-center justify-center bg-gradient-to-tr from-sky-600 to-sky-400 text-white rounded-full p-3 -mt-6 shadow-lg shadow-sky-200 dark:shadow-none hover:text-sky-500 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="pets" style="font-variation-settings: 'FILL' 1;">pets</span>
+<span class="font-['Plus_Jakarta_Sans'] font-semibold text-[10px] tracking-wide uppercase mt-1">Play</span>
+</a>
+<a class="flex flex-col items-center justify-center text-stone-400 dark:text-stone-500 p-2 hover:text-sky-500 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="favorite">favorite</span>
+<span class="font-['Plus_Jakarta_Sans'] font-semibold text-[10px] tracking-wide uppercase">Wellness</span>
+</a>
+<a class="flex flex-col items-center justify-center text-stone-400 dark:text-stone-500 p-2 hover:text-sky-500 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="visibility">visibility</span>
+<span class="font-['Plus_Jakarta_Sans'] font-semibold text-[10px] tracking-wide uppercase">Paws</span>
+</a>
+<a class="flex flex-col items-center justify-center text-stone-400 dark:text-stone-500 p-2 hover:text-sky-500 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-['Plus_Jakarta_Sans'] font-semibold text-[10px] tracking-wide uppercase">Profile</span>
+</a>
+</nav>
+</body></html>

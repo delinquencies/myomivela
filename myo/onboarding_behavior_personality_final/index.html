@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Pet Onboarding - Behavior &amp; Personality</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Be+Vietnam+Pro:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-container-highest": "#ffdad2",
+                    "primary": "#09658c",
+                    "outline": "#6d7881",
+                    "tertiary-container": "#6dbcb3",
+                    "on-secondary-container": "#6e2f00",
+                    "surface-bright": "#fff8f6",
+                    "on-primary": "#ffffff",
+                    "surface-container": "#ffe9e4",
+                    "primary-container": "#71b6e1",
+                    "on-tertiary-fixed": "#00201d",
+                    "background": "#fff8f6",
+                    "on-primary-fixed": "#001e2d",
+                    "surface-container-lowest": "#ffffff",
+                    "tertiary-fixed": "#a1f1e7",
+                    "secondary-container": "#fe9250",
+                    "on-primary-fixed-variant": "#004c6b",
+                    "on-tertiary-fixed-variant": "#00504a",
+                    "error": "#ba1a1a",
+                    "secondary-fixed": "#ffdbc9",
+                    "on-background": "#2b1611",
+                    "outline-variant": "#bdc8d2",
+                    "on-primary-container": "#004764",
+                    "inverse-surface": "#432a24",
+                    "surface-tint": "#09658c",
+                    "secondary-fixed-dim": "#ffb68e",
+                    "surface-container-low": "#fff1ed",
+                    "on-secondary-fixed": "#331200",
+                    "on-secondary": "#ffffff",
+                    "surface-container-high": "#ffe2db",
+                    "surface": "#fff8f6",
+                    "primary-fixed-dim": "#89cefb",
+                    "on-tertiary-container": "#004b45",
+                    "secondary": "#9a4603",
+                    "on-error": "#ffffff",
+                    "primary-fixed": "#c6e7ff",
+                    "on-secondary-fixed-variant": "#763300",
+                    "on-tertiary": "#ffffff",
+                    "inverse-primary": "#89cefb",
+                    "on-surface": "#2b1611",
+                    "inverse-on-surface": "#ffede9",
+                    "surface-variant": "#ffdad2",
+                    "on-surface-variant": "#3d4850",
+                    "error-container": "#ffdad6",
+                    "on-error-container": "#93000a",
+                    "tertiary-fixed-dim": "#85d4cb"
+            },
+            "borderRadius": {
+                    "DEFAULT": "1rem",
+                    "lg": "2rem",
+                    "xl": "3rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "container-max": "80rem",
+                    "header-height": "4.5rem",
+                    "bento-gap": "1.5rem",
+                    "inline-padding": "1rem",
+                    "nav-height": "6rem",
+                    "section-gap": "4rem"
+            },
+            "fontFamily": {
+                    "label-bold": ["Be Vietnam Pro"],
+                    "body-md": ["Be Vietnam Pro"],
+                    "body-xl": ["Be Vietnam Pro"],
+                    "headline-lg": ["Plus Jakarta Sans"],
+                    "display-xl": ["Plus Jakarta Sans"]
+            },
+            "fontSize": {
+                    "label-bold": ["0.875rem", {"letterSpacing": "0.05em", "fontWeight": "700"}],
+                    "body-md": ["1rem", {"lineHeight": "1.5", "fontWeight": "400"}],
+                    "body-xl": ["1.25rem", {"lineHeight": "1.6", "fontWeight": "500"}],
+                    "headline-lg": ["2.25rem", {"lineHeight": "1.2", "fontWeight": "700"}],
+                    "display-xl": ["4.5rem", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "800"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .active-tag {
+            background-color: #fe9250;
+            color: white;
+            border-color: #fe9250;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            background: #09658c;
+            cursor: pointer;
+            border-radius: 50%;
+            border: 4px solid white;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen font-body-md overflow-x-hidden">
+<!-- Top Navigation (Shell Injected) -->
+<header class="fixed top-0 w-full z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-sky-100/10 shadow-sm h-16">
+<div class="flex justify-between items-center px-6 h-full w-full max-w-7xl mx-auto">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full overflow-hidden bg-primary-container/20">
+<img alt="User Profile" class="w-full h-full object-cover" data-alt="Close up portrait of a friendly young man with short dark hair and a warm smile against a neutral background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD-eDChdXR2LIbvpf5OppymS6cz1Dh6AFp2FmG5SJfyRcTiMOU3KGo3ryXfIsjuiXNWSlUZrE2-I86SynvpcT3OmiuLbM4I39FYK3ywDZa0OB_bjTkWVOinFe8CqVZkLn6RRdfFiJ0n6H0tmDQxJpsApP2XqBrhgIlUyVC-XgnojT7Po0Jbbq8S17zggp7evQPCusSbTmd2dXO39ODq7zbd9-4g9KIIlvJiKexSYrrySdelxGWCsZBo31D9QcSTvrwSpi4ypw9JVg"/>
+</div>
+<span class="font-['Plus_Jakarta_Sans'] font-bold text-2xl font-black tracking-tight text-sky-500">myo.</span>
+</div>
+<button class="text-slate-400 hover:bg-sky-50/50 p-2 rounded-full transition-colors active:scale-95 transition-transform duration-200">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+</div>
+</header>
+<main class="pt-24 pb-32 px-6 max-w-4xl mx-auto">
+<!-- Progress Indicator -->
+<div class="flex items-center gap-4 mb-12 justify-center">
+<div class="h-2 w-12 rounded-full bg-primary-container"></div>
+<div class="h-2 w-12 rounded-full bg-primary-container"></div>
+<div class="h-2 w-16 rounded-full bg-primary shadow-sm"></div>
+<div class="h-2 w-12 rounded-full bg-surface-container-highest"></div>
+</div>
+<!-- Header Section -->
+<div class="text-center mb-12">
+<span class="inline-block px-4 py-1.5 rounded-full bg-primary-container/20 text-primary font-label-bold text-sm mb-4">STEP 3: PERSONALITY</span>
+<h1 class="font-headline-lg text-display-xl md:text-5xl text-on-background mb-4">What's their vibe?</h1>
+<p class="font-body-xl text-on-surface-variant max-w-xl mx-auto">Help our sitters get to know your pet's unique personality and energy level.</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-12 gap-bento-gap">
+<!-- Energy Level Slider Card -->
+<div class="md:col-span-12 bg-white rounded-xl p-8 border border-outline/10 shadow-sm">
+<div class="flex items-center gap-3 mb-8">
+<div class="p-3 rounded-xl bg-secondary-container/10 text-secondary">
+<span class="material-symbols-outlined">bolt</span>
+</div>
+<h2 class="font-headline-lg text-2xl text-on-surface">Energy Level</h2>
+</div>
+<div class="relative pt-12 pb-8">
+<input class="w-full h-3 bg-surface-container-high rounded-full appearance-none cursor-pointer" max="100" min="1" type="range" value="50"/>
+<div class="flex justify-between mt-6 px-1">
+<div class="text-center">
+<p class="font-label-bold text-on-surface">Chill</p>
+<p class="text-xs text-on-surface-variant">Naps all day</p>
+</div>
+<div class="text-center">
+<p class="font-label-bold text-on-surface">Zoomies</p>
+<p class="text-xs text-on-surface-variant">Non-stop play</p>
+</div>
+</div>
+<!-- Fun Decorative Element -->
+<div class="absolute -top-4 left-1/2 -translate-x-1/2 bg-white px-4 py-2 rounded-full border border-sky-100 shadow-sm flex items-center gap-2">
+<span class="text-2xl">🐕</span>
+<span class="font-label-bold text-primary">Balanced</span>
+</div>
+</div>
+</div>
+<!-- Personality Tags Bento Grid -->
+<div class="md:col-span-7 bg-surface-container-low rounded-xl p-8 border border-outline/10">
+<div class="flex items-center gap-3 mb-6">
+<div class="p-3 rounded-xl bg-tertiary-container/20 text-tertiary">
+<span class="material-symbols-outlined">mood</span>
+</div>
+<h2 class="font-headline-lg text-2xl text-on-surface">Personality Tags</h2>
+</div>
+<div class="flex flex-wrap gap-3">
+<button class="px-5 py-2.5 rounded-full border border-outline/20 font-label-bold text-sm bg-white hover:border-primary transition-all">Playful</button>
+<button class="px-5 py-2.5 rounded-full border border-outline/20 font-label-bold text-sm bg-white hover:border-primary transition-all">Shy</button>
+<button class="px-5 py-2.5 rounded-full border border-outline/20 font-label-bold text-sm active-tag shadow-lg shadow-secondary/20">Cuddly</button>
+<button class="px-5 py-2.5 rounded-full border border-outline/20 font-label-bold text-sm bg-white hover:border-primary transition-all">Protective</button>
+<button class="px-5 py-2.5 rounded-full border border-outline/20 font-label-bold text-sm bg-white hover:border-primary transition-all">Independent</button>
+<button class="px-5 py-2.5 rounded-full border border-outline/20 font-label-bold text-sm active-tag shadow-lg shadow-secondary/20">Adventurous</button>
+<button class="px-5 py-2.5 rounded-full border border-outline/20 font-label-bold text-sm bg-white hover:border-primary transition-all">Gentle</button>
+<button class="px-5 py-2.5 rounded-full border border-outline/20 font-label-bold text-sm bg-white hover:border-primary transition-all">Chatty</button>
+</div>
+</div>
+<!-- Visual Context Card -->
+<div class="md:col-span-5 rounded-xl overflow-hidden relative group h-full min-h-[250px]">
+<img alt="Happy Golden Retriever" class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" data-alt="A joyful golden retriever dog with its tongue out, lying in soft green grass during a sunlit afternoon" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAyqOU0rWJRj_8XBnVXiLPIIUHNN6-PYd060Zq9pmBAFtwafBYHYI89nWdkPv2CjwVe5Xa4Ejmb7sDGCUJr2FQADxrouFRUGRzV_s4dLlHQQPed9VQMVIMxRXEhGSITgvdYtBWSQi5JqCTlK_m62Rg1nvGRzeTgZsus-5DyBwl_YbyYkKQ1SzDEnyWdC2ICHRc3lLYmHL81fTFTURkM4wXEX3Dfn5BE98eNj0p9p87FytwhoC1cKMh25yGExP66R-28zTAu8BgR3Q"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-6">
+<p class="text-white font-label-bold">Social Butterfly</p>
+<p class="text-white/80 text-sm">Most dogs with this energy level love group walks.</p>
+</div>
+</div>
+<!-- Special Quirks Textarea -->
+<div class="md:col-span-12 bg-white rounded-xl p-8 border border-outline/10 shadow-sm">
+<div class="flex items-center gap-3 mb-6">
+<div class="p-3 rounded-xl bg-primary-container/20 text-primary">
+<span class="material-symbols-outlined">psychology</span>
+</div>
+<h2 class="font-headline-lg text-2xl text-on-surface">Special Quirks</h2>
+</div>
+<div class="relative">
+<textarea class="w-full min-h-[120px] bg-surface-bright rounded-lg border-outline-variant focus:border-primary focus:ring-primary font-body-md p-4 transition-all" placeholder="e.g. Chases falling leaves, afraid of balloons, loves belly rubs before bed..."></textarea>
+<div class="absolute right-4 bottom-4 text-outline-variant text-xs font-label-bold">
+                        0/200
+                    </div>
+</div>
+</div>
+</div>
+<!-- Sticky Footer Action -->
+<div class="mt-12 flex flex-col md:flex-row items-center justify-between gap-6">
+<button class="flex items-center gap-2 text-on-surface-variant font-label-bold hover:text-primary transition-colors">
+<span class="material-symbols-outlined">arrow_back</span>
+                Back to Details
+            </button>
+<button class="w-full md:w-auto bg-gradient-to-r from-[#09658c] to-[#71b6e1] text-white font-label-bold px-12 py-4 rounded-full shadow-xl hover:scale-105 transition-all active:scale-95 flex items-center justify-center gap-3">
+                Continue to Care
+                <span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</div>
+</main>
+<!-- Bottom Navigation Shell (Suppressed for focused onboarding journey) -->
+<!-- Exclusion Rule applied: Linear/Transactional Flow -->
+<!-- Secondary decorative elements for "Lively & Cute" vibe -->
+<div class="fixed top-32 -left-12 w-32 h-32 bg-secondary/10 rounded-full blur-3xl -z-10"></div>
+<div class="fixed bottom-24 -right-16 w-64 h-64 bg-primary/5 rounded-full blur-3xl -z-10"></div>
+</body></html>

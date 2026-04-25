@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>myo. | Pet Care Admin</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Be+Vietnam+Pro:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-secondary-fixed-variant": "#863b00",
+                    "tertiary-fixed-dim": "#71d7cd",
+                    "tertiary": "#006760",
+                    "surface-tint": "#006289",
+                    "surface-container-low": "#ffede9",
+                    "error": "#b31b25",
+                    "primary-dim": "#005578",
+                    "outline-variant": "#caa59c",
+                    "tertiary-container": "#7fe6db",
+                    "secondary-fixed-dim": "#ffb287",
+                    "inverse-primary": "#00baff",
+                    "secondary-fixed": "#ffc5a6",
+                    "on-primary-fixed": "#001723",
+                    "surface": "#fff4f2",
+                    "on-background": "#412923",
+                    "on-surface-variant": "#72544e",
+                    "on-secondary-fixed": "#592500",
+                    "surface-dim": "#fec8bc",
+                    "secondary": "#974300",
+                    "primary-fixed": "#00baff",
+                    "tertiary-fixed": "#7fe6db",
+                    "on-error": "#ffefee",
+                    "on-primary": "#e8f4ff",
+                    "on-error-container": "#570008",
+                    "on-tertiary-fixed": "#003e39",
+                    "on-surface": "#412923",
+                    "error-dim": "#9f0519",
+                    "outline": "#906f68",
+                    "on-primary-container": "#003248",
+                    "primary": "#006289",
+                    "surface-container": "#ffe2db",
+                    "surface-bright": "#fff4f2",
+                    "background": "#fff4f2",
+                    "inverse-surface": "#1c0905",
+                    "surface-variant": "#ffd3c9",
+                    "surface-container-highest": "#ffd3c9",
+                    "primary-fixed-dim": "#00abeb",
+                    "secondary-container": "#ffc5a6",
+                    "error-container": "#fb5151",
+                    "on-tertiary": "#bffff7",
+                    "primary-container": "#00baff",
+                    "on-secondary-container": "#773400",
+                    "on-tertiary-container": "#00534d",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-container-high": "#ffdad2",
+                    "on-primary-fixed-variant": "#003c55",
+                    "tertiary-dim": "#005a54",
+                    "secondary-dim": "#843a00",
+                    "inverse-on-surface": "#b9958d",
+                    "on-tertiary-fixed-variant": "#005d57",
+                    "on-secondary": "#fff0e9"
+            },
+            "borderRadius": {
+                    "DEFAULT": "1rem",
+                    "lg": "2rem",
+                    "xl": "3rem",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Plus Jakarta Sans"],
+                    "body": ["Be Vietnam Pro"],
+                    "label": ["Be Vietnam Pro"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .filled-icon {
+            font-variation-settings: 'FILL' 1;
+        }
+        body {
+            font-family: 'Be Vietnam Pro', sans-serif;
+            background-color: #fff4f2;
+            color: #412923;
+        }
+        .header-brand {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .bubbly-gradient {
+            background: linear-gradient(135deg, #00baff 0%, #005578 100%);
+        }
+        .bubbly-shadow {
+            box-shadow: 0 8px 32px rgba(65, 41, 35, 0.08);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="min-h-screen pb-28">
+<!-- TopAppBar -->
+<nav class="fixed top-0 w-full z-50 bg-[#fff4f2]/80 backdrop-blur-xl shadow-[0_8px_32_rgba(65,41,35,0.06)] flex items-center justify-between px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full overflow-hidden border-2 border-primary-container">
+<img alt="Pet Profile" class="w-full h-full object-cover" data-alt="Close-up of a happy golden retriever puppy smiling directly at the camera in soft natural daylight" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBiX425ZucL3baur0UQ3_2ZF93rw0JSaJuRyGWthJfBY4d1mzhhhwJo2jztnqcBQNt8XKJbyAIte74ZQ-mARBw_Gs5QEtEIFEfDgUpTKp3Lxoj_I7-vBsQd_6E2ewckMVru6SOgGP9dFPH5twVb8UrwB2qLC04R5Exv9EEBbG988KWOp81M4OA4cVEGbIcqH490nOFb2DgncsKjgkwfcAKakpf_3ThdYY5s7dqW96wNNAtFdPu5CZEkClg5UQDRU1XEf5hLs1KDWg"/>
+</div>
+<h1 class="text-2xl font-black text-[#412923] lowercase header-brand">myo.</h1>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 rounded-full hover:bg-surface-container transition-colors text-on-surface">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="hidden md:flex p-2 rounded-full hover:bg-surface-container transition-colors text-on-surface">
+<span class="material-symbols-outlined">settings</span>
+</button>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="pt-24 px-6 max-w-5xl mx-auto space-y-10">
+<!-- Welcome Header -->
+<header class="space-y-2">
+<h2 class="text-3xl font-extrabold tracking-tight font-headline text-on-surface">Good Morning, Parent!</h2>
+<p class="text-on-surface-variant font-medium">Cooper is having a high-energy day. Ready to log his adventures?</p>
+</header>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+<!-- Scenic Route Log (Large Column) -->
+<section class="md:col-span-8 space-y-4">
+<div class="flex items-center justify-between px-2">
+<h3 class="font-headline font-bold text-lg">Scenic Route Log</h3>
+<span class="text-primary font-bold text-sm bg-primary-container/20 px-3 py-1 rounded-full">LIVE TRACKING</span>
+</div>
+<div class="relative h-[400px] bg-surface-container-lowest rounded-xl overflow-hidden bubbly-shadow">
+<!-- Stylized GPS Map Placeholder -->
+<div class="absolute inset-0 z-0 opacity-40">
+<img class="w-full h-full object-cover grayscale brightness-110" data-alt="Minimalist abstract map of a city park with soft pastel colors and simplified geometric path lines" data-location="London" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDfBaN2i3T-Oa0rEO7CkgWWTvcQAKB3fJgs-h2g4SOaG3pWmyok43b3-SxSOPRDRFVcl4dqqGMIXNQK2ZxdVk_5_NPIIBS8yVVVjn-xR9DdSOA0LsyjM8gathr-nt1JPlde5eAZH9laEMO2yXZwpoUBg9x15htGymJloRN4bTW_4z2f0wia2h5-oXadMcuMKR8fIywg5Tb_BVwsmx--bsG1xT8P3MquYjq-1zQeGjCCKwcqxdSWLL6PZZfgl_go-NSwMvOfIdh-1g"/>
+</div>
+<!-- GPS Trace Layer (SVG) -->
+<svg class="absolute inset-0 z-10 w-full h-full" viewbox="0 0 400 400">
+<path class="opacity-80" d="M50,300 C100,280 150,320 200,250 S300,100 350,150" fill="none" stroke="#00baff" stroke-linecap="round" stroke-width="6"></path>
+<circle class="animate-pulse" cx="350" cy="150" fill="#00baff" r="8"></circle>
+</svg>
+<!-- Overlay Stats -->
+<div class="absolute bottom-6 left-6 right-6 flex gap-4 z-20">
+<div class="bg-white/90 backdrop-blur-md p-4 rounded-lg flex-1 bubbly-shadow flex items-center gap-3">
+<span class="material-symbols-outlined text-primary-fixed-dim filled-icon">distance</span>
+<div>
+<p class="text-[10px] uppercase tracking-wider font-bold text-on-surface-variant">Distance</p>
+<p class="font-headline font-black text-xl text-on-surface">2.4 <span class="text-sm font-normal">km</span></p>
+</div>
+</div>
+<div class="bg-white/90 backdrop-blur-md p-4 rounded-lg flex-1 bubbly-shadow flex items-center gap-3">
+<span class="material-symbols-outlined text-secondary filled-icon">timer</span>
+<div>
+<p class="text-[10px] uppercase tracking-wider font-bold text-on-surface-variant">Duration</p>
+<p class="font-headline font-black text-xl text-on-surface">42 <span class="text-sm font-normal">min</span></p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Quick Log Grid (Narrow Column) -->
+<section class="md:col-span-4 space-y-4">
+<h3 class="font-headline font-bold text-lg px-2">Quick Log</h3>
+<div class="grid grid-cols-2 gap-4">
+<button class="group h-32 bg-surface-container-low rounded-xl flex flex-col items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all bubbly-shadow border border-white/50">
+<div class="w-12 h-12 rounded-full bg-secondary-container/30 flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-3xl">child_care</span>
+</div>
+<span class="font-headline font-bold text-on-surface">Pee</span>
+</button>
+<button class="group h-32 bg-surface-container-low rounded-xl flex flex-col items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all bubbly-shadow border border-white/50">
+<div class="w-12 h-12 rounded-full bg-on-secondary-fixed-variant/10 flex items-center justify-center text-on-secondary-fixed-variant">
+<span class="material-symbols-outlined text-3xl">eco</span>
+</div>
+<span class="font-headline font-bold text-on-surface">Poo</span>
+</button>
+<button class="group h-32 bg-surface-container-low rounded-xl flex flex-col items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all bubbly-shadow border border-white/50">
+<div class="w-12 h-12 rounded-full bg-primary-container/20 flex items-center justify-center text-primary-dim">
+<span class="material-symbols-outlined text-3xl">restaurant</span>
+</div>
+<span class="font-headline font-bold text-on-surface">Food</span>
+</button>
+<button class="group h-32 bg-surface-container-low rounded-xl flex flex-col items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all bubbly-shadow border border-white/50">
+<div class="w-12 h-12 rounded-full bg-primary-container/10 flex items-center justify-center text-primary-container">
+<span class="material-symbols-outlined text-3xl">water_drop</span>
+</div>
+<span class="font-headline font-bold text-on-surface">Water</span>
+</button>
+</div>
+<!-- Large Custom Log Button -->
+<button class="w-full py-5 rounded-xl bubbly-gradient text-white font-headline font-bold text-lg bubbly-shadow flex items-center justify-center gap-2 active:scale-95 transition-transform">
+<span class="material-symbols-outlined">add_circle</span>
+                    Custom Event
+                </button>
+</section>
+</div>
+<!-- Recent Activity Feed -->
+<section class="space-y-6">
+<div class="flex items-center justify-between">
+<h3 class="font-headline font-extrabold text-2xl px-2">Recent Activity</h3>
+<button class="text-primary font-bold hover:underline">View Journal</button>
+</div>
+<div class="space-y-4">
+<!-- Activity Item 1 -->
+<div class="bg-surface-container-lowest p-6 rounded-lg bubbly-shadow flex items-center gap-6 border-l-8 border-primary-container">
+<div class="flex-shrink-0 w-16 h-16 rounded-xl overflow-hidden">
+<img alt="Activity" class="w-full h-full object-cover" data-alt="Two small dogs playing in a field of tall grass with bright morning sun filtering through their fur" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBDB_r9642VUhO4JY5TST7VGdx2BgTD3n8t1gTlpNUDLe1AyWJf23HzL5ZzqgymURrhivkQDdg-wjBRC1rXimPnHg_oO3eTloIaulg1RcSu3B_-XZbvy_a6_LpHsymyJxjUE2a2ig3_qQTmjbh1renJh1E2Ws374g_5qDLfh8socWUDZf3ieMkEN4bmatzJQjdHqQ7Woz2NePpNyJEWj4x17kYXreSVb0_IUUo8CUCMIvDIZWtu6pTR-VKu6ZWtUoRi0JdpesyUaA"/>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-start">
+<h4 class="font-headline font-bold text-lg text-on-surface">Evening Hike at Creek Trail</h4>
+<span class="text-xs font-bold text-on-surface-variant bg-surface-container px-2 py-1 rounded">2h AGO</span>
+</div>
+<p class="text-on-surface-variant text-sm mt-1">Cooper found a new stick and met his friend Bella. He drank a full bowl of water after.</p>
+</div>
+</div>
+<!-- Activity Item 2 -->
+<div class="bg-surface-container-lowest p-6 rounded-lg bubbly-shadow flex items-center gap-6 border-l-8 border-secondary-container">
+<div class="flex-shrink-0 w-16 h-16 rounded-xl bg-secondary-container/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-3xl text-secondary filled-icon">medical_services</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-start">
+<h4 class="font-headline font-bold text-lg text-on-surface">Monthly Heartworm Meds</h4>
+<span class="text-xs font-bold text-on-surface-variant bg-surface-container px-2 py-1 rounded">5h AGO</span>
+</div>
+<p class="text-on-surface-variant text-sm mt-1">Administered during breakfast. No side effects observed so far.</p>
+</div>
+</div>
+<!-- Activity Item 3 -->
+<div class="bg-surface-container-lowest p-6 rounded-lg bubbly-shadow flex items-center gap-6 border-l-8 border-tertiary-container">
+<div class="flex-shrink-0 w-16 h-16 rounded-xl overflow-hidden">
+<img alt="Activity" class="w-full h-full object-cover" data-alt="A small white dog sitting on a grooming table with a blue bow in its hair, looking neat and clean" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCcPuC9YOTiyxy0vyyB9cCIIW4ovP9667mpuaDS-QKi_1Ef1SqCvFRAtG3p0eyXjbOhpuEAQD_-kgxnQBEVVwJcsjClg8jcLwhZdEA2fi5YOIThkgKiifE_OyJMXLCzqCIGGSAuS347041fdu1oVwmhpPkC6psqGX3ABmcHBwgluPAs2BwIWH_AVmDZWoWvvp8xJ5hr2iLL7qhoMkpQu0uqkjXMo0cPYpmaWiICo5eemGhdNp0k5ahJ0LqTrQgKdhkkRVGzek7tlA"/>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-start">
+<h4 class="font-headline font-bold text-lg text-on-surface">Grooming Session Completed</h4>
+<span class="text-xs font-bold text-on-surface-variant bg-surface-container px-2 py-1 rounded">YESTERDAY</span>
+</div>
+<p class="text-on-surface-variant text-sm mt-1">Full brush out and paw pad trim. Cooper was very brave and received 3 treats!</p>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-full z-50 bg-[#fff4f2]/80 backdrop-blur-xl rounded-t-[3rem] shadow-[0_-8px_32px_rgba(65,41,35,0.06)] flex justify-around items-center px-4 pb-6 pt-3">
+<a class="flex flex-col items-center justify-center bg-[#00baff] text-white rounded-full px-4 py-2 transition-transform hover:scale-105 active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined text-xl">map</span>
+<span class="font-['Plus_Jakarta_Sans'] font-semibold text-[10px]">Journal</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#412923] opacity-60 transition-transform hover:scale-105 active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined text-xl">pets</span>
+<span class="font-['Plus_Jakarta_Sans'] font-semibold text-[10px]">Activities</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#412923] opacity-60 transition-transform hover:scale-105 active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined text-xl">calendar_month</span>
+<span class="font-['Plus_Jakarta_Sans'] font-semibold text-[10px]">Bookings</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#412923] opacity-60 transition-transform hover:scale-105 active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined text-xl">person</span>
+<span class="font-['Plus_Jakarta_Sans'] font-semibold text-[10px]">Profile</span>
+</a>
+</nav>
+</body></html>

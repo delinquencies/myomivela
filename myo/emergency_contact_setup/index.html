@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>myo. - Emergency Contact Setup</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&amp;family=Be+Vietnam+Pro:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "tertiary-dim": "#005a54",
+                    "secondary": "#974300",
+                    "on-tertiary-fixed": "#003e39",
+                    "on-primary-fixed-variant": "#003c55",
+                    "on-primary": "#e8f4ff",
+                    "on-background": "#412923",
+                    "outline": "#906f68",
+                    "on-primary-container": "#003248",
+                    "background": "#fff4f2",
+                    "on-error": "#ffefee",
+                    "surface-container-low": "#ffede9",
+                    "tertiary": "#006760",
+                    "tertiary-container": "#7fe6db",
+                    "surface": "#fff4f2",
+                    "error-dim": "#9f0519",
+                    "surface-tint": "#006289",
+                    "on-primary-fixed": "#001723",
+                    "primary-fixed": "#00baff",
+                    "primary": "#006289",
+                    "on-secondary-fixed": "#592500",
+                    "inverse-surface": "#1c0905",
+                    "secondary-container": "#ffc5a6",
+                    "surface-dim": "#fec8bc",
+                    "inverse-on-surface": "#b9958d",
+                    "on-secondary-fixed-variant": "#863b00",
+                    "error-container": "#fb5151",
+                    "inverse-primary": "#00baff",
+                    "tertiary-fixed": "#7fe6db",
+                    "secondary-dim": "#843a00",
+                    "outline-variant": "#caa59c",
+                    "surface-bright": "#fff4f2",
+                    "surface-container-lowest": "#ffffff",
+                    "on-surface-variant": "#72544e",
+                    "surface-container": "#ffe2db",
+                    "on-tertiary-container": "#00534d",
+                    "surface-container-highest": "#ffd3c9",
+                    "on-surface": "#412923",
+                    "on-secondary": "#fff0e9",
+                    "primary-fixed-dim": "#00abeb",
+                    "tertiary-fixed-dim": "#71d7cd",
+                    "secondary-fixed-dim": "#ffb287",
+                    "on-tertiary-fixed-variant": "#005d57",
+                    "error": "#b31b25",
+                    "surface-variant": "#ffd3c9",
+                    "secondary-fixed": "#ffc5a6",
+                    "on-tertiary": "#bffff7",
+                    "primary-container": "#00baff",
+                    "on-error-container": "#570008",
+                    "surface-container-high": "#ffdad2",
+                    "on-secondary-container": "#773400",
+                    "primary-dim": "#005578"
+            },
+            "borderRadius": {
+                    "DEFAULT": "1rem",
+                    "lg": "2rem",
+                    "xl": "3rem",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Plus Jakarta Sans"],
+                    "body": ["Be Vietnam Pro"],
+                    "label": ["Be Vietnam Pro"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      .pill-gradient {
+        background: linear-gradient(135deg, #005578 0%, #00baff 100%);
+      }
+      body {
+        font-family: 'Be Vietnam Pro', sans-serif;
+        background-color: #fff4f2;
+        color: #412923;
+      }
+      h1, h2, h3, .brand {
+        font-family: 'Plus Jakarta Sans', sans-serif;
+      }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface selection:bg-primary-container selection:text-on-primary-container">
+<!-- Top App Bar -->
+<header class="fixed top-0 w-full z-50 bg-[#fff4f2]/80 dark:bg-[#412923]/80 backdrop-blur-xl flex justify-between items-center px-6 py-4 w-full">
+<div class="flex items-center gap-4">
+<button class="hover:scale-95 transition-transform duration-200 text-[#412923]/60 dark:text-[#fff4f2]/60">
+<span class="material-symbols-outlined" data-icon="arrow_back">arrow_back</span>
+</button>
+<span class="text-2xl font-black text-[#412923] dark:text-[#fff4f2] lowercase">myo.</span>
+</div>
+<button class="hover:scale-95 transition-transform duration-200 text-[#412923]/60 dark:text-[#fff4f2]/60">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+</header>
+<main class="pt-24 pb-32 px-6 max-w-2xl mx-auto space-y-12">
+<!-- Hero Section -->
+<section class="relative overflow-visible">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+<div class="z-10">
+<h1 class="text-4xl md:text-5xl font-extrabold text-on-surface leading-tight tracking-tight">
+                        Who should we call in an emergency?
+                    </h1>
+<p class="mt-4 text-on-surface-variant font-medium text-lg leading-relaxed">
+                        Keep your pet's village close. We'll make sure these contacts are always just a tap away when it matters most.
+                    </p>
+</div>
+<div class="relative flex justify-center items-center">
+<!-- Overlapping Illustration -->
+<div class="absolute -z-10 w-64 h-64 bg-secondary-container rounded-full blur-3xl opacity-30"></div>
+<img alt="Happy dog wearing a yellow bandana" class="w-48 h-48 md:w-64 md:h-64 object-cover rounded-xl shadow-2xl -rotate-6 hover:rotate-0 transition-transform duration-500 border-8 border-surface-container-lowest" data-alt="a cheerful golden retriever wearing a vibrant yellow bandana sitting proudly in a sunlit modern living room" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAtbyfRyC5HfngAckovvZZFw9TRagR3JIDjN_AdbtiTW--RMLGsSHSz-IwFNG-YSUsk_7Oivs7Y5q2-RJKKQE6XcaZ5kOBLX7Fi6-ljqd-v9S8h-Tm0HmAVaUHXuvpOfSgE4zO7FByut0ZhdgUpKzcpeNUo8Hgdub98SCgbChKt0_Wg7nEr125emQqg7x3kccayStu4mDEPCctHadzR1bjLoezyrz2hAdRG63EZM1uBNR9kaOY5DcU63SDt5l-PcSPYQxJCTNNvFw"/>
+<div class="absolute -bottom-4 -right-4 bg-primary p-4 rounded-full shadow-lg">
+<span class="material-symbols-outlined text-on-primary text-3xl" style="font-variation-settings: 'FILL' 1;">medical_services</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Existing Contacts Section -->
+<section class="space-y-6">
+<div class="flex items-end justify-between px-2">
+<h2 class="text-2xl font-bold text-on-surface">Trusted Village</h2>
+<span class="text-sm font-bold uppercase tracking-widest text-primary">2 Active</span>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+<!-- Contact Card 1 -->
+<div class="bg-surface-container-lowest p-6 rounded-lg shadow-sm border border-outline-variant/15 hover:shadow-md transition-shadow group">
+<div class="flex items-start justify-between">
+<div class="space-y-3">
+<div class="bg-secondary-container/50 text-secondary p-3 rounded-full w-fit">
+<span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">vaccines</span>
+</div>
+<div>
+<h3 class="text-xl font-bold text-on-surface">Dr. Barker</h3>
+<p class="text-sm font-semibold text-secondary-dim uppercase tracking-wider">Primary Vet</p>
+</div>
+<p class="text-on-surface-variant font-medium flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">call</span> (555) 123-4567
+                            </p>
+</div>
+<button class="text-outline hover:text-error transition-colors p-2">
+<span class="material-symbols-outlined">delete</span>
+</button>
+</div>
+</div>
+<!-- Contact Card 2 -->
+<div class="bg-surface-container-lowest p-6 rounded-lg shadow-sm border border-outline-variant/15 hover:shadow-md transition-shadow group">
+<div class="flex items-start justify-between">
+<div class="space-y-3">
+<div class="bg-tertiary-container/50 text-tertiary p-3 rounded-full w-fit">
+<span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">home_pin</span>
+</div>
+<div>
+<h3 class="text-xl font-bold text-on-surface">Auntie Jen</h3>
+<p class="text-sm font-semibold text-tertiary-dim uppercase tracking-wider">Neighbor</p>
+</div>
+<p class="text-on-surface-variant font-medium flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">call</span> (555) 987-6543
+                            </p>
+</div>
+<button class="text-outline hover:text-error transition-colors p-2">
+<span class="material-symbols-outlined">delete</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+<!-- Add New Contact Form -->
+<section class="bg-surface-container-low p-8 rounded-xl space-y-8">
+<div class="space-y-2">
+<h2 class="text-2xl font-bold text-on-surface flex items-center gap-3">
+<span class="material-symbols-outlined text-primary">person_add</span>
+                    Add a New Hero
+                </h2>
+<p class="text-on-surface-variant">Fill in the details for your pet's new emergency contact.</p>
+</div>
+<form class="space-y-6">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="space-y-2">
+<label class="text-sm font-bold text-on-surface/70 ml-2">Name</label>
+<input class="w-full bg-surface-container-lowest border-none rounded-md p-4 focus:ring-2 focus:ring-primary/40 text-on-surface font-medium placeholder:text-on-surface-variant/40" placeholder="e.g. Grandma Rose" type="text"/>
+</div>
+<div class="space-y-2">
+<label class="text-sm font-bold text-on-surface/70 ml-2">Relationship</label>
+<div class="relative">
+<select class="w-full bg-surface-container-lowest border-none rounded-md p-4 pr-10 focus:ring-2 focus:ring-primary/40 text-on-surface font-medium appearance-none">
+<option>Select Relationship</option>
+<option>Vet</option>
+<option>Family</option>
+<option>Neighbor</option>
+<option>Pet Sitter</option>
+<option>Emergency Hospital</option>
+</select>
+<span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant">expand_more</span>
+</div>
+</div>
+</div>
+<div class="space-y-2">
+<label class="text-sm font-bold text-on-surface/70 ml-2">Phone Number</label>
+<input class="w-full bg-surface-container-lowest border-none rounded-md p-4 focus:ring-2 focus:ring-primary/40 text-on-surface font-medium placeholder:text-on-surface-variant/40" placeholder="(555) 000-0000" type="tel"/>
+</div>
+<div class="flex flex-col sm:flex-row gap-4 pt-4">
+<button class="pill-gradient text-on-primary font-bold px-8 py-4 rounded-full flex-1 flex items-center justify-center gap-2 hover:scale-[0.96] active:scale-90 transition-all shadow-lg" type="submit">
+<span class="material-symbols-outlined">check_circle</span>
+                        Save Contact
+                    </button>
+<button class="bg-surface-container-highest text-secondary font-bold px-8 py-4 rounded-xl flex-1 hover:scale-[0.96] active:scale-90 transition-all" type="button">
+                        Cancel
+                    </button>
+</div>
+</form>
+</section>
+<!-- Safety Tip -->
+<section class="bg-tertiary-dim/5 p-6 rounded-lg border border-tertiary-container/30 flex gap-4 items-start">
+<div class="bg-tertiary-container text-on-tertiary-container p-2 rounded-full">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">lightbulb</span>
+</div>
+<div class="space-y-1">
+<p class="font-bold text-on-tertiary-fixed">Pro-Tip</p>
+<p class="text-on-tertiary-fixed-variant text-sm">Include at least one contact who has a spare key to your home in case you can't get there in an emergency.</p>
+</div>
+</section>
+</main>
+<!-- Bottom Navigation Bar -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-8 pb-6 pt-4 bg-[#fff4f2]/80 dark:bg-[#412923]/80 backdrop-blur-xl z-50 rounded-t-[3rem] shadow-[0_-8px_32px_0_rgba(65,41,35,0.06)]">
+<a class="flex flex-col items-center justify-center text-[#412923]/50 dark:text-[#fff4f2]/50 p-2 hover:text-[#00BAFF] transition-colors scale-95 active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[10px] font-semibold uppercase tracking-widest mt-1">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#412923]/50 dark:text-[#fff4f2]/50 p-2 hover:text-[#00BAFF] transition-colors scale-95 active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="pets">pets</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[10px] font-semibold uppercase tracking-widest mt-1">Pets</span>
+</a>
+<!-- ACTIVE TAB: Emergencies -->
+<a class="flex flex-col items-center justify-center bg-gradient-to-tr from-[#005578] to-[#00BAFF] text-white rounded-full p-3 scale-110 -translate-y-2 shadow-lg" href="#">
+<span class="material-symbols-outlined" data-icon="contact_emergency" style="font-variation-settings: 'FILL' 1;">contact_emergency</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[10px] font-semibold uppercase tracking-widest mt-1">Emergencies</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#412923]/50 dark:text-[#fff4f2]/50 p-2 hover:text-[#00BAFF] transition-colors scale-95 active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[10px] font-semibold uppercase tracking-widest mt-1">Profile</span>
+</a>
+</nav>
+</body></html>

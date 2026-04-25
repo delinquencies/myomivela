@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Checkout Summary - myo.</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&amp;family=Be+Vietnam+Pro:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "secondary-dim": "#843a00",
+                    "tertiary-dim": "#005a54",
+                    "secondary-fixed-dim": "#ffb287",
+                    "outline": "#906f68",
+                    "on-primary-fixed-variant": "#003c55",
+                    "secondary-container": "#ffc5a6",
+                    "surface-variant": "#ffd3c9",
+                    "on-error-container": "#570008",
+                    "inverse-primary": "#00baff",
+                    "on-tertiary-container": "#00534d",
+                    "on-secondary-fixed-variant": "#863b00",
+                    "surface-dim": "#fec8bc",
+                    "error-dim": "#9f0519",
+                    "on-secondary-fixed": "#592500",
+                    "tertiary-container": "#7fe6db",
+                    "on-secondary": "#fff0e9",
+                    "secondary-fixed": "#ffc5a6",
+                    "on-error": "#ffefee",
+                    "surface-container": "#ffe2db",
+                    "surface-tint": "#006289",
+                    "on-background": "#412923",
+                    "primary-fixed-dim": "#00abeb",
+                    "inverse-surface": "#1c0905",
+                    "on-primary-container": "#003248",
+                    "surface-container-lowest": "#ffffff",
+                    "tertiary-fixed": "#7fe6db",
+                    "on-tertiary-fixed": "#003e39",
+                    "on-surface-variant": "#72544e",
+                    "primary-container": "#00baff",
+                    "surface-bright": "#fff4f2",
+                    "on-primary-fixed": "#001723",
+                    "background": "#fff4f2",
+                    "on-primary": "#e8f4ff",
+                    "surface": "#fff4f2",
+                    "surface-container-highest": "#ffd3c9",
+                    "primary-fixed": "#00baff",
+                    "primary-dim": "#005578",
+                    "on-tertiary": "#bffff7",
+                    "primary": "#006289",
+                    "surface-container-high": "#ffdad2",
+                    "inverse-on-surface": "#b9958d",
+                    "error-container": "#fb5151",
+                    "on-secondary-container": "#773400",
+                    "tertiary": "#006760",
+                    "surface-container-low": "#ffede9",
+                    "tertiary-fixed-dim": "#71d7cd",
+                    "secondary": "#974300",
+                    "on-tertiary-fixed-variant": "#005d57",
+                    "error": "#b31b25",
+                    "on-surface": "#412923",
+                    "outline-variant": "#caa59c"
+            },
+            "borderRadius": {
+                    "DEFAULT": "1rem",
+                    "lg": "2rem",
+                    "xl": "3rem",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Plus Jakarta Sans"],
+                    "body": ["Be Vietnam Pro"],
+                    "label": ["Be Vietnam Pro"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Be Vietnam Pro', sans-serif; }
+        h1, h2, h3 { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .squish-interaction:active { transform: scale(0.96); }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface min-h-screen">
+<!-- Top Navigation Bar -->
+<header class="bg-[#fff4f2]/80 backdrop-blur-2xl sticky top-0 z-50 flex justify-between items-center w-full px-6 py-4">
+<div class="flex items-center gap-3">
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-on-surface">arrow_back</span>
+</button>
+</div>
+<div class="font-headline font-black tracking-tighter text-stone-800 text-3xl">myo.</div>
+<div class="w-10 h-10 rounded-full overflow-hidden bg-surface-container-highest border-2 border-surface">
+<img alt="Profile" data-alt="Close up portrait of a smiling young man in sunlit outdoor setting, high-end lifestyle photography style" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBQgCuC0zK-8NuVAHOQHJH3gKrS3yw79HNSl6LDEDvDVIVi_6PFJHi6jmmW5euJC7vh_0aVqjSJ9Hrx_hG8EYQajV7BSJJty_njdO_LHZbxrnA83RP9Gnm5xt577NjmNHunIkO3mc5iSOCkDGjZjcxOQMRLoKdihWzsTCjc_DxtfOhqviFYUbdRaiotbTlu9ySjtV2vFCIZguZ_9HV1EX-LNKpKzkPijOwYeIKOikOqoH79Siex-hZN9Em0J_ZhnKVtG3DuDOZyUw"/>
+</div>
+</header>
+<main class="max-w-2xl mx-auto px-6 pt-8 pb-32">
+<!-- Hero Title -->
+<div class="mb-10">
+<h1 class="text-4xl font-bold tracking-tight text-on-surface mb-2">Ready to wrap up?</h1>
+<p class="text-on-surface-variant body-md">Review your pet's perfect day details below.</p>
+</div>
+<!-- Service Summary Card (Asymmetric Layout) -->
+<section class="relative mb-12">
+<div class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm relative z-10 flex flex-col md:flex-row">
+<div class="w-full md:w-1/2 h-48 md:h-auto relative">
+<img alt="Happy Dog" class="w-full h-full object-cover" data-alt="A fluffy golden retriever puppy being gently washed with soap bubbles in a bright, minimalist modern pet salon" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA0-I1_S9iFKZaU-kLBa1liHfH-TV2jvc5G6tb5SD20RT7LbrfuaEGoYfgaQoqwCsTfm3oAORyE8-cfrCA8oFFTy_IGa_qB97ieYtDe7A_EozPdRnctxpFwDv_fUZSzx5nomzn0e4FmhJ-OdDHUB7eDoU5KJ_P2Hf0UKw_bThR6k6H9gdI_CRDVKYoJCYZcX6rIR9KvFwPPrnUxY_bOKGAwa9SB4-icQnDLYQIg5aO9NlU-V1Bmyk-0TkXC4Wc4LJzWjsOwYgx4xA"/>
+</div>
+<div class="p-8 md:w-1/2">
+<div class="flex items-center gap-2 mb-4">
+<span class="bg-primary-container/20 text-primary px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest">Premium Service</span>
+</div>
+<h2 class="text-2xl font-bold text-on-surface mb-2">Grooming &amp; Play</h2>
+<div class="space-y-3">
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-primary text-xl">calendar_today</span>
+<span class="text-sm font-medium">Tomorrow, Oct 24 • 10:00 AM</span>
+</div>
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-primary text-xl">pets</span>
+<span class="text-sm font-medium">Bowie (Golden Retriever)</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Decorative Accent -->
+<div class="absolute -top-4 -right-4 w-24 h-24 bg-tertiary-container/30 rounded-full blur-2xl -z-0"></div>
+</section>
+<!-- Pricing Breakdown -->
+<section class="bg-surface-container-low rounded-lg p-8 mb-8">
+<h3 class="text-lg font-bold mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary">receipt_long</span>
+                Price Breakdown
+            </h3>
+<div class="space-y-4">
+<div class="flex justify-between items-center">
+<span class="text-on-surface-variant">Full Grooming Session</span>
+<span class="font-semibold text-on-surface">$85.00</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="text-on-surface-variant">Agility Playground Pass</span>
+<span class="font-semibold text-on-surface">$25.00</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="text-on-surface-variant">Organic Treat Pack</span>
+<span class="font-semibold text-on-surface">$12.00</span>
+</div>
+<div class="h-px bg-outline-variant/15 my-6"></div>
+<div class="flex justify-between items-center text-lg">
+<span class="font-bold text-on-surface">Subtotal</span>
+<span class="font-bold text-on-surface">$122.00</span>
+</div>
+</div>
+</section>
+<!-- Gratitude (Tip) Selector -->
+<section class="mb-12">
+<div class="flex items-center justify-between mb-6">
+<h3 class="text-lg font-bold">Add some Gratitude</h3>
+<span class="text-xs font-semibold text-primary uppercase tracking-widest">Optional</span>
+</div>
+<div class="grid grid-cols-4 gap-4">
+<button class="squish-interaction flex flex-col items-center justify-center p-4 rounded-full border-2 border-outline-variant/20 hover:border-primary hover:bg-primary-container/10 transition-all group">
+<span class="text-lg font-bold group-hover:text-primary">10%</span>
+<span class="text-[10px] text-on-surface-variant font-medium">$12.20</span>
+</button>
+<button class="squish-interaction flex flex-col items-center justify-center p-4 rounded-full bg-primary-dim text-white shadow-lg shadow-primary/20 scale-110">
+<span class="text-lg font-bold">15%</span>
+<span class="text-[10px] text-primary-container font-medium">$18.30</span>
+</button>
+<button class="squish-interaction flex flex-col items-center justify-center p-4 rounded-full border-2 border-outline-variant/20 hover:border-primary hover:bg-primary-container/10 transition-all group">
+<span class="text-lg font-bold group-hover:text-primary">20%</span>
+<span class="text-[10px] text-on-surface-variant font-medium">$24.40</span>
+</button>
+<button class="squish-interaction flex flex-col items-center justify-center p-4 rounded-full border-2 border-outline-variant/20 hover:border-primary hover:bg-primary-container/10 transition-all group">
+<span class="text-lg font-bold group-hover:text-primary">Custom</span>
+<span class="text-[10px] text-on-surface-variant font-medium">Other</span>
+</button>
+</div>
+<p class="text-center mt-6 text-sm text-on-surface-variant font-medium italic">"100% of tips go directly to Bowie's groomer, Sarah."</p>
+</section>
+<!-- Final Total & CTA -->
+<div class="fixed bottom-0 left-0 w-full bg-white/80 backdrop-blur-2xl px-6 py-8 md:relative md:bg-transparent md:px-0 md:py-0">
+<div class="max-w-2xl mx-auto">
+<div class="flex items-end justify-between mb-6 md:px-2">
+<div>
+<p class="text-sm font-semibold text-on-surface-variant uppercase tracking-tighter">Total Amount</p>
+<p class="text-4xl font-black text-on-surface">$140.30</p>
+</div>
+<div class="flex items-center gap-2 bg-surface-container-high px-4 py-2 rounded-full">
+<span class="material-symbols-outlined text-on-surface text-lg">credit_card</span>
+<span class="text-sm font-bold">•••• 4242</span>
+</div>
+</div>
+<button class="squish-interaction w-full py-5 rounded-full bg-gradient-to-tr from-secondary to-secondary-fixed flex items-center justify-center gap-3 text-white font-bold text-xl shadow-xl shadow-secondary/20 hover:shadow-secondary/30 transition-shadow">
+                    Confirm &amp; Pay
+                    <span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+</div>
+</main>
+<!-- Bottom Nav Suppression Logic: Hidden for Checkout/Transactional Flow -->
+<!-- As per instructions: "exclude navigation shell if page intent is Transactional: Checkout" -->
+</body></html>
