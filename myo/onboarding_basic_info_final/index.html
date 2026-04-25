@@ -4,13 +4,112 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Pet Onboarding - Basic Info</title>
-<script src="../../assets/tailwind-config.js"></script>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<script src="../../assets/tailwind-config.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Be+Vietnam+Pro:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<link href="../../assets/styles.css" rel="stylesheet"/>
-
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-highest": "#ffdad2",
+                        "primary": "#09658c",
+                        "outline": "#6d7881",
+                        "tertiary-container": "#6dbcb3",
+                        "on-secondary-container": "#6e2f00",
+                        "surface-bright": "#fff8f6",
+                        "on-primary": "#ffffff",
+                        "surface-container": "#ffe9e4",
+                        "primary-container": "#71b6e1",
+                        "on-tertiary-fixed": "#00201d",
+                        "background": "#fff8f6",
+                        "on-primary-fixed": "#001e2d",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary-fixed": "#a1f1e7",
+                        "secondary-container": "#fe9250",
+                        "on-primary-fixed-variant": "#004c6b",
+                        "on-tertiary-fixed-variant": "#00504a",
+                        "error": "#ba1a1a",
+                        "secondary-fixed": "#ffdbc9",
+                        "on-background": "#2b1611",
+                        "outline-variant": "#bdc8d2",
+                        "on-primary-container": "#004764",
+                        "inverse-surface": "#432a24",
+                        "surface-tint": "#09658c",
+                        "secondary-fixed-dim": "#ffb68e",
+                        "surface-container-low": "#fff1ed",
+                        "on-secondary-fixed": "#331200",
+                        "on-secondary": "#ffffff",
+                        "surface-container-high": "#ffe2db",
+                        "surface": "#fff8f6",
+                        "primary-fixed-dim": "#89cefb",
+                        "on-tertiary-container": "#004b45",
+                        "secondary": "#9a4603",
+                        "on-error": "#ffffff",
+                        "primary-fixed": "#c6e7ff",
+                        "on-secondary-fixed-variant": "#763300",
+                        "on-tertiary": "#ffffff",
+                        "inverse-primary": "#89cefb",
+                        "on-surface": "#2b1611",
+                        "inverse-on-surface": "#ffede9",
+                        "surface-variant": "#ffdad2",
+                        "on-surface-variant": "#3d4850",
+                        "error-container": "#ffdad6",
+                        "on-error-container": "#93000a",
+                        "tertiary-fixed-dim": "#85d4cb"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "container-max": "80rem",
+                        "header-height": "4.5rem",
+                        "bento-gap": "1.5rem",
+                        "inline-padding": "1rem",
+                        "nav-height": "6rem",
+                        "section-gap": "4rem"
+                    },
+                    "fontFamily": {
+                        "label-bold": ["Be Vietnam Pro"],
+                        "body-md": ["Be Vietnam Pro"],
+                        "body-xl": ["Be Vietnam Pro"],
+                        "headline-lg": ["Plus Jakarta Sans"],
+                        "display-xl": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "label-bold": ["0.875rem", { "letterSpacing": "0.05em", "fontWeight": "700" }],
+                        "body-md": ["1rem", { "lineHeight": "1.5", "fontWeight": "400" }],
+                        "body-xl": ["1.25rem", { "lineHeight": "1.6", "fontWeight": "500" }],
+                        "headline-lg": ["2.25rem", { "lineHeight": "1.2", "fontWeight": "700" }],
+                        "display-xl": ["4.5rem", { "lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "800" }]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .active-pill {
+            scale: 0.95;
+            transition: transform 0.2s;
+        }
+        .bento-card {
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(109, 120, 129, 0.1);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
   </head>
 <body class="bg-background text-on-background font-body-md min-h-screen">
 <!-- Top Navigation Anchor (Manual suppression of items for transactional flow) -->
