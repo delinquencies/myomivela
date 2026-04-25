@@ -5,100 +5,10 @@
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&amp;family=Be+Vietnam+Pro:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="../../assets/styles.css" rel="stylesheet"/>
+
+<script src="../../assets/tailwind-config.js"></script>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<script id="tailwind-config">
-      tailwind.config = {
-        darkMode: "class",
-        theme: {
-          extend: {
-            "colors": {
-                    "on-secondary-fixed-variant": "#863b00",
-                    "tertiary-fixed-dim": "#71d7cd",
-                    "tertiary": "#006760",
-                    "surface-tint": "#006289",
-                    "surface-container-low": "#ffede9",
-                    "error": "#b31b25",
-                    "primary-dim": "#005578",
-                    "outline-variant": "#caa59c",
-                    "tertiary-container": "#7fe6db",
-                    "secondary-fixed-dim": "#ffb287",
-                    "inverse-primary": "#00baff",
-                    "secondary-fixed": "#ffc5a6",
-                    "on-primary-fixed": "#001723",
-                    "surface": "#fff4f2",
-                    "on-background": "#412923",
-                    "on-surface-variant": "#72544e",
-                    "on-secondary-fixed": "#592500",
-                    "surface-dim": "#fec8bc",
-                    "secondary": "#974300",
-                    "primary-fixed": "#00baff",
-                    "tertiary-fixed": "#7fe6db",
-                    "on-error": "#ffefee",
-                    "on-primary": "#e8f4ff",
-                    "on-error-container": "#570008",
-                    "on-tertiary-fixed": "#003e39",
-                    "on-surface": "#412923",
-                    "error-dim": "#9f0519",
-                    "outline": "#906f68",
-                    "on-primary-container": "#003248",
-                    "primary": "#006289",
-                    "surface-container": "#ffe2db",
-                    "surface-bright": "#fff4f2",
-                    "background": "#fff4f2",
-                    "inverse-surface": "#1c0905",
-                    "surface-variant": "#ffd3c9",
-                    "surface-container-highest": "#ffd3c9",
-                    "primary-fixed-dim": "#00abeb",
-                    "secondary-container": "#ffc5a6",
-                    "error-container": "#fb5151",
-                    "on-tertiary": "#bffff7",
-                    "primary-container": "#00baff",
-                    "on-secondary-container": "#773400",
-                    "on-tertiary-container": "#00534d",
-                    "surface-container-lowest": "#ffffff",
-                    "surface-container-high": "#ffdad2",
-                    "on-primary-fixed-variant": "#003c55",
-                    "tertiary-dim": "#005a54",
-                    "secondary-dim": "#843a00",
-                    "inverse-on-surface": "#b9958d",
-                    "on-tertiary-fixed-variant": "#005d57",
-                    "on-secondary": "#fff0e9"
-            },
-            "borderRadius": {
-                    "DEFAULT": "1rem",
-                    "lg": "2rem",
-                    "xl": "3rem",
-                    "full": "9999px"
-            },
-            "spacing": {
-              "section": "3rem"
-            },
-            "fontFamily": {
-                    "headline": ["Plus Jakarta Sans"],
-                    "body": ["Be Vietnam Pro"],
-                    "label": ["Be Vietnam Pro"]
-            }
-          },
-        },
-      }
-    </script>
-<style>
-        .material-symbols-outlined {
-            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-        }
-        body { font-family: 'Be Vietnam Pro', sans-serif; }
-        h1, h2, h3, .brand-font { font-family: 'Plus Jakarta Sans', sans-serif; }
-        .glass-header {
-            background: rgba(255, 244, 242, 0.8);
-            backdrop-filter: blur(24px);
-        }
-    </style>
-<style>
-    body {
-      min-height: max(884px, 100dvh);
-    }
-  </style>
   </head>
 <body class="bg-surface text-on-surface selection:bg-primary-container selection:text-on-primary-container">
 <!-- TopAppBar -->
@@ -215,19 +125,19 @@
 </main>
 <!-- BottomNavBar -->
 <nav class="fixed bottom-0 w-full z-50 bg-[#fff4f2]/80 backdrop-blur-xl rounded-t-[3rem] shadow-[0_-8px_32px_rgba(65,41,35,0.06)] flex justify-around items-center px-4 pb-6 pt-3">
-<a class="flex flex-col items-center justify-center text-[#412923] opacity-60 hover:scale-105 transition-transform active:scale-90 duration-200" href="#">
+<a class="flex flex-col items-center justify-center text-[#412923] opacity-60 hover:scale-105 transition-transform active:scale-90 duration-200" href="../client_journal_cute_lively/index.html">
 <span class="material-symbols-outlined">map</span>
 <span class="font-['Plus_Jakarta_Sans'] font-semibold text-[10px]">Journal</span>
 </a>
-<a class="flex flex-col items-center justify-center bg-[#00baff] text-white rounded-full px-4 py-2 hover:scale-105 transition-transform active:scale-90 duration-200" href="#">
+<a class="flex flex-col items-center justify-center bg-[#00baff] text-white rounded-full px-4 py-2 hover:scale-105 transition-transform active:scale-90 duration-200" href="../stay_report_card/index.html">
 <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">pets</span>
 <span class="font-['Plus_Jakarta_Sans'] font-semibold text-[10px]">Activities</span>
 </a>
-<a class="flex flex-col items-center justify-center text-[#412923] opacity-60 hover:scale-105 transition-transform active:scale-90 duration-200" href="#">
+<a class="flex flex-col items-center justify-center text-[#412923] opacity-60 hover:scale-105 transition-transform active:scale-90 duration-200" href="../schedule_a_meet_greet/index.html">
 <span class="material-symbols-outlined">calendar_month</span>
 <span class="font-['Plus_Jakarta_Sans'] font-semibold text-[10px]">Bookings</span>
 </a>
-<a class="flex flex-col items-center justify-center text-[#412923] opacity-60 hover:scale-105 transition-transform active:scale-90 duration-200" href="#">
+<a class="flex flex-col items-center justify-center text-[#412923] opacity-60 hover:scale-105 transition-transform active:scale-90 duration-200" href="../pet_profile_cooper/index.html">
 <span class="material-symbols-outlined">person</span>
 <span class="font-['Plus_Jakarta_Sans'] font-semibold text-[10px]">Profile</span>
 </a>

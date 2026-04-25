@@ -8,98 +8,10 @@
 <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,700;0,800;1,800&amp;family=Be+Vietnam+Pro:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="../../assets/styles.css" rel="stylesheet"/>
+
+<script src="../../assets/tailwind-config.js"></script>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<script id="tailwind-config">
-      tailwind.config = {
-        darkMode: "class",
-        theme: {
-          extend: {
-            "colors": {
-                    "secondary-fixed-dim": "#ffb287",
-                    "on-error": "#ffefee",
-                    "tertiary": "#006760",
-                    "secondary-container": "#ffc5a6",
-                    "on-primary": "#e8f4ff",
-                    "surface-tint": "#006289",
-                    "on-tertiary-fixed": "#003e39",
-                    "surface-dim": "#fec8bc",
-                    "on-tertiary-container": "#00534d",
-                    "inverse-surface": "#1c0905",
-                    "primary-fixed-dim": "#00abeb",
-                    "background": "#fff4f2",
-                    "inverse-on-surface": "#b9958d",
-                    "surface-container-highest": "#ffd3c9",
-                    "surface-container-lowest": "#ffffff",
-                    "secondary-fixed": "#ffc5a6",
-                    "on-surface": "#412923",
-                    "on-background": "#412923",
-                    "surface-variant": "#ffd3c9",
-                    "tertiary-container": "#7fe6db",
-                    "error": "#b31b25",
-                    "on-secondary-fixed": "#592500",
-                    "on-primary-container": "#003248",
-                    "on-secondary": "#fff0e9",
-                    "on-surface-variant": "#72544e",
-                    "primary-dim": "#005578",
-                    "outline-variant": "#caa59c",
-                    "on-secondary-container": "#773400",
-                    "inverse-primary": "#00baff",
-                    "tertiary-fixed": "#7fe6db",
-                    "tertiary-fixed-dim": "#71d7cd",
-                    "surface-container-low": "#ffede9",
-                    "surface-bright": "#fff4f2",
-                    "primary": "#006289",
-                    "error-dim": "#9f0519",
-                    "on-primary-fixed-variant": "#003c55",
-                    "on-primary-fixed": "#001723",
-                    "surface-container-high": "#ffdad2",
-                    "primary-fixed": "#00baff",
-                    "tertiary-dim": "#005a54",
-                    "outline": "#906f68",
-                    "on-tertiary-fixed-variant": "#005d57",
-                    "error-container": "#fb5151",
-                    "primary-container": "#00baff",
-                    "on-tertiary": "#bffff7",
-                    "surface": "#fff4f2",
-                    "secondary-dim": "#843a00",
-                    "on-secondary-fixed-variant": "#863b00",
-                    "on-error-container": "#570008",
-                    "surface-container": "#ffe2db",
-                    "secondary": "#974300"
-            },
-            "borderRadius": {
-                    "DEFAULT": "1rem",
-                    "lg": "2rem",
-                    "xl": "3rem",
-                    "full": "9999px"
-            },
-            "fontFamily": {
-                    "headline": ["Plus Jakarta Sans"],
-                    "body": ["Be Vietnam Pro"],
-                    "label": ["Be Vietnam Pro"]
-            }
-          },
-        },
-      }
-    </script>
-<style>
-      .material-symbols-outlined {
-        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-      }
-      .hide-scrollbar::-webkit-scrollbar {
-        display: none;
-      }
-      .hide-scrollbar {
-        -ms-overflow-style: none;
-        scrollbar-width: none;
-      }
-    </style>
-<style>
-    body {
-      min-height: max(884px, 100dvh);
-    }
-  </style>
   </head>
 <body class="bg-surface font-body text-on-surface leading-relaxed">
 <!-- TopAppBar -->
@@ -114,10 +26,10 @@
 <div class="flex items-center gap-6">
 <!-- Desktop Nav Cluster -->
 <div class="hidden md:flex items-center gap-8">
-<a class="text-[#412923] dark:text-stone-400 opacity-70 font-headline font-bold text-lg hover:scale-95 transition-transform" href="#">Home</a>
-<a class="text-[#412923] dark:text-stone-400 opacity-70 font-headline font-bold text-lg hover:scale-95 transition-transform" href="#">Pets</a>
-<a class="text-[#00BAFF] font-bold font-headline text-lg hover:scale-95 transition-transform" href="#">Safety</a>
-<a class="text-[#412923] dark:text-stone-400 opacity-70 font-headline font-bold text-lg hover:scale-95 transition-transform" href="#">Profile</a>
+<a class="text-[#412923] dark:text-stone-400 opacity-70 font-headline font-bold text-lg hover:scale-95 transition-transform" href="../../index.html">Home</a>
+<a class="text-[#412923] dark:text-stone-400 opacity-70 font-headline font-bold text-lg hover:scale-95 transition-transform" href="../pet_profile_cooper/index.html">Pets</a>
+<a class="text-[#00BAFF] font-bold font-headline text-lg hover:scale-95 transition-transform" href="../safety_first_faq/index.html">Safety</a>
+<a class="text-[#412923] dark:text-stone-400 opacity-70 font-headline font-bold text-lg hover:scale-95 transition-transform" href="../pet_profile_cooper/index.html">Profile</a>
 </div>
 <div class="w-10 h-10 rounded-full overflow-hidden border-2 border-primary-container">
 <img alt="Pet parent profile" class="w-full h-full object-cover" data-alt="Friendly male pet parent smiling portrait with warm natural lighting outdoors" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA-cpqCHAHv5T0XcnOsuU0dzoEBD2aCcLJH613DDgCyYyl8OEtwVSNOIdtKpXyJ1XLsrAWccxFnkOFS_q9RwGOT7TImB6JXZYoUuR0MkMZfsC1fokqyc8v-97BGbZN_LoLVdqa7tUhqpQpFbA6qibXmYOybdG5qgEzNCi_1cq2SYQcfyxz7Ch2IFHCiu9KyPGe4z1wFfZyNk6avuBsg_S3EMDY87ig1APAwSrdK4iRMzywxfYpmgqSonxrrI5gHCagTW1usEcbFdw"/>
@@ -252,19 +164,19 @@
 </main>
 <!-- BottomNavBar -->
 <nav class="md:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-6 pt-2 bg-[#fff4f2]/80 dark:bg-stone-900/80 backdrop-blur-xl rounded-t-[3rem] shadow-[0_-8px_32px_rgba(65,41,35,0.06)]">
-<a class="flex flex-col items-center justify-center text-[#412923] dark:text-stone-400 p-3 hover:bg-[#00BAFF]/10 transition-colors rounded-full" href="#">
+<a class="flex flex-col items-center justify-center text-[#412923] dark:text-stone-400 p-3 hover:bg-[#00BAFF]/10 transition-colors rounded-full" href="../../index.html">
 <span class="material-symbols-outlined" data-icon="home">home</span>
 <span class="font-['Plus_Jakarta_Sans'] font-medium text-[11px] mt-1">Home</span>
 </a>
-<a class="flex flex-col items-center justify-center text-[#412923] dark:text-stone-400 p-3 hover:bg-[#00BAFF]/10 transition-colors rounded-full" href="#">
+<a class="flex flex-col items-center justify-center text-[#412923] dark:text-stone-400 p-3 hover:bg-[#00BAFF]/10 transition-colors rounded-full" href="../pet_profile_cooper/index.html">
 <span class="material-symbols-outlined" data-icon="pets">pets</span>
 <span class="font-['Plus_Jakarta_Sans'] font-medium text-[11px] mt-1">Pets</span>
 </a>
-<a class="flex flex-col items-center justify-center bg-gradient-to-tr from-[#005578] to-[#00baff] text-white rounded-full p-3 transition-transform duration-150 scale-96" href="#">
+<a class="flex flex-col items-center justify-center bg-gradient-to-tr from-[#005578] to-[#00baff] text-white rounded-full p-3 transition-transform duration-150 scale-96" href="../safety_first_faq/index.html">
 <span class="material-symbols-outlined" data-icon="verified_user">verified_user</span>
 <span class="font-['Plus_Jakarta_Sans'] font-medium text-[11px] mt-1">Safety</span>
 </a>
-<a class="flex flex-col items-center justify-center text-[#412923] dark:text-stone-400 p-3 hover:bg-[#00BAFF]/10 transition-colors rounded-full" href="#">
+<a class="flex flex-col items-center justify-center text-[#412923] dark:text-stone-400 p-3 hover:bg-[#00BAFF]/10 transition-colors rounded-full" href="../pet_profile_cooper/index.html">
 <span class="material-symbols-outlined" data-icon="person">person</span>
 <span class="font-['Plus_Jakarta_Sans'] font-medium text-[11px] mt-1">Profile</span>
 </a>
