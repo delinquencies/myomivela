@@ -6,10 +6,17 @@
 }
 
 @font-face {
-  font-family: "DM Sans";
-  src: url("home/dm-sans.woff2") format("woff2");
-  font-weight: 400 700;
+  font-family: Dosis;
+  src: url("home/dosis.ttf") format("truetype");
+  font-weight: 200 800;
   font-display: swap;
+}
+
+@font-face {
+  font-family: "Myo Tabular Digits";
+  src: local("Consolas"), local("Menlo"), local("Liberation Mono"), local("DejaVu Sans Mono"), local("Droid Sans Mono");
+  unicode-range: U+0030-0039;
+  font-weight: 500 700;
 }
 
 :root {
@@ -21,13 +28,16 @@
   --cream: #fff7f0;
   --gutter: clamp(1.25rem, 3.5vw, 4rem);
   --display: Fraunces, Georgia, serif;
+  --sans: Dosis, system-ui, sans-serif;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
 html { scroll-behavior: smooth; scroll-padding-top: 2rem; }
-body { margin: 0; background: var(--paper); color: var(--ink); font: 500 1rem/1.5 "DM Sans", sans-serif; }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 500 1rem/1.5 var(--sans); letter-spacing: .015em; }
 a { color: inherit; text-decoration: none; }
 button { font: inherit; }
+button, .button, .service-pills a { font-weight: 600; letter-spacing: .03em; }
+.tabular-numbers { font-family: "Myo Tabular Digits", var(--sans); font-variant-numeric: tabular-nums; }
 img { display: block; max-width: 100%; height: auto; }
 figure, ul, ol, dl, dd { margin: 0; }
 h1, h2, h3, p { margin: 0; }
@@ -133,7 +143,8 @@ html:has(.site-header--sticky) { scroll-padding-top: 5.5rem; }
   min-height: 48px;
   padding-inline: .75rem;
   border-radius: .6rem;
-  font-weight: 700;
+  font-weight: 600;
+  letter-spacing: .03em;
 }
 .site-nav a:hover, .site-nav a[aria-current="page"] { background: var(--peach); }
 .menu-panel .language { margin: .4rem .75rem; }
@@ -170,7 +181,7 @@ html:has(.site-header--sticky) { scroll-padding-top: 5.5rem; }
   padding: .61em 1.58em;
   border-radius: 99px;
   font-size: clamp(1.1rem, 2.08vw, 2rem);
-  font-weight: 700;
+  font-weight: 600;
   white-space: nowrap;
   transition: background .2s, transform .2s;
 }
@@ -215,7 +226,7 @@ html:has(.site-header--sticky) { scroll-padding-top: 5.5rem; }
 .hero-actions .button { padding-inline: 1.5em; font-weight: 600; }
 .hero-art { position: absolute; right: 0; bottom: 0; width: 54%; }
 .hero-art img { width: 100%; mask-image: linear-gradient(to right, transparent, black 4%); }
-.hero-art figcaption { position: absolute; left: 64%; top: 91.4%; width: 23%; transform: rotate(7deg); transform-origin: left; font: italic 600 clamp(.85rem, 1.7vw, 1.8rem)/1.1 "DM Sans", sans-serif; letter-spacing: -.04em; white-space: nowrap; }
+.hero-art figcaption { position: absolute; left: 64%; top: 91.4%; width: 23%; transform: rotate(7deg); transform-origin: left; font: italic 600 clamp(.85rem, 1.7vw, 1.8rem)/1.1 var(--sans); letter-spacing: .015em; white-space: nowrap; }
 .hero-copy { animation: enter .55s ease-out both; }
 @keyframes enter { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 

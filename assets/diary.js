@@ -25,7 +25,7 @@ export function renderDiaryVisits(visits, eventsByVisit, petName, photoFor) {
     const entries = eventsByVisit.get(visit.id) || [];
     const pets = visit.pet_ids.map(petName).filter(Boolean).join(', ');
     return '<article class="diary-visit"><header><p class="diary-status">'+escapeHtml(visit.status)+'</p><h3>'+escapeHtml(visit.service_name)+'</h3>'+
-      '<p>'+formatVisitDate(visit.starts)+' · '+escapeHtml(pets)+'</p></header>'+
+      '<p data-visit-date>'+formatVisitDate(visit.starts)+' · '+escapeHtml(pets)+'</p></header>'+
       (visit.summary ? '<p class="diary-summary preserve"><strong>Visit summary</strong><br>'+escapeHtml(visit.summary)+'</p>' : '')+
       (entries.length ? '<ol class="diary-timeline">'+entries.map(renderEntry).join('')+'</ol>' : '<p class="diary-summary">No updates for this visit yet.</p>')+'</article>';
   }).join('');

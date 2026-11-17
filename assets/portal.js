@@ -160,7 +160,7 @@ function publishingDesk() {
     return '<p>Start a confirmed visit to publish diary updates.</p>'+tapLink('#upcoming','Go to today’s visits','📅');
   }
   return visits.map(booking => '<article><h3>'+text(booking.service_name)+' for '+text(booking.customer)+'</h3>'+
-    '<p>'+date(booking.starts)+'</p>'+eventForm(booking)+
+    '<p class="appointment-details">'+date(booking.starts)+'</p>'+eventForm(booking)+
     tapLink('#upcoming','Go to Today to complete the visit','🏁')+'</article>').join('');
 }
 function bookingCard(booking) {
@@ -179,10 +179,10 @@ function bookingCard(booking) {
     if (slots.length) actions += '<details class="reschedule-options"><summary>'+emoji('📅')+'Reschedule</summary>'+
       form('reschedule',choiceGroup('New time',slotChoices(slots))+button('Confirm new time','secondary','✓'),booking.id)+'</details>';
   }
-  return '<article><h3>'+text(booking.service_name)+' · '+text(booking.status)+'</h3><p>'+date(booking.starts)+' – '+date(booking.ends)+' · '+money(booking.cents)+'</p>'+
+  return '<article><h3>'+text(booking.service_name)+' · '+text(booking.status)+'</h3><p class="appointment-details">'+date(booking.starts)+' – '+date(booking.ends)+' · '+money(booking.cents)+'</p>'+
     (data.user.admin ? '<p>'+text(booking.customer)+' · '+text(booking.email)+'</p>' : '')+
     '<p>Pets: '+pets.map(p=>text(p.name)).join(', ')+'</p><p class="preserve">'+text(booking.notes)+'</p>'+
-    (booking.arrived ? '<p>Arrived: '+date(booking.arrived)+'</p>' : '') + (booking.departed ? '<p>Completed: '+date(booking.departed)+'</p>' : '')+
+    (booking.arrived ? '<p class="appointment-details">Arrived: '+date(booking.arrived)+'</p>' : '') + (booking.departed ? '<p class="appointment-details">Completed: '+date(booking.departed)+'</p>' : '')+
     (booking.summary ? '<p class="preserve"><strong>Visit summary:</strong> '+text(booking.summary)+'</p>' : '')+
     (data.user.admin ? pets.map(p=>'<details><summary>'+text(p.name)+'’s care profile</summary>'+profileSummary(p)+'</details>').join('') : '')+
     actions+'</article>';
@@ -228,8 +228,8 @@ function adminSettings() {
     input('Price in USD','price','type="number" min="0" max="10000" step="0.01" required')+button('Save service','','✓'))+
     form('slots','<h3>Publish an appointment window</h3><p>Enter the window in your device’s local time. The portal displays Massachusetts time.</p>'+
     input('Starts','starts','type="datetime-local" required')+input('Ends','ends','type="datetime-local" required')+button('Publish window','','📅'))+'</div>'+
-    '<p>'+data.services.map(s=>text(s.name)+' · '+s.minutes+' min · '+money(s.cents)).join('<br>')+'</p>'+
-    data.slots.map(s=>form('slots','<p>'+date(s.starts)+' – '+date(s.ends)+'</p>'+button('Remove window','secondary','✕'),s.id)).join('');
+    '<p class="appointment-details">'+data.services.map(s=>text(s.name)+' · '+s.minutes+' min · '+money(s.cents)).join('<br>')+'</p>'+
+    data.slots.map(s=>form('slots','<p class="appointment-details">'+date(s.starts)+' – '+date(s.ends)+'</p>'+button('Remove window','secondary','✕'),s.id)).join('');
 }
 const section = (id,title,contents) => '<section id="'+id+'"><h2>'+title+'</h2>'+contents+'</section>';
 function render() {

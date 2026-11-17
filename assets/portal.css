@@ -15,7 +15,8 @@
   border-radius: .75rem;
   background: var(--cream);
   color: #562a1d;
-  font-weight: 700;
+  font-weight: 600;
+  letter-spacing: .03em;
   line-height: 1.2;
   overflow-wrap: anywhere;
 }
@@ -37,12 +38,22 @@
   font: inherit; color: var(--ink); border: 1px solid #9c7561; background: white; border-radius: .5rem;
 }
 .portal textarea { min-height: 5rem; }
+.portal input, .portal textarea { letter-spacing: .015em; }
+.portal [data-quote],
+.portal .appointment-details,
+.portal .diary-visit time,
+.portal .diary-visit [data-visit-date],
+.portal input:is([type="number"], [type="datetime-local"]),
+.portal .tap-choices label > span {
+  font-family: "Myo Tabular Digits", var(--sans);
+  font-variant-numeric: tabular-nums;
+}
 .portal fieldset { margin: .6rem 0; border: 1px solid #c59a83; border-radius: .5rem; }
 .portal fieldset label { margin: .3rem 0; }
 .portal :is(button, summary), #logout { cursor: pointer; min-height: 48px; }
 .portal button, #logout {
   margin: .3rem .4rem .3rem 0; padding: .55rem .9rem; border: 0; border-radius: 99px;
-  background: #a13013; color: white; font-weight: 700;
+  background: #a13013; color: white; font-weight: 600;
 }
 .portal button:disabled { opacity: .65; cursor: default; }
 .portal button.secondary { background: #eed5c5; color: #562a1d; }
@@ -55,7 +66,7 @@
 .portal article img { max-height: 25rem; width: auto; border-radius: .75rem; margin-top: .75rem; }
 #feedback { min-height: 1.5rem; margin-top: .65rem; color: #732b17; font-weight: 700; }
 .portal .tap-choices { padding: 0; border: 0; min-inline-size: 0; }
-.tap-choices legend { font-weight: 700; margin-bottom: .35rem; }
+.tap-choices legend { font-weight: 600; margin-bottom: .35rem; }
 .tap-choices > div { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 8rem), 1fr)); gap: .45rem; }
 .portal .tap-choices label { position: relative; margin: 0; }
 .portal .tap-choices input {
@@ -70,7 +81,7 @@
   cursor: pointer;
   font-size: 1rem;
 }
-.tap-choices label > span { display: flex; align-items: center; gap: .4rem; min-height: 52px; height: 100%; padding: .55rem .65rem; border: 1px solid #b89079; border-radius: .65rem; background: var(--cream); cursor: pointer; line-height: 1.2; overflow-wrap: anywhere; }
+.tap-choices label > span { display: flex; align-items: center; gap: .4rem; min-height: 52px; height: 100%; padding: .55rem .65rem; border: 1px solid #b89079; border-radius: .65rem; background: var(--cream); cursor: pointer; line-height: 1.2; letter-spacing: .03em; overflow-wrap: anywhere; }
 .tap-choices input:checked + span { background: #f6c8af; border-color: #a13013; box-shadow: inset 0 0 0 1px #a13013; }
 .tap-choices input:focus-visible + span { outline: 2px solid #a13013; outline-offset: 2px; }
 .choice-icon, .control-icon { flex-shrink: 0; font-size: 1.15em; line-height: 1; }
