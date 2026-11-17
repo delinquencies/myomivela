@@ -77,10 +77,29 @@ if (portrait && 'IntersectionObserver' in window) {
   observer.observe(portrait);
 }
 
-const serviceRail = document.querySelector('.service-rail');
-if (serviceRail) {
-  const controls = document.querySelector('.service-controls');
-  const cards = [...serviceRail.querySelectorAll('.service')];
+const stickyHeader = document.querySelector('.site-header--sticky');
+const intro = document.querySelector('.hero, .faq-intro');
+if (stickyHeader && intro) {
+  let pending = false;
+  function updateHeader() {
+    pending = false;
+    stickyHeader.classList.toggle('is-past-intro', intro.getBoundingClientRect().bottom <= stickyHeader.getBoundingClientRect().bottom);
+  }
+  function scheduleHeaderUpdate() {
+    if (pending) return;
+    pending = true;
+    requestAnimationFrame(updateHeader);
+  }
+  window.addEventListener('scroll', scheduleHeaderUpdate, { passive: true });
+  window.addEventListener('resize', scheduleHeaderUpdate);
+  window.addEventListener('pageshow', scheduleHeaderUpdate);
+  if ('ResizeObserver' in window) new ResizeObserver(scheduleHeaderUpdate).observe(intro);
+  updateHeader();
+}
+
+function setupDeck(rail, controls, cardSelector, { linkServices = false, status = null } = {}) {
+  const cards = [...rail.querySelectorAll(cardSelector)];
+  if (cards.length < 2) return;
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   let current = 0;
   let moving = false;
@@ -88,6 +107,7 @@ if (serviceRail) {
 
   function showCard(index) {
     current = index;
+    if (status) status.textContent = (current + 1) + ' / ' + cards.length;
     cards.forEach((card, position) => {
       const depth = (position - current + cards.length) % cards.length;
       card.dataset.depth = depth;
@@ -99,12 +119,14 @@ if (serviceRail) {
     if (moving) return;
     moving = true;
     const card = cards[current];
-    if (card.contains(document.activeElement)) serviceRail.focus({ preventScroll: true });
-    if (!reducedMotion.matches) {
-      await card.animate([
+    if (card.contains(document.activeElement)) rail.focus({ preventScroll: true });
+    if (!reducedMotion.matches && typeof card.animate === 'function') {
+      const animation = card.animate([
         { transform: getComputedStyle(card).transform, opacity: 1 },
         { transform: 'translateX(' + (-direction * 115) + '%) rotate(' + (-direction * 17) + 'deg)', opacity: 0 },
-      ], { duration: 240, easing: 'ease-in', fill: 'forwards' }).finished.then(animation => animation.cancel());
+      ], { duration: 240, easing: 'ease-in', fill: 'forwards' });
+      try { await animation.finished; } catch { /* Still restore the deck after interruption. */ }
+      animation.cancel();
     }
     card.style.removeProperty('--swipe');
     if (card === cards[current]) showCard((current + direction + cards.length) % cards.length);
@@ -116,33 +138,35 @@ if (serviceRail) {
     if (index >= 0) showCard(index);
   }
 
-  serviceRail.classList.add('is-deck');
+  rail.classList.add('is-deck');
   controls.hidden = false;
   showCard(0);
-  followServiceLink();
-  window.addEventListener('hashchange', followServiceLink);
-  document.addEventListener('click', event => {
-    const hash = event.target.closest('a[href^="#"]')?.getAttribute('href');
-    if (hash && hash === location.hash) followServiceLink();
-  });
+  if (linkServices) {
+    followServiceLink();
+    window.addEventListener('hashchange', followServiceLink);
+    document.addEventListener('click', event => {
+      const hash = event.target.closest('a[href^="#"]')?.getAttribute('href');
+      if (hash && hash === location.hash) followServiceLink();
+    });
+  }
 
   controls.addEventListener('click', event => {
     const button = event.target.closest('button');
-    if (button) move(Number(button.dataset.serviceStep));
+    if (button) move(Number(button.dataset.deckStep));
   });
-  serviceRail.addEventListener('keydown', event => {
+  rail.addEventListener('keydown', event => {
     if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
     event.preventDefault();
     move(event.key === 'ArrowRight' ? 1 : -1);
   });
-  serviceRail.addEventListener('dragstart', event => event.preventDefault());
-  serviceRail.addEventListener('pointerdown', event => {
+  rail.addEventListener('dragstart', event => event.preventDefault());
+  rail.addEventListener('pointerdown', event => {
     if (moving || !event.isPrimary || event.button !== 0 || event.target.closest('a, button')) return;
     if (!cards[current].contains(event.target)) return;
     gesture = { id:event.pointerId, x:event.clientX, y:event.clientY, dx:0 };
-    serviceRail.setPointerCapture(event.pointerId);
+    rail.setPointerCapture(event.pointerId);
   });
-  serviceRail.addEventListener('pointermove', event => {
+  rail.addEventListener('pointermove', event => {
     if (gesture?.id !== event.pointerId) return;
     const dx = event.clientX - gesture.x;
     if (Math.abs(dx) < Math.abs(event.clientY - gesture.y) && !gesture.dx) return;
@@ -156,32 +180,17 @@ if (serviceRail) {
     if (event.type === 'pointerup' && Math.abs(dx) >= 45) move(dx < 0 ? 1 : -1);
     else cards[current].style.removeProperty('--swipe');
   }
-  serviceRail.addEventListener('pointerup', finishGesture);
-  serviceRail.addEventListener('pointercancel', finishGesture);
-  serviceRail.addEventListener('lostpointercapture', finishGesture);
+  rail.addEventListener('pointerup', finishGesture);
+  rail.addEventListener('pointercancel', finishGesture);
+  rail.addEventListener('lostpointercapture', finishGesture);
 }
+
+const serviceRail = document.querySelector('.service-rail');
+const serviceControls = document.querySelector('.service-controls');
+if (serviceRail && serviceControls) setupDeck(serviceRail, serviceControls, '.service', { linkServices: true });
 
 const reviewRail = document.querySelector('.review-rail');
 const reviewControls = document.querySelector('.review-controls');
 if (reviewRail && reviewControls) {
-  const cards = [...reviewRail.querySelectorAll('.review-card')];
-  const [previous, next] = reviewControls.querySelectorAll('button');
-  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
-
-  function updateReviewControls() {
-    const remaining = reviewRail.scrollWidth - reviewRail.clientWidth;
-    reviewControls.hidden = cards.length < 2 || remaining <= 1;
-    previous.setAttribute('aria-disabled', String(reviewRail.scrollLeft <= 1));
-    next.setAttribute('aria-disabled', String(remaining - reviewRail.scrollLeft <= 1));
-  }
-
-  reviewControls.addEventListener('click', (event) => {
-    const button = event.target.closest('button');
-    if (cards.length < 2 || !button || button.getAttribute('aria-disabled') === 'true') return;
-    const step = cards[1].offsetLeft - cards[0].offsetLeft;
-    reviewRail.scrollBy({ left: step * Number(button.dataset.reviewStep), behavior: reducedMotion.matches ? 'instant' : 'smooth' });
-  });
-  reviewRail.addEventListener('scroll', updateReviewControls, { passive: true });
-  window.addEventListener('resize', updateReviewControls);
-  updateReviewControls();
+  setupDeck(reviewRail, reviewControls, '.review-card', { status: document.querySelector('[data-review-status]') });
 }
