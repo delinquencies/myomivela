@@ -10,12 +10,15 @@ myo. is Myomi’s pet-care website and portal. Customers request visits and read
 
 ## Technology and structure
 
-Node.js (22.13 or newer; the tests and CI use 22 and 24) with the built-in `node:http` and `node:sqlite` modules. There are **no runtime dependencies**. The front end is plain HTML, CSS and ES modules. `node:sqlite` is still marked experimental by Node and prints a warning at startup.
+**Production runs on Cloudflare**: one Worker serves the public site and portal as static assets and forwards `/api/` to a single Durable Object, which holds the SQLite database. Photos are stored in R2. The same app code also runs on Node.js (22.13 or newer) for local development and the fast test suite, with `node:sqlite` and photos on disk. Both runtimes share everything in `lib/`; only `worker.mjs` and `server.mjs` differ. There are **no runtime dependencies** (Wrangler is a dev dependency). The front end is plain HTML, CSS and ES modules.
 
 ```
-server.mjs            Start-up checks and the HTTP server; wires the modules below
+worker.mjs            Cloudflare entry: static assets, security headers, and the MyoApi Durable Object
+wrangler.jsonc        Cloudflare config: assets, Durable Object, R2 bucket
+server.mjs            Node entry (local dev and tests): bridges node:http to the same app
 lib/config.mjs        Every environment variable, and the production checks
-lib/db.mjs            SQLite connection, ordered migrations, query helpers, transaction()
+lib/db.mjs            Ordered migrations, query helpers, transaction(), photo storage (runtime-neutral)
+lib/stores/           Storage adapters: node.mjs (node:sqlite + files), durable.mjs (Durable Object SQLite + R2)
 lib/validate.mjs      Input checks (requireThat, field, integer, email) and JSON body reading
 lib/auth.mjs          Password hashing, sessions and cookies, admin bootstrap, rate limiting
 lib/domain.mjs        Service names, activity types, status transitions, booking step
@@ -24,17 +27,19 @@ lib/bookings.mjs      Access-checked booking queries and page cursors
 lib/photos.mjs        Upload validation; lib/image.mjs strips EXIF/XMP/text metadata
 lib/api.mjs           Route table and access rules (public / user / staff), origin check
 lib/routes/           Handlers: account, portal, diary, bookings, admin
-lib/static.mjs        Security headers (CSP etc.) and the allow-listed static files
+lib/headers.mjs       Security headers (CSP etc.), JSON errors, URL decoding
+lib/site.mjs          Which files are public; used by the Node static server and the Cloudflare build
+lib/static.mjs        Node only: serves the public files
 assets/portal.js      Customer and staff portal (renders into portal/index.html)
 assets/diary.js       Diary rendering shared by the portal and the public sample
 assets/home.js        Public site: language switch, service cards
 assets/*.css          Checked-in styles (no build step)
 index.html, myo/      Public homepage, FAQ, sample diary
 portal/index.html     Portal shell
-scripts/backup.mjs    Consistent, verified SQLite backup
-scripts/scrub-photos.mjs  One-time metadata scrub for photos stored before stripping existed
+scripts/build-site.mjs  Copies the public files into dist/site for Cloudflare (run automatically by wrangler)
+scripts/backup.mjs    Consistent, verified copy of the local Node database
 tests/                node:test suites (API, pagination, routes, images, operations); tests/browser/ smoke test
-.github/workflows/    CI: runs `npm test` on Node 22 and 24
+.github/workflows/    CI: `npm test` on Node 22 and 24, and `npm run test:worker` on the Cloudflare runtime
 docs/                 Handoff notes, earlier audits, archived design previews
 MYO_AUDIT.md          Current audit with remediation log
 DEVELOPMENT_HANDOFF.md  Where Claude stopped, and what Codex should do next
@@ -43,24 +48,25 @@ DEVELOPMENT_HANDOFF.md  Where Claude stopped, and what Codex should do next
 ## Run locally
 
 ```sh
-npm start
+npm start      # Node, at http://127.0.0.1:45838/
+npm run dev    # the Cloudflare runtime locally (wrangler dev), at http://127.0.0.1:8787/
 ```
 
 Open <http://127.0.0.1:45838/>. Use separate browser profiles or a private window for the [client portal](http://127.0.0.1:45838/portal/) and the [staff sign-in](http://127.0.0.1:45838/portal/?staff=1#diary), because they use different sessions.
 
 ### Environment variables
 
-Names only; set them in the shell or your host. Never commit values.
+Names only; set them in the shell (Node), as `--var` flags or a git-ignored `.dev.vars` file (`npm run dev`), or as Cloudflare secrets (production). Never commit values. On Cloudflare only `MYO_ADMIN_EMAIL` and `MYO_ADMIN_PASSWORD` are needed: the Worker sees the real https URL and Cloudflare's `CF-Connecting-IP`, so the origin, cookie and proxy settings are automatic.
 
 | Variable | Purpose |
 | --- | --- |
-| `MYO_DB` | SQLite file path. Default `.myo/data.sqlite` (ignored by git). Keep it on private storage. |
+| `MYO_DB` | Node only. SQLite file path. Default `.myo/data.sqlite` (ignored by git); photos go in a `photos` folder next to it. |
 | `MYO_ADMIN_EMAIL`, `MYO_ADMIN_PASSWORD` | Creates the staff account at startup if that email does not exist (password 12–128 characters). Changing the password variable later does **not** change an existing account. |
 | `PORT`, `HOST` | Listener. Defaults `45838` and `127.0.0.1`. |
-| `NODE_ENV` | `production` makes the server refuse to start unless `MYO_ORIGIN` is an `https://` origin and `MYO_SECURE_COOKIES=1`. |
+| `NODE_ENV` | Node only. `production` makes the server refuse to start unless `MYO_ORIGIN` is an `https://` origin and `MYO_SECURE_COOKIES=1`. |
 | `MYO_ORIGIN` | Exact public origin (for example `https://example.com`). Browser POSTs with a different `Origin` are rejected. Without it the server expects `http://<host>`. |
 | `MYO_SECURE_COOKIES` | `1` adds `Secure` to the session cookie and sends HSTS. Required in production. |
-| `MYO_TRUST_PROXY` | `1` takes the client address from the last `X-Forwarded-For` entry; `cloudflare` uses `CF-Connecting-IP`. Set only when exactly one trusted proxy sits in front, otherwise leave unset. Used for rate limiting. |
+| `MYO_TRUST_PROXY` | Node only (the Worker always uses `CF-Connecting-IP`). `1` takes the client address from the last `X-Forwarded-For` entry; `cloudflare` uses `CF-Connecting-IP`. Set only when exactly one trusted proxy sits in front, otherwise leave unset. Used for rate limiting. |
 
 ### Create a test staff account
 
@@ -81,25 +87,36 @@ On PowerShell use `$env:NAME = 'value'`. Use fictional customers and a separate 
 4. As the customer, open **Pet Diary**. A second customer must not be able to open the update or its photo.
 5. Still open: run this on real iPhone and Android devices, including the camera and photo-library buttons.
 
-## Database and migrations
+## Deploy to Cloudflare
 
-SQLite via `node:sqlite`. The schema is created and upgraded automatically at startup by the ordered `migrations` list in `lib/db.mjs`; the applied count is stored in `PRAGMA user_version` (currently 3). To change the schema, **append** a migration. Never edit an earlier one. An older database opens and upgrades in place (covered by a test).
-
-Backups and maintenance:
+One-time setup, from a machine logged in to the Cloudflare account. Sign-in hashes passwords with scrypt, which uses about 40 ms of CPU per sign-in, more than the Workers Free plan's 10 ms per request. Plan on **Workers Paid**.
 
 ```sh
-npm run backup -- backups/myo-$(date +%F).sqlite   # consistent copy, safe while the server runs; verified; never overwrites
-node scripts/scrub-photos.mjs                       # dry run: photos stored before metadata stripping
-node scripts/scrub-photos.mjs --apply               # after taking a backup
+npm ci
+npx wrangler login
+npx wrangler r2 bucket create myo-photos
+npx wrangler secret put MYO_ADMIN_EMAIL
+npx wrangler secret put MYO_ADMIN_PASSWORD
+npm run deploy
 ```
 
-Restore by stopping the server and copying a backup over `MYO_DB`. Scheduling backups and keeping copies off the machine is a deployment task that is not set up.
+`npm run deploy` copies the public files into `dist/site`, bundles `worker.mjs` and uploads both. The first deploy creates the `MyoApi` Durable Object and its database, and the staff account is created on the first API request. The site is then live at `myo.<your-subdomain>.workers.dev`. To serve it on your own domain, add it under the Worker's **Settings → Domains & Routes** in the Cloudflare dashboard. Every later change ships with `npm run deploy`.
+
+## Database and migrations
+
+SQLite in both runtimes: the Durable Object's built-in SQLite on Cloudflare, `node:sqlite` locally. The schema is created and upgraded automatically on start by the ordered `migrations` list in `lib/db.mjs`. The applied count is stored in the `meta` table (`schema_version`, currently 4), because Durable Objects do not allow `PRAGMA user_version`. To change the schema, **append** a migration that is safe to re-run. Never edit an earlier one. Photos are not in the database: they are stored in R2 (Cloudflare) or files (Node) under the event's `photo_key`.
+
+Backups:
+
+- **Cloudflare:** Durable Object SQLite keeps 30 days of point-in-time recovery. R2 photos have no automatic backup; an export job is not set up yet.
+- **Node (local):** `npm run backup -- backups/myo-$(date +%F).sqlite` writes a verified copy, safe while the server runs, and never overwrites. Copy the `photos` folder too.
 
 ## Tests and builds
 
 ```sh
-npm test       # 32 tests; starts the server on free ports with temporary databases
-npm run test:browser   # end-to-end portal run in Chromium (needs Playwright); fails on any CSP or console error
+npm test             # 32 tests against Node; starts the server on free ports with temporary databases
+npm run test:worker  # the same suites against the Cloudflare runtime (wrangler dev); Node-only tests are skipped
+npm run test:browser # end-to-end portal run in Chromium (needs Playwright); MYO_TARGET=worker runs it on the Worker
 npm run build  # only rebuilds the archived design-preview stylesheet (needs `npm ci`); the live site has no build
 ```
 
@@ -116,7 +133,7 @@ There is no linter or type checker configured. CI is defined in `.github/workflo
 
 ## Not built yet
 
-Payments and checkout (Stripe), recurring bookings and packages, care plans and per-visit checklists, structured medication logging (today “Medication” is a free-text activity type), GPS walk tracking and distance (“Walk started/completed” are diary labels only), messaging, email and other notifications, email verification and password recovery, a Spanish portal, editing or deleting published diary updates, customer search and management for staff, and pagination of long histories.
+Payments and checkout (Stripe), recurring bookings and packages, care plans and per-visit checklists, structured medication logging (today “Medication” is a free-text activity type), GPS walk tracking and distance (“Walk started/completed” are diary labels only), messaging, email and other notifications, email verification and password recovery, a Spanish portal, editing or deleting published diary updates, and customer search and management for staff.
 
 ## Existing integrations
 
@@ -124,14 +141,13 @@ None. There is no payment provider, email provider or analytics. Fonts fall back
 
 ## Known limitations
 
-- Portal changes for the start-time grid and the new Content-Security-Policy have **not been exercised in a real browser** or on phones.
-- Rate-limit counters live in server memory (reset on restart, not shared between instances).
+- The portal is tested in Chromium only (`npm run test:browser`), not in Safari or on real phones.
+- The app has **not been deployed to Cloudflare yet**; it has only run under `wrangler dev` locally. The first real deploy should be checked by hand.
+- Rate-limit counters live in memory (in the single Durable Object on Cloudflare), so they reset when it restarts.
 - Account lockout after repeated failures also locks out the real owner for 15 minutes.
 - Staff is a single shared account created from environment variables; there is no password change or second staff user.
-- The whole diary and booking history is returned on each portal load (no pagination).
-- Photos are stored inside the database file.
 - Booking lifecycle policy (no-show, early start, cancellation cutoffs) is undecided and unenforced.
-- `sitemap.xml` and `robots.txt` point at GitHub Pages, which cannot run the portal. Production hosting is undecided (see below).
+- `sitemap.xml` and `robots.txt` still point at GitHub Pages; update them once the Cloudflare domain is chosen.
 
 ## Decisions still needed
 
@@ -140,7 +156,7 @@ None. There is no payment provider, email provider or analytics. Fonts fall back
 | Service area and pricing | Confirm towns/ZIP codes, services, visit lengths, hours, capacity and fees. Proposed client-review rates: **$30 / 30-minute walk**, **$35 / 30-minute drop-in**, **$110 / in-home overnight**. |
 | Policies | Cancellation, rescheduling, refund and payment timing; required care and emergency details; home access, emergency authorization, photo and location consent, retention. |
 | Launch content | Contact and social links, portrait and photos, testimonials with permission, review of English and Spanish copy. |
-| Production hosting | The server needs Node and a persistent disk. The earlier plan was Cloudflare Workers + D1 + R2, which requires rewriting the API and atomic booking logic; a Node host with backups is a shorter path. Decide before building more. |
+| Production domain | Hosting is decided (Cloudflare Workers + Durable Object + R2). Choose the public domain, then fix `sitemap.xml` and `robots.txt`. |
 | Payments and email | Choose providers and approve payment timing before integrating. |
 | GPS | If walks must track with the phone locked, prototype a native staff app; decide what route data to keep and show. |
 

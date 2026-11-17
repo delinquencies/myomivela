@@ -1,0 +1,17 @@
+// Cloudflare deployment: one Worker serves the site and portal (static assets) and the API (Durable Object).
+// See README "Deploy to Cloudflare" for the one-time setup (R2 bucket, admin secrets).
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "myo",
+  "main": "worker.mjs",
+  "compatibility_date": "2026-11-01",
+  "compatibility_flags": ["nodejs_compat"],
+  // Copies only the allow-listed public files (lib/site.mjs) into dist/site before every dev run and deploy.
+  "build": { "command": "node scripts/build-site.mjs" },
+  // run_worker_first: every request passes through worker.mjs so it gets the security headers and allow-list.
+  "assets": { "directory": "dist/site", "binding": "ASSETS", "run_worker_first": true },
+  "durable_objects": { "bindings": [{ "name": "API", "class_name": "MyoApi" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["MyoApi"] }],
+  "r2_buckets": [{ "binding": "PHOTOS", "bucket_name": "myo-photos" }],
+  "observability": { "enabled": true }
+}

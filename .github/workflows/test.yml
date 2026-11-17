@@ -13,5 +13,17 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
-      - run: for f in server.mjs lib/*.mjs lib/routes/*.mjs scripts/*.mjs; do node --check "$f"; done
+      - run: for f in server.mjs lib/*.mjs lib/routes/*.mjs lib/stores/node.mjs scripts/*.mjs; do node --check "$f"; done
       - run: npm test
+  worker:
+    # The same suites against the Cloudflare runtime (wrangler dev: Durable Object SQLite, local R2, static assets).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: npm run test:worker
+        env:
+          WRANGLER_SEND_METRICS: 'false'

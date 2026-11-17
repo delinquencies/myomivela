@@ -10,7 +10,8 @@ async function loadPlaywright() {
   catch { console.error('Playwright is not installed. Run `npm install --no-save playwright && npx playwright install chromium`.'); process.exit(1); }
 }
 const { chromium } = await loadPlaywright();
-import { startServer, adminLogin, password } from '../helpers.mjs';
+import { startServer, adminLogin, password, target } from '../helpers.mjs';
+console.log('Target: ' + target);
 import { deflateSync } from 'node:zlib';
 import { DatabaseSync } from 'node:sqlite';
 
@@ -153,8 +154,8 @@ log('customer diary photo loaded:', await img.evaluate(i => i.complete && i.natu
 await cust.locator('#refresh-diary').click();
 await feedback(cust).filter({ hasText:'up to date' }).waitFor();
 
-// Paging: seed older completed visits, then load them through the "Show older" buttons.
-{
+// Paging (Node only, it seeds the database file): older completed visits load through the "Show older" buttons.
+if (server.dbPath) {
   const db = new DatabaseSync(server.dbPath);
   const owner = db.prepare("SELECT id FROM users WHERE email='casey@example.test'").get().id;
   const pet = db.prepare('SELECT id FROM pets WHERE owner=?').get(owner).id;
@@ -166,7 +167,6 @@ await feedback(cust).filter({ hasText:'up to date' }).waitFor();
     db.prepare('INSERT INTO booking_pets VALUES(?,?)').run(id, pet);
   }
   db.close();
-}
 await cust.goto(server.base + '/portal/index.html#upcoming');
 await cust.reload();
 const pastCards = () => cust.locator('#upcoming article:has-text("Old visit")').count();
@@ -182,6 +182,7 @@ await cust.click('#more-diary');
 await cust.locator('#diary-feed article.diary-visit').nth(firstPage).waitFor();
 log('diary visits:', firstPage, '→', await diaryVisits());
 if (firstPage !== 10) throw new Error('Expected a first diary page of 10 visits, got ' + firstPage);
+}
 
 await browser.close();
 await server.stop();

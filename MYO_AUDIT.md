@@ -257,12 +257,18 @@ Unchanged. Needs policy decisions (no-show, early-start window, cancellation cut
 - **Verification:** the existing 28 tests and the browser smoke test pass unchanged. 4 new tests walk the route table: every non-public route returns 401 when signed out, every staff route returns 403 to a customer, and unknown routes return 404.
 - **Remaining limitations:** the portal client still hard-codes service names and icons (`assets/portal.js`). It is still one process with in-memory rate limits.
 
-### P0-6 — Hosting decision · BLOCKED (needs your decision)
-Checked against Cloudflare documentation on 2026-11-17: the server **cannot run on Cloudflare as-is**. Workers can now host a `node:http` server (with `nodejs_compat`), but `node:sqlite` is a non-functional stub there and Workers have no local disk, so the database layer (`lib/db.mjs`) would have to move to D1 or Durable Object SQLite. D1 has no interactive `BEGIN…COMMIT`, so the confirm-with-overlap logic would need redesign. A Durable Object's synchronous SQLite with `transactionSync` is the closest match to today's model. Cloudflare Containers can run the Node process unchanged, but their disk is ephemeral (snapshots are in beta with a 30-day TTL), so the SQLite file would be lost. The practical Cloudflare option today is to run Node on a host with a persistent disk and put Cloudflare in front (DNS/proxy or Tunnel) with `MYO_TRUST_PROXY=cloudflare`.
+### P0-6 — Hosting decision · RESOLVED: Cloudflare (Worker + Durable Object + R2) · not yet deployed
+- **Decision (owner, 2026-11-17):** everything else is hosted on Cloudflare, so the app moved there rather than to a Node host.
+- **Files:** `worker.mjs`, `wrangler.jsonc`, `lib/stores/durable.mjs`, `lib/stores/node.mjs`, `lib/db.mjs`, `lib/config.mjs`, `lib/headers.mjs`, `lib/site.mjs`, `lib/api.mjs`, `lib/auth.mjs`, `lib/validate.mjs`, `lib/routes/account.mjs`, `lib/routes/diary.mjs`, `server.mjs`, `scripts/build-site.mjs`, `tests/helpers.mjs` and the suites, `.github/workflows/test.yml`
+- **Fix:** the app in `lib/` now speaks Fetch `Request`/`Response` and reaches storage through one adapter. On Cloudflare a Worker serves the allow-listed public files as static assets (with the security headers) and forwards `/api/` to one named Durable Object. Its synchronous SQLite and `transactionSync` keep the no-await transaction model, so the overlap and confirmation checks (§4.1) carry over without redesign. D1 was rejected for the reason given in §4.1. Photos moved out of the database into R2 (closes §4.7); an upload is stored before a transaction that re-checks the visit, and is deleted if the update is refused. The schema version moved to a `meta` table because Durable Objects forbid `PRAGMA user_version`. Node remains for local development and the fast tests. `scripts/scrub-photos.mjs` was removed: it only cleaned database BLOBs, which held test data only.
+- **Verification:** `npm run test:worker` runs the shared suites under `wrangler dev`: 24 passed, 8 Node-only skipped. These cover the lifecycle, isolation, the grid, photo stripping through R2, headers, route access, diary paging (built through the API) and per-client rate limiting via `CF-Connecting-IP`. The Chromium browser run is clean on the Worker. `wrangler deploy --dry-run` builds a 40 KB bundle with no Node-only modules.
+- **Remaining limitations:** not deployed to a real Cloudflare account. scrypt uses about 40 ms CPU per sign-in, which exceeds the Workers Free plan's 10 ms limit, so the plan must be Workers Paid. R2 photos have no backup. One Durable Object serialises all API traffic; that is ample for a single-operator business, but it is the scaling limit.
+
+Background checked against Cloudflare documentation on 2026-11-17: the original Node server **could not run on Cloudflare as-is**. Workers can now host a `node:http` server (with `nodejs_compat`), but `node:sqlite` is a non-functional stub there and Workers have no local disk, so the database layer (`lib/db.mjs`) would have to move to D1 or Durable Object SQLite. D1 has no interactive `BEGIN…COMMIT`, so the confirm-with-overlap logic would need redesign. A Durable Object's synchronous SQLite with `transactionSync` is the closest match to today's model. Cloudflare Containers can run the Node process unchanged, but their disk is ephemeral (snapshots are in beta with a 30-day TTL), so the SQLite file would be lost. The practical Cloudflare option today is to run Node on a host with a persistent disk and put Cloudflare in front (DNS/proxy or Tunnel) with `MYO_TRUST_PROXY=cloudflare`.
 
 ### New findings from the remediation
 - **N1 — Account lockout can be abused to lock a victim out for 15 minutes.** Medium-low. OPEN. Consider lockout keyed on address + account together, or a CAPTCHA, once email verification exists.
-- **N2 — Existing stored photos still carry metadata until the scrub script is run.** Medium. OPEN (operational step after backup).
+- **N2 — Existing stored photos still carry metadata until the scrub script is run.** MOOT: photos now live in R2/files and are stripped on upload; the database BLOBs only ever held test data, and the scrub script was removed.
 - **N3 — No browser or device test of the portal after the grid and CSP changes.** High for release. PARTLY RESOLVED.
   - **Files:** `tests/browser/portal-smoke.mjs` (new), `package.json` (`test:browser`)
   - **Fix:** an end-to-end Playwright run in Chromium at a 390×844 viewport in America/New_York. It loads the home page, FAQ and sample diary, then drives the portal through the UI: staff sets a price and publishes a 3-hour window; a customer registers, adds a pet and books two times in that window; staff approves both and reschedules one; the customer cancels one through the confirmation dialog; staff starts the other, publishes a diary update with a photo and completes it with a summary; the customer sees the photo in the Pet Diary and refreshes it. The run fails on any console error, CSP violation, failed request or HTTP error.
@@ -285,18 +291,18 @@ Checked against Cloudflare documentation on 2026-11-17: the server **cannot run 
 | D3 | No write idempotency | Low–Med | OPEN |
 | D4 | Ad hoc schema management | Medium | RESOLVED |
 | D5 | Unbounded portal payload | Medium | RESOLVED |
-| O1 | Static hosting mismatch | Medium | OPEN |
+| O1 | Static hosting mismatch | Medium | IN PROGRESS: site and API served together by the Worker; sitemap/robots await the domain |
 | O2 | Re-render loses input | Low–Med | OPEN |
-| O3 | No tests/CI/engines | Medium | RESOLVED; CI IMPLEMENTED — UNVERIFIED |
-| P0-1 | Automated tests | P0 | RESOLVED (32 tests + browser smoke) |
-| P0-5 | Backup tooling | P0 | RESOLVED; scheduling BLOCKED |
-| P0-6 | Hosting decision | P0 | BLOCKED |
+| O3 | No tests/CI/engines | Medium | RESOLVED; CI (Node and Worker jobs) IMPLEMENTED — UNVERIFIED |
+| P0-1 | Automated tests | P0 | RESOLVED (32 Node, 24 Worker, browser smoke on both) |
+| P0-5 | Backup tooling | P0 | PARTIAL: Durable Object PITR (30 days); R2 photo backup OPEN |
+| P0-6 | Hosting decision | P0 | RESOLVED: Cloudflare Worker + Durable Object + R2 (not yet deployed) |
 | P1-3 | Pagination / server-side filters | P1 | RESOLVED |
 | P1-4 | Lifecycle guards | P1 | OPEN |
 | P1-5 | Structured pet care profile | P1 | OPEN |
 | P1-6 | Email verification and recovery | P1 | OPEN (needs provider) |
 | P1-7 | Stripe Checkout | P1 | BLOCKED (needs payment decisions) |
-| P1-8 | Sitemap/robots vs hosting | P1 | OPEN |
+| P1-8 | Sitemap/robots vs hosting | P1 | OPEN (needs the public domain) |
 | P2-4 | Split `server.mjs` into modules | P2 | RESOLVED (client service names still duplicated) |
 | P2-* | Edit diary updates, idempotency, i18n, module split, form drafts, staff accounts, new product features | P2 | OPEN |
 
@@ -307,7 +313,7 @@ Checked against Cloudflare documentation on 2026-11-17: the server **cannot run 
 ## 9. Remaining Work for Codex (dependency order)
 
 1. **Device verification (N3, remainder).** Chromium is covered by `npm run test:browser`. Still to do: Safari (macOS and iOS) and Android Chrome by hand, including camera capture and HEIC photos from an iPhone.
-2. **Hosting decision and deployment setup (P0-6, O1, P0-5 scheduling).** Decide Node host vs. Workers/D1. If Node: set `NODE_ENV=production`, `MYO_ORIGIN`, `MYO_SECURE_COOKIES=1`, `MYO_TRUST_PROXY`; schedule `npm run backup` with an off-machine copy and rehearse a restore; fix `sitemap.xml`/`robots.txt`. Run `scripts/scrub-photos.mjs` on any existing database after a backup (N2).
+2. **First Cloudflare deploy (P0-6 follow-up, O1, P0-5).** Hosting is decided; see DEVELOPMENT_HANDOFF.md §6. The original text of this item follows. **Hosting decision and deployment setup (P0-6, O1, P0-5 scheduling).** Decide Node host vs. Workers/D1. If Node: set `NODE_ENV=production`, `MYO_ORIGIN`, `MYO_SECURE_COOKIES=1`, `MYO_TRUST_PROXY`; schedule `npm run backup` with an off-machine copy and rehearse a restore; fix `sitemap.xml`/`robots.txt`. Run `scripts/scrub-photos.mjs` on any existing database after a backup (N2).
 3. ~~Bounded API responses (D5, P1-3).~~ Done; see D5 in §7.
 4. **Lifecycle policy and guards (D2, P1-4, D3).** After you decide the rules: no-show state, how early a visit can start, cancellation cutoff, what rescheduling a Confirmed booking does; idempotency keys for bookings and diary events.
 5. **Account lifecycle and payments (S5, N1, P1-6, P1-7).** Email provider, verification and recovery, then Stripe Checkout with signed webhooks, a payments table and idempotency. Payments are blocked on the policy decisions listed in the README.

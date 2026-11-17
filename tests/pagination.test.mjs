@@ -1,7 +1,7 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { DatabaseSync } from 'node:sqlite';
-import { startServer, adminLogin, password, hours } from './helpers.mjs';
+import { startServer, adminLogin, password, hours, iso, nodeOnly } from './helpers.mjs';
 
 // Bounded responses: /api/portal carries one page of history, /api/history and /api/diary page the rest.
 let app;
@@ -18,6 +18,7 @@ before(async () => {
   await call('bob','POST','/api/pets',{ name:'Bobpet', species:'Cat', details:'' });
   annPets = (await get('ann','/api/portal')).pets.map(p => p.id);
   bobPet = (await get('bob','/api/portal')).pets[0].id;
+  if (nodeOnly) return;
   // Completed visits in the past cannot be created through the API, so seed them directly.
   const db = new DatabaseSync(app.dbPath);
   const service = db.prepare('SELECT id FROM services').get().id;
@@ -51,14 +52,14 @@ async function collect(who, path, key, start = '') {
   return { rows, pages };
 }
 
-test('the portal sends one page of history and no diary events', async () => {
+test('the portal sends one page of history and no diary events', { skip:nodeOnly }, async () => {
   const data = await get('ann','/api/portal');
   assert.equal(data.bookings.length, 20);
   assert.ok(data.history_next);
   assert.equal('events' in data, false);
 });
 
-test('history pages cover every past booking once, newest first, owner only', async () => {
+test('history pages cover every past booking once, newest first, owner only', { skip:nodeOnly }, async () => {
   const first = await get('ann','/api/portal');
   const rest = await collect('ann','/api/history','bookings',first.history_next);
   const all = [...first.bookings, ...rest.rows];
@@ -68,7 +69,7 @@ test('history pages cover every past booking once, newest first, owner only', as
   assert.ok(all.every(b => b.pet_ids.every(id => annPets.includes(id))));
 });
 
-test('diary pages hold ten visits with their updates, and the pet filter runs on the server', async () => {
+test('diary pages hold ten visits with their updates, and the pet filter runs on the server', { skip:nodeOnly }, async () => {
   const everything = await collect('ann','/api/diary','visits');
   assert.equal(everything.rows.length, pastVisits);
   assert.equal(everything.pages, Math.ceil(pastVisits / 10));
@@ -82,7 +83,7 @@ test('diary pages hold ten visits with their updates, and the pet filter runs on
   assert.ok(onlyBeta.events.every(e => e.pet === annPets[1]));
 });
 
-test('a customer cannot page into another customer’s diary or history', async () => {
+test('a customer cannot page into another customer’s diary or history', { skip:nodeOnly }, async () => {
   const bob = await collect('bob','/api/diary','visits');
   assert.equal(bob.rows.length, 3);
   const annVisit = (await get('ann','/api/diary')).visits[0].id;
@@ -93,7 +94,7 @@ test('a customer cannot page into another customer’s diary or history', async 
   assert.equal((await call('nobody','GET','/api/diary')).status, 401);
 });
 
-test('staff see every customer, but only the pets their page references', async () => {
+test('staff see every customer, but only the pets their page references', { skip:nodeOnly }, async () => {
   const staff = await get('staff','/api/portal');
   const referenced = new Set(staff.bookings.flatMap(b => b.pet_ids));
   assert.deepEqual(new Set(staff.pets.map(p => p.id)), referenced);
@@ -106,4 +107,33 @@ test('malformed page cursors are rejected', async () => {
     assert.equal((await call('ann','GET','/api/history?before=' + bad)).status, 400, bad);
   }
   assert.equal((await call('ann','GET','/api/diary?pet=x')).status, 400);
+});
+
+// Runs on both runtimes: builds visits through the API only (staff may start and complete a future visit).
+test('diary paging and the pet filter work end to end through the API', async () => {
+  const service = (await get('ann','/api/portal')).services[0];
+  const starts = Math.ceil((Date.now() + hours(24 * 30)) / hours(1)) * hours(1);
+  await call('staff','POST','/api/slots',{ starts:iso(starts), ends:iso(starts + hours(7)) });
+  const window = (await get('staff','/api/portal')).windows.find(w => w.starts === starts);
+  const made = [];
+  for (let i = 0; i < 12; i++) {
+    const pet = annPets[i % 2];
+    const booking = await call('ann','POST','/api/bookings',{ service:service.id, cents:service.cents, pets:[pet], slot:window.id, start:starts + i * hours(0.5), notes:'' });
+    assert.equal(booking.status, 200);
+    const id = booking.json.id;
+    for (const status of ['Confirmed','In Progress']) assert.equal((await call('staff','POST','/api/status',{ id, status })).status, 200);
+    assert.equal((await call('staff','POST','/api/events',{ id, pet, kind:'Playtime', notes:'visit ' + i })).status, 200);
+    assert.equal((await call('staff','POST','/api/status',{ id, status:'Completed', summary:'done' })).status, 200);
+    made.push(id);
+  }
+  const first = await get('ann','/api/diary');
+  assert.equal(first.visits.length, 10);
+  assert.equal(first.visits[0].id, made.at(-1), 'newest visit first');
+  const second = await get('ann','/api/diary?before=' + first.next);
+  assert.ok(second.visits.some(v => v.id === made[0]) && !second.visits.some(v => first.visits.some(f => f.id === v.id)));
+  const alpha = await get('ann','/api/diary?pet=' + annPets[0]);
+  assert.ok(alpha.visits.filter(v => made.includes(v.id)).every(v => v.pet_ids.includes(annPets[0])));
+  assert.ok(alpha.events.every(e => e.pet === annPets[0]));
+  const bob = await get('bob','/api/diary?visit=' + made[0]);
+  assert.equal(bob.visits.length + bob.events.length, 0);
 });

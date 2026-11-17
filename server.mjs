@@ -1,38 +1,54 @@
-// myo. care portal server: start-up checks, then one HTTP server for the API and the static site.
-// The pieces live in lib/: config, db (migrations, transactions), auth, scheduling, bookings, photos,
-// api (route table) with handlers in lib/routes/, and static (headers and files).
+// Local runtime: `npm start` and the test suite. Production runs on Cloudflare through worker.mjs.
+// Both use the same app in lib/; this file only bridges node:http to the Fetch-style handlers.
 import { createServer } from 'node:http';
-import { dirname } from 'node:path';
+import { Readable } from 'node:stream';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { config, productionProblems } from './lib/config.mjs';
+import { productionProblems } from './lib/config.mjs';
 
 const problems = productionProblems();
 if (problems.length) { console.error('Refusing to start in production:\n- ' + problems.join('\n- ')); process.exit(1); }
 
 // Imported after the production check so a misconfigured server exits before touching the database.
-const { requireThat } = await import('./lib/validate.mjs');
-const { ensureAdmin } = await import('./lib/auth.mjs');
+const { nodeStore, fileBlobs } = await import('./lib/stores/node.mjs');
+const { useStorage } = await import('./lib/db.mjs');
+const { ensureAdmin, clientAddress } = await import('./lib/auth.mjs');
 const { handleApi } = await import('./lib/api.mjs');
-const { securityHeaders, serveStatic } = await import('./lib/static.mjs');
+const { withSecurityHeaders, errorResponse, decodedPath } = await import('./lib/headers.mjs');
+const { serveStatic } = await import('./lib/static.mjs');
+
+const database = resolve(process.env.MYO_DB || '.myo/data.sqlite');
+useStorage(nodeStore(database), fileBlobs(join(dirname(database), 'photos')));
 await ensureAdmin();
 
 const root = dirname(fileURLToPath(import.meta.url));
-const server = createServer(async (request,response) => {
-  securityHeaders(response);
+async function handle(request, socketAddress) {
+  const url = new URL(request.url);
   try {
-    let path;
-    try { path = decodeURIComponent(new URL(request.url,'http://localhost').pathname); } catch { requireThat(false,'Page not found.',404); }
-    if (!path.startsWith('/api/')) return await serveStatic(request,response,path,root);
-    response.setHeader('Cache-Control','private, no-store');
-    const data = await handleApi(request,response,path);
-    if (!response.writableEnded) {
-      response.setHeader('Content-Type','application/json; charset=utf-8');
-      response.end(JSON.stringify(data));
-    }
+    const path = decodedPath(url);
+    if (path.startsWith('/api/')) return await handleApi(request, { clientAddress:clientAddress(request, socketAddress) });
+    return await serveStatic(request, path, root);
+  } catch (error) { return errorResponse(error); }
+}
+
+const server = createServer(async (incoming, outgoing) => {
+  let response;
+  try {
+    const hasBody = !['GET','HEAD'].includes(incoming.method);
+    const request = new Request('http://' + (incoming.headers.host || 'localhost') + incoming.url, {
+      method:incoming.method, headers:incoming.headers,
+      body:hasBody ? Readable.toWeb(incoming) : undefined, duplex:hasBody ? 'half' : undefined,
+    });
+    response = await handle(request, incoming.socket.remoteAddress);
+    response = withSecurityHeaders(response, new URL(request.url));
   } catch (error) {
-    if (!error.status) console.error(error);
-    if (!response.headersSent) response.writeHead(error.status || 500, {'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});
-    response.end(JSON.stringify({error:error.status ? error.message : 'The request could not be completed.'}));
+    response = withSecurityHeaders(errorResponse(Object.assign(error, { status:error.status || 400 })), new URL('http://localhost'));
   }
+  const headers = {};
+  response.headers.forEach((value, name) => { if (name !== 'set-cookie') headers[name] = value; });
+  const cookies = response.headers.getSetCookie();
+  if (cookies.length) headers['set-cookie'] = cookies;
+  outgoing.writeHead(response.status, headers);
+  outgoing.end(incoming.method === 'HEAD' || !response.body ? undefined : Buffer.from(await response.arrayBuffer()));
 });
-server.listen(config.port,config.host,() => console.log('myo. listening on port '+server.address().port));
+server.listen(Number(process.env.PORT || 45838), process.env.HOST || '127.0.0.1', () => console.log('myo. listening on port '+server.address().port));
