@@ -65,7 +65,7 @@ Names only; set them in the shell (Node), as `--var` flags or a git-ignored `.de
 | Variable | Purpose |
 | --- | --- |
 | `MYO_DB` | Node only. SQLite file path. Default `.myo/data.sqlite` (ignored by git); photos go in a `photos` folder next to it. |
-| `MYO_ADMIN_EMAIL`, `MYO_ADMIN_PASSWORD` | Creates the staff account at startup if that email does not exist (password 12–128 characters). Changing the password variable later does **not** change an existing account. |
+| `MYO_ADMIN_EMAIL`, `MYO_ADMIN_PASSWORD` | Creates the staff account at startup if that email does not exist (password 12–128 characters). Changing the password variable later does **not** change an existing account; change it in the portal under **Account** instead. |
 | `PORT`, `HOST` | Listener. Defaults `45838` and `127.0.0.1`. |
 | `NODE_ENV` | Node only. `production` makes the server refuse to start unless `MYO_ORIGIN` is an `https://` origin and `MYO_SECURE_COOKIES=1`. |
 | `MYO_ORIGIN` | Exact public origin (for example `https://example.com`). Browser POSTs with a different `Origin` are rejected. Without it the server expects `http://<host>`. |
@@ -108,7 +108,7 @@ npm run deploy
 
 ## Database and migrations
 
-SQLite in both runtimes: the Durable Object's built-in SQLite on Cloudflare, `node:sqlite` locally. The schema is created and upgraded automatically on start by the ordered `migrations` list in `lib/db.mjs`. The applied count is stored in the `meta` table (`schema_version`, currently 5), because Durable Objects do not allow `PRAGMA user_version`. To change the schema, **append** a migration that is safe to re-run. Never edit an earlier one. Photos are not in the database: they are stored in R2 (Cloudflare) or files (Node) under the event's `photo_key`.
+SQLite in both runtimes: the Durable Object's built-in SQLite on Cloudflare, `node:sqlite` locally. The schema is created and upgraded automatically on start by the ordered `migrations` list in `lib/db.mjs`. The applied count is stored in the `meta` table (`schema_version`, currently 6), because Durable Objects do not allow `PRAGMA user_version`. To change the schema, **append** a migration that is safe to re-run. Never edit an earlier one. Photos are not in the database: they are stored in R2 (Cloudflare) or files (Node) under the event's `photo_key`.
 
 ### Backups and restore
 
@@ -130,7 +130,7 @@ Also available:
 ## Tests and builds
 
 ```sh
-npm test             # 42 tests against Node; starts the server on free ports with temporary databases
+npm test             # 49 tests against Node; starts the server on free ports with temporary databases
 npm run test:worker  # the same suites against the Cloudflare runtime (wrangler dev); Node-only tests are skipped
 npm run test:browser # end-to-end portal run in Chromium (needs Playwright); MYO_TARGET=worker runs it on the Worker
 npm run build  # only rebuilds the archived design-preview stylesheet (needs `npm ci`); the live site has no build
@@ -141,7 +141,7 @@ There is no linter or type checker configured. CI is defined in `.github/workflo
 ## What works today
 
 - **Public site:** bilingual (English/Spanish) homepage and FAQ, service cards linking to booking, and a fictional sample diary using the same layout as the real one.
-- **Accounts:** customer registration, sign-in and sign-out with scrypt password hashes, hashed server-side sessions, and a per-address and per-account rate limit.
+- **Accounts:** customer registration, sign-in and sign-out with scrypt password hashes and hashed server-side sessions. Under **Account**, anyone can change their password (other devices are signed out) or sign out everywhere. Failed sign-ins lock out the guessing address, never the owner's devices (see below).
 - **Pets:** create and edit pet profiles (breed, medical, diet, emergency contacts and notes as one JSON profile).
 - **Booking:** customers request a service for one or more of their pets at a start time on a 30-minute grid inside staff-published windows. Staff approve, decline, reschedule and cancel; customers can cancel or reschedule. Overlapping approvals and approvals for withdrawn windows are rejected. The price is snapshotted on the booking.
 - **Visits and diary:** staff start and complete visits (a summary is required), publish typed activity updates with an optional photo, and customers see them grouped by visit. Photo access is checked per request, and photo metadata (including GPS) is removed on upload.
@@ -162,8 +162,8 @@ None. There is no payment provider, email provider or analytics. Fonts fall back
 - The portal is tested in Chromium only (`npm run test:browser`), not in Safari or on real phones.
 - The app has **not been deployed to Cloudflare yet**; it has only run under `wrangler dev` locally. The first real deploy should be checked by hand.
 - Rate-limit counters live in memory (in the single Durable Object on Cloudflare), so they reset when it restarts.
-- Account lockout after repeated failures also locks out the real owner for 15 minutes.
-- Staff is a single shared account created from environment variables; there is no password change or second staff user.
+- Lockouts: 8 failed passwords per account and address per 15 minutes; 50 per account per hour from devices that have never signed in to it; a device that has signed in before (it holds a `myo_device` cookie) has its own 8-per-15-minutes allowance and ignores the other two. So a guesser locks out only themselves, and a large distributed attack can block new devices for an hour but never the owner's known phone or computer.
+- Staff is a single shared account created from environment variables (its password can be changed in the portal); there is no second staff user.
 - Booking lifecycle policy (no-show, early start, cancellation cutoffs) is undecided and unenforced.
 - `sitemap.xml` and `robots.txt` still point at GitHub Pages; update them once the Cloudflare domain is chosen.
 

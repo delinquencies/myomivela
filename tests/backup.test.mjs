@@ -54,7 +54,7 @@ after(async () => { await source.stop(); await rm(dir, { recursive:true, force:t
 
 test('the backup holds every table and photo, and no sessions', () => {
   assert.equal(backup.format, 'myo-backup');
-  assert.equal(backup.schema_version, 5);
+  assert.equal(backup.schema_version, 6);
   assert.equal(backup.tables.users.length, 2);
   assert.ok(backup.tables.users.every(user => /^[0-9a-f]+:[0-9a-f]+$/.test(user.password)), 'password hashes kept so accounts still work');
   assert.equal(backup.tables.events.length, 2);

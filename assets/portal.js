@@ -4,6 +4,7 @@ import { createDrafts } from './drafts.js';
 const app = document.querySelector('#app');
 const feedback = document.querySelector('#feedback');
 const logout = document.querySelector('#logout');
+const accountLink = document.querySelector('#account-link');
 const cancelDialog = document.querySelector('#cancel-booking');
 const find = (rows,id) => rows.find(row => row.id === id);
 const money = cents => new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(cents / 100);
@@ -269,9 +270,19 @@ function adminSettings() {
     '<h3>Backup</h3><p>Download everything (accounts, pets, bookings, diary updates and photos) as one file. '+
     'It includes password hashes, so store it somewhere private.</p>'+'<a class="tap-link" href="/api/backup" download>'+emoji('💾')+'Download backup</a>';
 }
+function accountSettings() {
+  const sessions = data.account?.sessions ?? 1;
+  return '<p>Signed in as '+text(data.user.name)+' · '+text(data.user.email)+'</p>'+
+    form('password','<h3>Change password</h3>'+
+      input('Current password','current','required type="password" maxlength="128" autocomplete="current-password"')+
+      input('New password','password','required type="password" minlength="12" maxlength="128" autocomplete="new-password"')+
+      '<small>At least 12 characters. Changing it signs you out on your other devices.</small>'+button('Change password','','🔑'))+
+    form('signout-all','<h3>Sign out everywhere</h3><p>'+(sessions === 1 ? 'You are signed in on 1 device.' : 'You are signed in on '+sessions+' devices.')+
+      ' Use this if you signed in on a shared or lost device. It signs you out here too.</p>'+button('Sign out everywhere','secondary','↩️'));
+}
 const section = (id,title,contents) => '<section id="'+id+'"><h2>'+title+'</h2>'+contents+'</section>';
 function render() {
-  logout.hidden = !data?.user;
+  logout.hidden = accountLink.hidden = !data?.user;
   if (!data?.user) { auth(); return; }
   // Keep anything typed into other forms: record it before replacing the page, put it back afterwards.
   drafts.use(data.user.id);
@@ -300,7 +311,8 @@ function render() {
       section('book','Request care',bookingForm()))+
     section('diary',admin ? 'Publish updates' : 'Pet Diary',
       (admin ? publishingDesk()+'<h3>Published updates</h3>' : '')+'<div id="diary-feed">'+diary()+'</div>')+
-    (admin ? section('history','Booking history',cards(history)+older) : '');
+    (admin ? section('history','Booking history',cards(history)+older) : '')+
+    section('account','Account',accountSettings());
   updateQuote();
   drafts.restore(app, {
     onChoice:(form, input) => { if (form.dataset.action === 'bookings' && ['service','day'].includes(input.name)) updateQuote({ target:input }); },
@@ -314,7 +326,7 @@ function showSection(focus = false) {
   const requested = location.hash === bookingIntake ? 'pets' : location.hash.slice(1);
   const id = panels.some(panel => panel.id === requested) ? requested : 'upcoming';
   for (const panel of panels) panel.hidden = panel.id !== id;
-  for (const link of app.querySelectorAll('nav a')) {
+  for (const link of [...app.querySelectorAll('nav a'), accountLink]) {
     if (link.hash === '#'+id) link.setAttribute('aria-current','page');
     else link.removeAttribute('aria-current');
   }
@@ -514,7 +526,9 @@ app.addEventListener('submit',async event => {
     if (action === 'status' && payload.status === 'In Progress') history.replaceState(null,'','#diary');
     await refresh();
     if (resumeBooking) showSection(true);
+    if (action === 'signout-all') { drafts.clear(); feedback.textContent = 'Signed out on every device.'; return; }
     feedback.textContent = action === 'bookings' ? 'Request sent. Myomi still needs to confirm your appointment.'
+      : action === 'password' ? 'Password changed. Your other devices have been signed out.'
       : resumeBooking ? 'Pet added. You can continue booking.'
       : action === 'events' ? 'Published to the customer’s Pet Diary.' : 'Saved.';
   } catch (error) { feedback.textContent = error.message; }

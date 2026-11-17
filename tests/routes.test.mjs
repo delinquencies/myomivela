@@ -23,7 +23,7 @@ test('every route declares a known access level', () => {
   assert.ok(routes.length >= 15);
   for (const route of routes) {
     assert.ok(['public','user','staff'].includes(route.access), concrete(route));
-    assert.match(concrete(route), /^\/api\/[\w/]+$/, 'the tests below must be able to call ' + concrete(route));
+    assert.match(concrete(route), /^\/api\/[\w/-]+$/, 'the tests below must be able to call ' + concrete(route));
   }
 });
 

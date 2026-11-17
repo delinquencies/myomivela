@@ -24,8 +24,9 @@ async function call(path, body) {
   const response = await fetch(base + path, {
     method:'POST', headers:{ 'Content-Type':'application/json', ...(cookie ? { cookie } : {}) }, body:JSON.stringify(body),
   });
-  const setCookie = response.headers.get('set-cookie');
-  if (setCookie) cookie = setCookie.split(';')[0];
+  // Sign-in sets several cookies (session and recognised device); only the session is needed here.
+  const session = response.headers.getSetCookie().find(value => value.startsWith('myo_session='));
+  if (session) cookie = session.split(';')[0];
   const result = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(path + ' failed (' + response.status + '): ' + (result.error || 'no details'));
   return result;

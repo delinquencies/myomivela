@@ -65,7 +65,7 @@ test('a pre-migration database upgrades in place and keeps its data', { skip:nod
   const app = await startServer({}, { dbPath:path });
   await app.stop();
   const upgraded = new DatabaseSync(path);
-  assert.equal(upgraded.prepare("SELECT value FROM meta WHERE key='schema_version'").get().value, '5');
+  assert.equal(upgraded.prepare("SELECT value FROM meta WHERE key='schema_version'").get().value, '6');
   assert.ok(upgraded.prepare('PRAGMA table_info(events)').all().some(c => c.name === 'photo_key'));
   assert.ok(upgraded.prepare('PRAGMA table_info(bookings)').all().some(c => c.name === 'summary'));
   assert.equal(upgraded.prepare('SELECT name FROM pets').get().name, 'Biscuit');
@@ -83,7 +83,7 @@ test('backup script writes a verified copy of a live database and refuses to ove
     const run = () => spawnSync(process.execPath, ['--no-warnings', join(root, 'scripts', 'backup.mjs'), target], { env:{ ...process.env, MYO_DB:app.dbPath }, encoding:'utf8' });
     const first = run();
     assert.equal(first.status, 0, first.stderr);
-    assert.match(first.stdout, /schema version 5/);
+    assert.match(first.stdout, /schema version 6/);
     const copy = new DatabaseSync(target, { readOnly:true });
     assert.equal(copy.prepare("SELECT email FROM users WHERE email='c@example.test'").get().email, 'c@example.test');
     copy.close();

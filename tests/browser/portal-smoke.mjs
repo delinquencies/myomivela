@@ -257,19 +257,47 @@ log('diary visits:', firstPage, '→', await diaryVisits());
 if (firstPage !== 10) throw new Error('Expected a first diary page of 10 visits, got ' + firstPage);
 }
 
+// Account: change the password from the portal; another browser signed in to the same account is signed out.
+const otherBrowser = await (await ctx()).newPage(); watch(otherBrowser,'customer-2');
+await otherBrowser.goto(server.base + '/portal/index.html');
+await otherBrowser.locator('[data-action=login] [name=email]').fill('casey@example.test');
+await otherBrowser.locator('[data-action=login] [name=password]').fill(password);
+await otherBrowser.locator('[data-action=login] button').click();
+await otherBrowser.locator('h1', { hasText:'My account' }).waitFor();
+await cust.reload(); // the device count is part of the page data, so it updates on the next load
+await cust.locator('#account-link').click();
+await cust.locator('#account').getByText('signed in on 2 devices').waitFor();
+await cust.locator('[data-action=password] [name=current]').fill(password);
+await cust.locator('[data-action=password] [name=password]').fill('casey-new-password-1');
+await cust.locator('[data-action=password] button').click();
+await feedback(cust).filter({ hasText:'Password changed' }).waitFor();
+const stillSignedIn = await cust.locator('#account').getByText('signed in on 1 device').isVisible();
+await otherBrowser.reload();
+const otherSignedOut = await otherBrowser.locator('[data-action=login]').first().isVisible();
+log('password changed in the portal: this device still signed in', stillSignedIn, '· other browser signed out', otherSignedOut);
+if (!stillSignedIn || !otherSignedOut) throw new Error('Password change did not keep this session and end the other');
+const passwordStored = await cust.evaluate(() => Object.entries(sessionStorage).some(([key, value]) => key.startsWith('myo-drafts:') && value.includes('casey-new-password')));
+if (passwordStored) throw new Error('A password was kept in draft storage');
+
 // Signing out forgets drafts, so nothing typed lingers for the next person on a shared phone.
 await cust.goto(server.base + '/portal/index.html#pets');
 await cust.locator('#logout').click();
-await feedback(cust).filter({ hasText:'Signed out' }).waitFor();
+await feedback(cust).filter({ hasText:/^Signed out\.$/ }).waitFor(); // exact: other messages also mention "signed out"
 const leftover = await cust.evaluate(() => Object.keys(sessionStorage).filter(key => key.startsWith('myo-drafts:')).length);
 await cust.locator('[data-action=login] [name=email]').fill('casey@example.test');
-await cust.locator('[data-action=login] [name=password]').fill(password);
+await cust.locator('[data-action=login] [name=password]').fill('casey-new-password-1');
 await cust.locator('[data-action=login] button').click();
 await cust.locator('h1', { hasText:'My account' }).waitFor();
 await cust.goto(server.base + '/portal/index.html#pets');
 const afterSignIn = await cust.locator('#pets form[data-id=""] [name=name]').inputValue();
 log('after sign-out and back in: stored drafts', leftover, '· new pet form', JSON.stringify(afterSignIn));
 if (leftover || afterSignIn) throw new Error('Drafts survived sign-out');
+
+// Sign out everywhere from the Account section ends this session too.
+await cust.locator('#account-link').click();
+await cust.locator('[data-action="signout-all"] button').click();
+await feedback(cust).filter({ hasText:'Signed out on every device' }).waitFor();
+log('sign out everywhere: back at sign-in', await cust.locator('[data-action=login]').first().isVisible());
 
 await browser.close();
 await server.stop();

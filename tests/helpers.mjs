@@ -58,21 +58,27 @@ export async function startServer(env = {}, { dbPath } = {}) {
     setTimeout(() => fail(new Error('Server did not start: ' + output)), 60_000).unref();
   });
   const base = 'http://127.0.0.1:' + port;
-  const jars = {};
+  const jars = {}; // who -> Map(cookie name -> value)
+  const cookieHeader = who => jars[who]?.size ? [...jars[who]].map(([name, value]) => name + '=' + value).join('; ') : '';
   async function call(who, method, path, body, headers = {}) {
     const response = await fetch(base + path, {
       method, redirect:'manual',
-      headers: { ...(body === undefined ? {} : { 'Content-Type':'application/json' }), ...(jars[who] ? { cookie:jars[who] } : {}), ...headers },
+      headers: { ...(body === undefined ? {} : { 'Content-Type':'application/json' }), ...(cookieHeader(who) ? { cookie:cookieHeader(who) } : {}), ...headers },
       body: body === undefined ? undefined : JSON.stringify(body),
     });
-    const cookie = response.headers.get('set-cookie');
-    if (cookie) jars[who] = cookie.split(';')[0];
+    // Like a browser: keep each cookie by name, and drop one the server expires (Max-Age=0).
+    for (const cookie of response.headers.getSetCookie()) {
+      const [pair] = cookie.split(';');
+      const [name, value] = [pair.slice(0, pair.indexOf('=')), pair.slice(pair.indexOf('=') + 1)];
+      jars[who] ??= new Map();
+      if (/;\s*Max-Age=0\b/i.test(cookie) || !value) jars[who].delete(name); else jars[who].set(name, value);
+    }
     const bytes = Buffer.from(await response.arrayBuffer());
     let json; try { json = JSON.parse(bytes); } catch { /* not JSON */ }
     return { status:response.status, json, bytes, headers:response.headers };
   }
   return {
-    base, call, output: () => output, dbPath: target === 'node' ? dbPath || join(dir, 'test.sqlite') : undefined,
+    base, call, cookies: who => new Map(jars[who] || []), forgetCookie: (who, name) => jars[who]?.delete(name), output: () => output, dbPath: target === 'node' ? dbPath || join(dir, 'test.sqlite') : undefined,
     async stop() {
       const exited = new Promise(done => child.once('exit', done));
       if (target === 'worker') { try { process.kill(-child.pid, 'SIGTERM'); } catch { /* already gone */ } } else child.kill();
