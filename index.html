@@ -186,48 +186,45 @@
           <p class="closing-subheading" data-es="¡Tu mascota tiene una nueva (segunda) persona favorita!">Your pet has a new (second) favorite person!</p>
         </div>
         <div class="reviews">
-          <svg class="review-decoration-defs" aria-hidden="true">
-            <symbol id="review-decoration" viewBox="0 0 64 72">
-              <path class="review-sparkle" d="M40 4c2 10 5 14 15 16-10 2-13 6-15 16-2-10-6-14-16-16 10-2 14-6 16-16ZM16 35c1 5 3 7 8 8-5 1-7 3-8 8-1-5-3-7-8-8 5-1 7-3 8-8Z"/>
-              <path class="review-action-lines" d="m36 49 12 8m-19 0 13 8m8-17 6 6"/>
-            </symbol>
-          </svg>
           <p class="review-preview" data-es="Citas y calificaciones de ejemplo">Sample quotes and ratings</p>
           <div class="review-controls deck-controls" hidden>
             <button type="button" data-deck-step="-1" aria-controls="review-cards" aria-label="Previous testimonial" data-es-label="Testimonio anterior">←</button>
             <button type="button" data-deck-step="1" aria-controls="review-cards" aria-label="Next testimonial" data-es-label="Siguiente testimonio">→</button>
           </div>
-          <div class="review-rail" id="review-cards" role="region" aria-label="Testimonial cards" data-es-label="Tarjetas de testimonios" tabindex="0">
-            <figure class="review-card">
-              <svg class="review-decoration" viewBox="0 0 64 72" aria-hidden="true"><use href="#review-decoration"/></svg>
-              <img src="assets/home/testimonial-beagle.jpg" width="640" height="640" alt="A beagle wearing a burnt-orange bandana" data-es-alt="Un beagle con un pañuelo naranja quemado" loading="lazy" decoding="async">
-              <span class="review-stars" role="img" aria-label="Demo rating: 5 out of 5 stars" data-es-label="Calificación de ejemplo: 5 de 5 estrellas">★★★★★</span>
-              <blockquote><p data-es="«Volvimos a casa y encontramos a nuestro perro feliz y cansado. Las fotos del paseo nos alegraron el día.»">“We came home to a happily tired pup, and the walk photos made our day.”</p></blockquote>
-            </figure>
-            <figure class="review-card">
-              <svg class="review-decoration" viewBox="0 0 64 72" aria-hidden="true"><use href="#review-decoration"/></svg>
-              <img src="assets/home/testimonial-tabby.jpg" width="640" height="640" alt="An orange tabby peeking out from an apricot blanket" data-es-alt="Un gato atigrado naranja asomado entre una manta color albaricoque" loading="lazy" decoding="async">
-              <span class="review-stars" role="img" aria-label="Demo rating: 5 out of 5 stars" data-es-label="Calificación de ejemplo: 5 de 5 estrellas">★★★★★</span>
-              <blockquote><p data-es="«Hasta nuestro gato tímido salió a saludar. Las novedades nos ayudaron a relajarnos mientras estábamos fuera.»">“Even our shy cat came out to say hello. The little updates made it so much easier to relax while we were away.”</p></blockquote>
-            </figure>
-            <figure class="review-card">
-              <svg class="review-decoration" viewBox="0 0 64 72" aria-hidden="true"><use href="#review-decoration"/></svg>
-              <img src="assets/home/testimonial-lab.jpg" width="640" height="640" alt="A black Labrador wearing a rust-orange collar" data-es-alt="Un labrador negro con un collar naranja quemado" loading="lazy" decoding="async">
-              <span class="review-stars" role="img" aria-label="Demo rating: 5 out of 5 stars" data-es-label="Calificación de ejemplo: 5 de 5 estrellas">★★★★★</span>
-              <blockquote><p data-es="«Myomi se acordó de la rutina de dormir y del juguete favorito de nuestro perro. Sentimos que lo dejábamos con una amiga.»">“Myomi remembered the bedtime routine and our dog’s favorite toy. It felt like leaving him with a friend.”</p></blockquote>
-            </figure>
-            <figure class="review-card">
-              <svg class="review-decoration" viewBox="0 0 64 72" aria-hidden="true"><use href="#review-decoration"/></svg>
-              <img src="assets/home/testimonial-terrier.jpg" width="640" height="640" alt="A white terrier in an orange harness" data-es-alt="Un terrier blanco con un arnés naranja" loading="lazy" decoding="async">
-              <span class="review-stars" role="img" aria-label="Demo rating: 5 out of 5 stars" data-es-label="Calificación de ejemplo: 5 de 5 estrellas">★★★★★</span>
-              <blockquote><p data-es="«Myomi hizo que la primera visita fuera muy fácil. En la siguiente, nuestro perro ya la esperaba junto a la puerta.»">“Myomi made the first visit feel easy. Our pup was already waiting by the door for the next one.”</p></blockquote>
-            </figure>
-            <figure class="review-card">
-              <svg class="review-decoration" viewBox="0 0 64 72" aria-hidden="true"><use href="#review-decoration"/></svg>
-              <img src="assets/home/testimonial-gray-cat.jpg" width="640" height="640" alt="A gray cat next to an orange knitted cushion" data-es-alt="Un gato gris junto a un cojín tejido naranja" loading="lazy" decoding="async">
-              <span class="review-stars" role="img" aria-label="Demo rating: 5 out of 5 stars" data-es-label="Calificación de ejemplo: 5 de 5 estrellas">★★★★★</span>
-              <blockquote><p data-es="«Las notas tenían mucho detalle. Supimos que nuestro gato había cenado y hasta en qué rincón había elegido dormir la siesta.»">“The notes were so thoughtful. We knew dinner was served and exactly where our cat had decided to nap.”</p></blockquote>
-            </figure>
+          <div class="review-gallery">
+            <svg class="gallery-rays gallery-rays--left" viewBox="0 0 56 56" aria-hidden="true">
+              <path d="M30 40 8 30M39 29 24 9M50 24 46 6"/>
+            </svg>
+            <div class="review-rail" id="review-cards" role="region" aria-label="Testimonial cards" data-es-label="Tarjetas de testimonios" tabindex="0">
+              <figure class="review-card">
+                <img src="assets/home/testimonial-beagle.jpg" width="640" height="640" alt="A beagle wearing a burnt-orange bandana" data-es-alt="Un beagle con un pañuelo naranja quemado" loading="lazy" decoding="async">
+                <span class="review-stars" role="img" aria-label="Demo rating: 5 out of 5 stars" data-es-label="Calificación de ejemplo: 5 de 5 estrellas">★★★★★</span>
+                <blockquote><p data-es="«Volvimos a casa y encontramos a nuestro perro feliz y cansado. Las fotos del paseo nos alegraron el día.»">“We came home to a happily tired pup, and the walk photos made our day.”</p></blockquote>
+              </figure>
+              <figure class="review-card">
+                <img src="assets/home/testimonial-tabby.jpg" width="640" height="640" alt="An orange tabby peeking out from an apricot blanket" data-es-alt="Un gato atigrado naranja asomado entre una manta color albaricoque" loading="lazy" decoding="async">
+                <span class="review-stars" role="img" aria-label="Demo rating: 5 out of 5 stars" data-es-label="Calificación de ejemplo: 5 de 5 estrellas">★★★★★</span>
+                <blockquote><p data-es="«Hasta nuestro gato tímido salió a saludar. Las novedades nos ayudaron a relajarnos mientras estábamos fuera.»">“Even our shy cat came out to say hello. The little updates made it so much easier to relax while we were away.”</p></blockquote>
+              </figure>
+              <figure class="review-card">
+                <img src="assets/home/testimonial-lab.jpg" width="640" height="640" alt="A black Labrador wearing a rust-orange collar" data-es-alt="Un labrador negro con un collar naranja quemado" loading="lazy" decoding="async">
+                <span class="review-stars" role="img" aria-label="Demo rating: 5 out of 5 stars" data-es-label="Calificación de ejemplo: 5 de 5 estrellas">★★★★★</span>
+                <blockquote><p data-es="«Myomi se acordó de la rutina de dormir y del juguete favorito de nuestro perro. Sentimos que lo dejábamos con una amiga.»">“Myomi remembered the bedtime routine and our dog’s favorite toy. It felt like leaving him with a friend.”</p></blockquote>
+              </figure>
+              <figure class="review-card">
+                <img src="assets/home/testimonial-terrier.jpg" width="640" height="640" alt="A white terrier in an orange harness" data-es-alt="Un terrier blanco con un arnés naranja" loading="lazy" decoding="async">
+                <span class="review-stars" role="img" aria-label="Demo rating: 5 out of 5 stars" data-es-label="Calificación de ejemplo: 5 de 5 estrellas">★★★★★</span>
+                <blockquote><p data-es="«Myomi hizo que la primera visita fuera muy fácil. En la siguiente, nuestro perro ya la esperaba junto a la puerta.»">“Myomi made the first visit feel easy. Our pup was already waiting by the door for the next one.”</p></blockquote>
+              </figure>
+              <figure class="review-card">
+                <img src="assets/home/testimonial-gray-cat.jpg" width="640" height="640" alt="A gray cat next to an orange knitted cushion" data-es-alt="Un gato gris junto a un cojín tejido naranja" loading="lazy" decoding="async">
+                <span class="review-stars" role="img" aria-label="Demo rating: 5 out of 5 stars" data-es-label="Calificación de ejemplo: 5 de 5 estrellas">★★★★★</span>
+                <blockquote><p data-es="«Las notas tenían mucho detalle. Supimos que nuestro gato había cenado y hasta en qué rincón había elegido dormir la siesta.»">“The notes were so thoughtful. We knew dinner was served and exactly where our cat had decided to nap.”</p></blockquote>
+              </figure>
+            </div>
+            <svg class="gallery-rays gallery-rays--right" viewBox="0 0 56 56" aria-hidden="true">
+              <path d="M30 40 8 30M39 29 24 9M50 24 46 6"/>
+            </svg>
           </div>
           <span class="screen-reader-only" data-review-status role="status"></span>
           <button type="button" class="google-reviews" disabled>

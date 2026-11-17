@@ -340,12 +340,16 @@ html:has(.site-header--sticky) { scroll-padding-top: 5.5rem; }
 .closing-heading { margin: 0 auto .9rem; }
 .closing h2 { margin-inline: auto; max-width: 22ch; font-size: clamp(1.85rem, 4.8vw, 4.5rem); }
 .closing-subheading { margin-top: .55rem; color: #ffb284; font-size: clamp(1rem, 2vw, 1.4rem); font-weight: 700; }
-.review-decoration-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
-.review-decoration { position: absolute; z-index: 1; inset-block-start: .2rem; inset-inline-start: -1.45rem; width: 3.25rem; color: #ed9b61; pointer-events: none; transform: rotate(-9deg); }
-.review-card:nth-child(even) .review-decoration { inset-inline: auto -1.45rem; transform: scaleX(-1) rotate(-9deg); }
-.review-sparkle { fill: currentColor; }
-.review-action-lines { fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; }
 .reviews { max-width: 53rem; margin: 0 auto; }
+.review-gallery {
+  display: grid;
+  grid-template-columns: clamp(1.35rem, 7vw, 3.65rem) minmax(0, 1fr) clamp(1.35rem, 7vw, 3.65rem);
+  max-width: 33rem;
+  margin-inline: auto;
+}
+.gallery-rays { width: 100%; fill: none; stroke: currentColor; stroke-width: 6; stroke-linecap: round; pointer-events: none; }
+.gallery-rays--left { margin-top: 4rem; color: #f16b41; }
+.gallery-rays--right { align-self: end; margin-bottom: 4.5rem; color: #fae0cf; transform: scaleX(-1) rotate(-22deg); }
 .review-preview { margin: 0 0 .45rem; color: #f2c7ad; font-size: .9rem; }
 .review-controls { display: flex; justify-content: center; gap: .65rem; margin-top: .65rem; }
 .review-controls button { border-color: #ffb284; color: #842b16; }
@@ -493,6 +497,7 @@ a.social-icon:hover { background: #9f3018; color: white; }
 }
 
 @media (max-width: 580px) {
+  .review-rail.is-deck { padding-inline: 1rem; }
   .wordmark { font-size: 3.25rem; }
   .button-small { padding-inline: .8em; min-height: 48px; }
   .header-actions { gap: .45rem; }
