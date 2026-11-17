@@ -1,10 +1,10 @@
+import { activityIcons, escapeHtml as text, formatVisitDate as date, renderDiaryVisits } from './diary.js';
+
 const app = document.querySelector('#app');
 const feedback = document.querySelector('#feedback');
 const logout = document.querySelector('#logout');
-const text = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const find = (rows,id) => rows.find(row => row.id === id);
 const money = cents => new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(cents / 100);
-const date = value => new Intl.DateTimeFormat('en-US',{dateStyle:'medium',timeStyle:'short',timeZone:'America/New_York'}).format(value);
 const day = value => new Intl.DateTimeFormat('en-CA',{dateStyle:'short',timeZone:'America/New_York'}).format(value);
 const option = (value,label,selected = false) => '<option value="'+text(value)+'"'+(selected ? ' selected' : '')+'>'+text(label)+'</option>';
 const button = (label, style = '') => '<button class="'+style+'" type="submit">'+label+'</button>';
@@ -117,10 +117,6 @@ function statusForm(booking,status,label) {
   const summary = status === 'Completed' ? '<label>Visit summary<textarea required maxlength="3000" name="summary"></textarea></label>' : '';
   return form('status','<input type="hidden" name="status" value="'+text(status)+'">'+summary+button(label,'secondary'),booking.id);
 }
-const activityIcons = {
-  Feeding:'🍽️', Water:'💧', 'Walk started':'🐾', 'Walk completed':'🦮', Potty:'💩',
-  Medication:'💊', Playtime:'🎾', Rest:'💤', Observation:'👀', Custom:'✏️',
-};
 function choice(name, value, label, icon = '') {
   return '<label><input type="radio" name="'+name+'" value="'+text(value)+'" required>'+
     '<span>'+(icon ? '<span aria-hidden="true" class="choice-icon">'+icon+'</span>' : '')+text(label)+'</span></label>';
@@ -185,23 +181,15 @@ function diary() {
   const options = (rows, current, labelFor) => rows.map(row => '<option value="'+row.id+'"'+(String(row.id) === current ? ' selected' : '')+'>'+text(labelFor(row))+'</option>').join('');
   if (!visits.some(visit => String(visit.id) === filterVisit)) filterVisit = '';
   const visible = visits.filter(visit => !filterVisit || String(visit.id) === filterVisit);
-  const entry = event => '<li><h4>'+
-    (activityIcons[event.kind] ? '<span class="choice-icon" aria-hidden="true">'+activityIcons[event.kind]+'</span> ' : '')+
-    text(find(data.pets,event.pet)?.name)+' · '+text(event.kind)+'</h4>'+
-    '<time datetime="'+new Date(event.published).toISOString()+'">'+date(event.published)+'</time>'+
-    '<p class="preserve">'+text(event.notes)+'</p>'+
-    (event.has_photo ? '<a class="diary-photo" href="/api/photos/'+event.id+'"><img src="/api/photos/'+event.id+'" alt="Open full photo from the care visit" loading="lazy"></a>' : '')+'</li>';
   return '<div class="diary-toolbar"><div class="diary-filters">'+
     select('Filter by pet','filter-pet',option('','All pets')+options(data.pets,filterPet,p=>p.name),'id="filter-pet"')+
     select('Filter by visit','filter-visit',option('','All visits')+options(visits,filterVisit,b=>b.service_name+' · '+date(b.starts)),'id="filter-visit"')+
     '</div><button type="button" class="secondary" id="refresh-diary">Refresh updates</button></div>'+
-    (visible.length ? visible.map(visit => {
-      const entries = eventsByVisit.get(visit.id) || [];
-      return '<article class="diary-visit"><header><p class="diary-status">'+text(visit.status)+'</p><h3>'+text(visit.service_name)+'</h3>'+
-        '<p>'+date(visit.starts)+' · '+text(visit.pet_ids.map(id=>find(data.pets,id)?.name).filter(Boolean).join(', '))+'</p></header>'+
-        (visit.summary ? '<p class="diary-summary preserve"><strong>Visit summary</strong><br>'+text(visit.summary)+'</p>' : '')+
-        (entries.length ? '<ol class="diary-timeline">'+entries.map(entry).join('')+'</ol>' : '<p class="diary-summary">No updates for this visit yet.</p>')+'</article>';
-    }).join('') : '<p>No diary visits for this selection yet.</p>');
+    renderDiaryVisits(visible, eventsByVisit, id => find(data.pets,id)?.name, event => {
+      if (!event.has_photo) return null;
+      const url = '/api/photos/'+event.id;
+      return { src:url, href:url, alt:'Open full photo from the care visit' };
+    });
 }
 function adminSettings() {
   return '<div class="grid">'+form('services','<h3>Set a service price</h3>'+
