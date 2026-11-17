@@ -136,7 +136,16 @@
         <a class="button button-secondary" href="portal/index.html#book"><span data-es="Conozcámonos">Let’s get acquainted</span><span aria-hidden="true">→</span></a>
       </div>
       <div class="portrait-wrap" aria-hidden="true">
-        <div class="portrait-hearts"><span>♥</span><span>♥</span><span>♥</span><span>♥</span></div>
+        <div class="portrait-hearts">
+          <span class="heart-n">♥</span>
+          <span class="heart-ne">♥</span>
+          <span class="heart-e">♥</span>
+          <span class="heart-se">♥</span>
+          <span class="heart-s">♥</span>
+          <span class="heart-sw">♥</span>
+          <span class="heart-w">♥</span>
+          <span class="heart-nw">♥</span>
+        </div>
         <div class="portrait-placeholder">♡</div>
       </div>
     </section>
@@ -171,10 +180,31 @@
       </ol>
     </section>
 
-    <section class="closing" id="booking">
+    <section class="closing" id="booking" aria-labelledby="closing-title">
       <div class="section-wrap">
-        <h2 data-es="La nueva persona favorita de tu mascota te espera.">Your pet’s new favorite person awaits.</h2>
+        <div class="closing-heading">
+          <svg class="closing-flourish" viewBox="0 0 90 100" fill="none" aria-hidden="true">
+            <path class="closing-star" d="M54 3c1 15 5 20 19 23-14 3-18 8-19 23-3-15-7-20-21-23 14-3 18-8 21-23ZM20 47c1 8 4 11 12 13-8 2-11 5-12 13-2-8-5-11-13-13 8-2 11-5 13-13Z"/>
+            <path class="closing-action-lines" d="m50 69 18 9m-26 8 22 4m13-22 7 10"/>
+          </svg>
+          <h2 id="closing-title" data-es="La nueva persona favorita de tu mascota te espera.">Your pet’s new favorite person awaits.</h2>
+          <svg class="closing-flourish" viewBox="0 0 90 100" fill="none" aria-hidden="true">
+            <path class="closing-star" d="M40 29c2 15 6 20 20 23-14 3-18 8-20 23-2-15-6-20-20-23 14-3 18-8 20-23ZM71 64c1 8 4 11 12 13-8 2-11 5-12 13-2-8-5-11-13-13 8-2 11-5 13-13Z"/>
+            <path class="closing-action-lines" d="m26 26 12-16m8 14 9-12m4 20 17-9"/>
+          </svg>
+        </div>
         <a class="button" href="portal/index.html#book"><span data-es="Reserva una visita">Book a Visit</span><span aria-hidden="true">→</span></a>
+        <section class="reviews" aria-labelledby="reviews-title">
+          <h3 id="reviews-title" data-es="Lo que dicen las familias">Kind words from pet parents</h3>
+          <div class="review-rail" role="region" aria-label="Testimonials" data-es-label="Testimonios" tabindex="0">
+            <!-- Add one figure per approved testimonial.
+            <figure class="review-card">
+              <blockquote><p>Testimonial text.</p></blockquote>
+              <figcaption>Pet parent attribution</figcaption>
+            </figure>
+            -->
+          </div>
+        </section>
       </div>
     </section>
   </main>

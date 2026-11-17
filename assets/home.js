@@ -72,9 +72,7 @@ if (siteMenu) {
 const portrait = document.querySelector('.portrait-wrap');
 if (portrait && 'IntersectionObserver' in window) {
   const observer = new IntersectionObserver(([entry]) => {
-    if (!entry.isIntersecting) return;
-    portrait.classList.add('is-celebrating');
-    observer.disconnect();
+    portrait.classList.toggle('is-celebrating', entry.intersectionRatio >= .4);
   }, { threshold: .4 });
   observer.observe(portrait);
 }
