@@ -62,7 +62,7 @@ Security, reliability, scheduling and test coverage from the audit. No redesign 
 
 ## 6. Remaining audit findings
 
-OPEN: S5, D2, D3, O1, O2, P1-3, P1-4, P1-5, P1-6, P1-8, P2 items. IN PROGRESS: D5. BLOCKED: P0-6 (hosting decision), P1-7 (Stripe, needs payment decisions), backup scheduling. New: N1 (account lockout can be abused), N2 (old photos unscrubbed), N3 (no browser verification). See MYO_AUDIT.md §8.
+OPEN: S5, D2, D3, O1, O2, P1-3, P1-4, P1-5, P1-6, P1-8, P2 items. IN PROGRESS: D5. BLOCKED: P0-6 (hosting decision), P1-7 (Stripe, needs payment decisions), backup scheduling. New: N1 (account lockout can be abused), N2 (old photos unscrubbed), N3 (Chromium covered by `npm run test:browser`; Safari and devices untested). See MYO_AUDIT.md §8.
 
 ## 7. Known bugs and blockers
 
@@ -80,7 +80,7 @@ OPEN: S5, D2, D3, O1, O2, P1-3, P1-4, P1-5, P1-6, P1-8, P2 items. IN PROGRESS: D
 
 ## 9. Recommended next five Codex tasks
 
-1. **Browser and phone verification (N3, S4, D1).** Load the portal on Chrome and Safari and watch the console for CSP violations. Walk through register, add pet, book on the grid, staff approve/start/update/complete, reschedule and cancel. Test camera and library upload on iPhone and Android. Fix defects and add a small browser smoke test if practical.
+1. **Safari and phone verification (N3 remainder).** Chromium passes `npm run test:browser` (the full customer and staff flow, with no CSP violations). Still to check by hand: Safari on macOS and iOS, Android Chrome, camera capture and iPhone HEIC photos.
 2. **Hosting and operations (P0-6, O1, backups, N2).** Pick the host (a Node host with a persistent disk is the shortest path), set the production variables, schedule `npm run backup` with an off-machine copy and rehearse a restore, run the photo scrub after a backup, and fix `sitemap.xml` and `robots.txt`.
 3. **Bounded responses (D5, P1-3).** Paginate bookings and diary events, filter by pet and visit on the server, and cache photos privately. Keep `tests/api.test.mjs` isolation tests green.
 4. **Lifecycle rules and idempotency (D2, P1-4, D3, O2).** Once the owner decides the policy: no-show, early-start limit, cancellation cutoff, rescheduling a Confirmed booking, idempotency keys, and preserving unsaved form input.

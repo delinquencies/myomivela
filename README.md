@@ -89,6 +89,7 @@ Restore by stopping the server and copying a backup over `MYO_DB`. Scheduling ba
 
 ```sh
 npm test       # 22 tests; starts the server on free ports with temporary databases
+npm run test:browser   # end-to-end portal run in Chromium (needs Playwright); fails on any CSP or console error
 npm run build  # only rebuilds the archived design-preview stylesheet (needs `npm ci`); the live site has no build
 ```
 

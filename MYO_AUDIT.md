@@ -253,7 +253,11 @@ The per-slot-per-service query loop is gone; availability is computed in one in-
 ### New findings from the remediation
 - **N1 — Account lockout can be abused to lock a victim out for 15 minutes.** Medium-low. OPEN. Consider lockout keyed on address + account together, or a CAPTCHA, once email verification exists.
 - **N2 — Existing stored photos still carry metadata until the scrub script is run.** Medium. OPEN (operational step after backup).
-- **N3 — No browser or device test of the portal after the grid and CSP changes.** High for release. OPEN.
+- **N3 — No browser or device test of the portal after the grid and CSP changes.** High for release. PARTLY RESOLVED.
+  - **Files:** `tests/browser/portal-smoke.mjs` (new), `package.json` (`test:browser`)
+  - **Fix:** an end-to-end Playwright run in Chromium at a 390×844 viewport in America/New_York. It loads the home page, FAQ and sample diary, then drives the portal through the UI: staff sets a price and publishes a 3-hour window; a customer registers, adds a pet and books two times in that window; staff approves both and reschedules one; the customer cancels one through the confirmation dialog; staff starts the other, publishes a diary update with a photo and completes it with a summary; the customer sees the photo in the Pet Diary and refreshes it. The run fails on any console error, CSP violation, failed request or HTTP error.
+  - **Verification:** passes with no console errors or CSP violations. The window offered 6 starts, both bookings shared it, and approval and reschedule worked on the grid.
+  - **Remaining limitations:** Chromium only. Safari/WebKit, Firefox, and real iPhone/Android camera capture and HEIC photos are still untested. Not run in CI, because CI has no browser installed.
 
 ---
 
@@ -264,9 +268,9 @@ The per-slot-per-service query loop is gone; availability is computed in one in-
 | S1 | Shared rate-limit bucket, blocking hashing | High | RESOLVED |
 | S2 | HTTPS config not enforced | High | RESOLVED (startup enforcement) |
 | S3 | EXIF/GPS retained | Medium | RESOLVED (new uploads); N2 open for old data |
-| S4 | Minimal headers, malformed URL 500 | Medium | IMPLEMENTED — UNVERIFIED (CSP in browser) |
+| S4 | Minimal headers, malformed URL 500 | Medium | RESOLVED (Chromium); Safari UNVERIFIED |
 | S5 | Account lifecycle (verification, recovery, rotation) | Medium | OPEN |
-| D1 | One booking per window | High | IMPLEMENTED — UNVERIFIED (portal UI) |
+| D1 | One booking per window | High | RESOLVED (Chromium, phone viewport); Safari/devices UNVERIFIED |
 | D2 | Visit lifecycle loose ends | Medium | OPEN (policy needed) |
 | D3 | No write idempotency | Low–Med | OPEN |
 | D4 | Ad hoc schema management | Medium | RESOLVED |
@@ -291,7 +295,7 @@ The per-slot-per-service query loop is gone; availability is computed in one in-
 
 ## 9. Remaining Work for Codex (dependency order)
 
-1. **Browser and device verification (N3).** Load the portal with the new CSP in Chrome and Safari; check the console for blocked resources; book on the new grid as customer and staff (book, reschedule, cancel, approve); test camera and library upload on iPhone and Android. Fix whatever breaks. Add a small browser smoke test if practical.
+1. **Device verification (N3, remainder).** Chromium is covered by `npm run test:browser`. Still to do: Safari (macOS and iOS) and Android Chrome by hand, including camera capture and HEIC photos from an iPhone.
 2. **Hosting decision and deployment setup (P0-6, O1, P0-5 scheduling).** Decide Node host vs. Workers/D1. If Node: set `NODE_ENV=production`, `MYO_ORIGIN`, `MYO_SECURE_COOKIES=1`, `MYO_TRUST_PROXY`; schedule `npm run backup` with an off-machine copy and rehearse a restore; fix `sitemap.xml`/`robots.txt`. Run `scripts/scrub-photos.mjs` on any existing database after a backup (N2).
 3. **Bounded API responses (D5, P1-3).** Paginate bookings and diary events, add server-side pet/visit filters, and let photos cache privately. Keep the isolation tests passing.
 4. **Lifecycle policy and guards (D2, P1-4, D3).** After you decide the rules: no-show state, how early a visit can start, cancellation cutoff, what rescheduling a Confirmed booking does; idempotency keys for bookings and diary events.
