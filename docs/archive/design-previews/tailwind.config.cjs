@@ -1,5 +1,5 @@
 module.exports = {
-  content: ["./myo/**/*.html"],
+  content: ["./docs/archive/design-previews/myo/**/*.html"],
   plugins: [require("@tailwindcss/forms"), require("@tailwindcss/container-queries")],
   darkMode: "class",
   theme: {

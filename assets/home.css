@@ -401,16 +401,6 @@ a.social-icon:hover { background: #9f3018; color: white; }
 
 .preview-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding-block: 1.5rem; }
 .preview-header .wordmark { font-size: clamp(3.5rem, 7vw, 6rem); }
-.preview-directory { padding-block: clamp(2.5rem, 7vw, 6rem); }
-.preview-directory h1 { font-size: clamp(3.5rem, 10vw, 9rem); letter-spacing: -.075em; line-height: .94; }
-.preview-directory > p { max-width: 54ch; margin-top: 1.25rem; font-size: clamp(1.1rem, 2vw, 1.5rem); }
-.preview-directory section { margin-top: 3rem; }
-.preview-directory h2 { font-size: clamp(2rem, 4.8vw, 4.5rem); max-width: none; }
-.preview-directory ul { list-style: none; padding: 0; margin-top: 1rem; }
-.preview-directory li { border-top: 1px solid #a8614460; }
-.preview-directory li:last-child { border-bottom: 1px solid #a8614460; }
-.preview-directory li a { display: flex; justify-content: space-between; gap: 1rem; padding: .8rem .35rem; }
-.preview-directory li a:hover { background: var(--peach); }
 
 @media (max-width: 1120px) {
   .service-pills { margin-top: 1.5em; }

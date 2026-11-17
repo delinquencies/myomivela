@@ -300,6 +300,12 @@ async function api(request, response, path) {
 }
 
 const types = { '.html':'text/html; charset=utf-8','.css':'text/css','.js':'text/javascript','.png':'image/png','.jpg':'image/jpeg','.woff2':'font/woff2','.xml':'application/xml','.txt':'text/plain' };
+const publicMyoPages = new Set([
+  '/myo/safety_first_faq/',
+  '/myo/safety_first_faq/index.html',
+  '/myo/client_journal_cute_lively/',
+  '/myo/client_journal_cute_lively/index.html',
+]);
 const server = createServer(async (request,response) => {
   response.setHeader('X-Content-Type-Options','nosniff');
   response.setHeader('Referrer-Policy','same-origin');
@@ -316,7 +322,8 @@ const server = createServer(async (request,response) => {
       return;
     }
     requireThat(['GET','HEAD'].includes(request.method), 'Method not allowed.',405);
-    requireThat(path === '/' || /^\/(?:index\.html|robots\.txt|sitemap\.xml|(?:assets|myo|portal)\/[\w./ -]*)$/.test(path), 'Page not found.',404);
+    requireThat(path === '/' || publicMyoPages.has(path) ||
+      /^\/(?:index\.html|robots\.txt|sitemap\.xml|(?:assets|portal)\/[\w./ -]*)$/.test(path), 'Page not found.',404);
     const file = resolve(root,'.'+path+(path.endsWith('/') ? 'index.html' : ''));
     requireThat(['assets','myo','portal'].some(dir => file.startsWith(resolve(root,dir)+sep)) ||
       ['index.html','robots.txt','sitemap.xml'].some(name => file === resolve(root,name)), 'Page not found.',404);

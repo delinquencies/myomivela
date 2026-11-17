@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "start": "node server.mjs",
-    "build": "tailwindcss -c tailwind.config.cjs -i assets/legacy-tailwind.input.css -o assets/legacy-tailwind.css --minify"
+    "build": "tailwindcss -c docs/archive/design-previews/tailwind.config.cjs -i docs/archive/design-previews/assets/legacy-tailwind.input.css -o docs/archive/design-previews/assets/legacy-tailwind.css --minify"
   },
   "devDependencies": {
     "@tailwindcss/container-queries": "0.1.1",
