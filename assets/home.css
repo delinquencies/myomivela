@@ -347,9 +347,14 @@ html:has(.site-header--sticky) { scroll-padding-top: 5.5rem; }
   max-width: 33rem;
   margin-inline: auto;
 }
-.gallery-rays { width: 100%; fill: none; stroke: currentColor; stroke-width: 6; stroke-linecap: round; pointer-events: none; }
-.gallery-rays--left { margin-top: 4rem; color: #f16b41; }
-.gallery-rays--right { align-self: end; margin-bottom: 4.5rem; color: #fae0cf; transform: scaleX(-1) rotate(-22deg); }
+.gallery-rays {
+  align-self: center;
+  width: min(100%, 2.5rem);
+  height: auto;
+  pointer-events: none;
+}
+.gallery-rays--left { justify-self: end; }
+.gallery-rays--right { justify-self: start; }
 .review-preview { margin: 0 0 .45rem; color: #f2c7ad; font-size: .9rem; }
 .review-controls { display: flex; justify-content: center; gap: .65rem; margin-top: .65rem; }
 .review-controls button { border-color: #ffb284; color: #842b16; }
