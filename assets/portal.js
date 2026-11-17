@@ -242,7 +242,9 @@ function adminSettings() {
     form('slots','<h3>Publish an appointment window</h3><p>Enter the window in your device’s local time. The portal displays Massachusetts time.</p>'+
     input('Starts','starts','type="datetime-local" required')+input('Ends','ends','type="datetime-local" required')+button('Publish window','','📅'))+'</div>'+
     '<p class="appointment-details">'+data.services.map(s=>text(s.name)+' · '+s.minutes+' min · '+money(s.cents)).join('<br>')+'</p>'+
-    data.windows.map(s=>form('slots','<p class="appointment-details">'+date(s.starts)+' – '+date(s.ends)+'</p>'+button('Remove window','secondary','✕'),s.id)).join('');
+    data.windows.map(s=>form('slots','<p class="appointment-details">'+date(s.starts)+' – '+date(s.ends)+'</p>'+button('Remove window','secondary','✕'),s.id)).join('')+
+    '<h3>Backup</h3><p>Download everything (accounts, pets, bookings, diary updates and photos) as one file. '+
+    'It includes password hashes, so store it somewhere private.</p>'+'<a class="tap-link" href="/api/backup" download>'+emoji('💾')+'Download backup</a>';
 }
 const section = (id,title,contents) => '<section id="'+id+'"><h2>'+title+'</h2>'+contents+'</section>';
 function render() {

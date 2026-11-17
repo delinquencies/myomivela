@@ -257,6 +257,12 @@ Unchanged. Needs policy decisions (no-show, early-start window, cancellation cut
 - **Verification:** the existing 28 tests and the browser smoke test pass unchanged. 4 new tests walk the route table: every non-public route returns 401 when signed out, every staff route returns 403 to a customer, and unknown routes return 404.
 - **Remaining limitations:** the portal client still hard-codes service names and icons (`assets/portal.js`). It is still one process with in-memory rate limits.
 
+### P0-5 — Backups (Cloudflare) · RESOLVED for manual backups; scheduling OPEN
+- **Files:** `lib/backup.mjs` (new), `lib/routes/admin.mjs` (`/api/backup`, `/api/restore/photo`, `/api/restore`), `lib/api.mjs` and `lib/validate.mjs` (per-route `maxBody`), `scripts/restore.mjs` (new), `assets/portal.js` ("Download backup"), `tests/backup.test.mjs` (new), `tests/browser/portal-smoke.mjs`
+- **Fix:** staff download the whole installation (every table except sessions, plus every photo) as one streamed, gzip-compressed JSON file. The tables are read in one synchronous pass, so the snapshot is consistent. `scripts/restore.mjs` uploads the photos (re-validated and re-stripped), then replaces all tables in one transaction. Both restore endpoints refuse once any customer, pet, booking or diary update exists, and a backup from a different schema version is refused.
+- **Verification:** 4 new tests run on both runtimes. They build a real visit with a photo, download the backup, and check that it holds every table, password hashes and no sessions, and that its photo matches the served bytes. Customers get 403 and anonymous callers 401. A restore into a populated installation is refused. A restore into a fresh installation brings back the customer's sign-in, pet, booking notes, both diary updates and byte-identical photo, signs everyone out, and refuses a second run. A mismatched schema version and a path-like photo key are rejected. The browser smoke test downloads a backup through the portal button on both runtimes.
+- **Remaining limitations:** downloads are manual; nothing schedules them or stores them off-account. The archive holds password hashes and personal data, so how it is stored is up to the operator. Restore needs a new installation (no merging). Not rehearsed on a real Cloudflare deployment.
+
 ### P0-6 — Hosting decision · RESOLVED: Cloudflare (Worker + Durable Object + R2) · not yet deployed
 - **Decision (owner, 2026-11-17):** everything else is hosted on Cloudflare, so the app moved there rather than to a Node host.
 - **Files:** `worker.mjs`, `wrangler.jsonc`, `lib/stores/durable.mjs`, `lib/stores/node.mjs`, `lib/db.mjs`, `lib/config.mjs`, `lib/headers.mjs`, `lib/site.mjs`, `lib/api.mjs`, `lib/auth.mjs`, `lib/validate.mjs`, `lib/routes/account.mjs`, `lib/routes/diary.mjs`, `server.mjs`, `scripts/build-site.mjs`, `tests/helpers.mjs` and the suites, `.github/workflows/test.yml`
@@ -294,8 +300,8 @@ Background checked against Cloudflare documentation on 2026-11-17: the original 
 | O1 | Static hosting mismatch | Medium | IN PROGRESS: site and API served together by the Worker; sitemap/robots await the domain |
 | O2 | Re-render loses input | Low–Med | OPEN |
 | O3 | No tests/CI/engines | Medium | RESOLVED; CI (Node and Worker jobs) IMPLEMENTED — UNVERIFIED |
-| P0-1 | Automated tests | P0 | RESOLVED (32 Node, 24 Worker, browser smoke on both) |
-| P0-5 | Backup tooling | P0 | PARTIAL: Durable Object PITR (30 days); R2 photo backup OPEN |
+| P0-1 | Automated tests | P0 | RESOLVED (36 Node, 28 Worker, browser smoke on both) |
+| P0-5 | Backup tooling | P0 | RESOLVED (manual download + tested restore, both runtimes); scheduling OPEN |
 | P0-6 | Hosting decision | P0 | RESOLVED: Cloudflare Worker + Durable Object + R2 (not yet deployed) |
 | P1-3 | Pagination / server-side filters | P1 | RESOLVED |
 | P1-4 | Lifecycle guards | P1 | OPEN |

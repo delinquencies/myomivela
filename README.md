@@ -24,6 +24,7 @@ lib/auth.mjs          Password hashing, sessions and cookies, admin bootstrap, r
 lib/domain.mjs        Service names, activity types, status transitions, booking step
 lib/scheduling.mjs    Windows, bookable start times, overlap checks
 lib/bookings.mjs      Access-checked booking queries and page cursors
+lib/backup.mjs        Whole-installation backup (streamed, gzip JSON) and restore into an empty installation
 lib/photos.mjs        Upload validation; lib/image.mjs strips EXIF/XMP/text metadata
 lib/api.mjs           Route table and access rules (public / user / staff), origin check
 lib/routes/           Handlers: account, portal, diary, bookings, admin
@@ -37,7 +38,8 @@ assets/*.css          Checked-in styles (no build step)
 index.html, myo/      Public homepage, FAQ, sample diary
 portal/index.html     Portal shell
 scripts/build-site.mjs  Copies the public files into dist/site for Cloudflare (run automatically by wrangler)
-scripts/backup.mjs    Consistent, verified copy of the local Node database
+scripts/restore.mjs   Restores a downloaded backup into a new installation over the API (any runtime)
+scripts/backup.mjs    Consistent, verified copy of the local Node database file
 tests/                node:test suites (API, pagination, routes, images, operations); tests/browser/ smoke test
 .github/workflows/    CI: `npm test` on Node 22 and 24, and `npm run test:worker` on the Cloudflare runtime
 docs/                 Handoff notes, earlier audits, archived design previews
@@ -106,15 +108,27 @@ npm run deploy
 
 SQLite in both runtimes: the Durable Object's built-in SQLite on Cloudflare, `node:sqlite` locally. The schema is created and upgraded automatically on start by the ordered `migrations` list in `lib/db.mjs`. The applied count is stored in the `meta` table (`schema_version`, currently 4), because Durable Objects do not allow `PRAGMA user_version`. To change the schema, **append** a migration that is safe to re-run. Never edit an earlier one. Photos are not in the database: they are stored in R2 (Cloudflare) or files (Node) under the event's `photo_key`.
 
-Backups:
+### Backups and restore
 
-- **Cloudflare:** Durable Object SQLite keeps 30 days of point-in-time recovery. R2 photos have no automatic backup; an export job is not set up yet.
-- **Node (local):** `npm run backup -- backups/myo-$(date +%F).sqlite` writes a verified copy, safe while the server runs, and never overwrites. Copy the `photos` folder too.
+**Download backup** (staff portal, **Services & availability**, or `GET /api/backup` as staff) saves the whole installation as one `myo-backup-<date>.json.gz` file. It includes accounts, pets, services, windows, bookings, diary updates and every photo, and works the same on Cloudflare and Node. All tables are read in one consistent pass. Sessions are not included. **The file contains password hashes and customers' personal details: store it privately**, for example in an encrypted drive, never in the repository or a shared folder. Downloads are manual for now; nothing schedules them.
+
+To restore, deploy or start a **new, empty** installation, then run:
+
+```sh
+MYO_STAFF_EMAIL='staff@…' MYO_STAFF_PASSWORD='…' node scripts/restore.mjs myo-backup-2026-11-17.json.gz https://your-site
+```
+
+Use the staff account of the new installation (its `MYO_ADMIN_*` settings). Photos are uploaded first, then all tables are replaced in one transaction. The server refuses if the installation already has customers, pets, bookings or diary updates, so a restore can never overwrite live data. The backup must come from the same schema version. Afterwards everyone is signed out and signs in with the accounts from the backup.
+
+Also available:
+
+- **Cloudflare:** Durable Object SQLite keeps 30 days of point-in-time recovery for the database (not the R2 photos), restorable through Cloudflare's Durable Object API.
+- **Node (local):** `npm run backup -- backups/myo-$(date +%F).sqlite` copies the raw database file. Copy the `photos` folder too.
 
 ## Tests and builds
 
 ```sh
-npm test             # 32 tests against Node; starts the server on free ports with temporary databases
+npm test             # 36 tests against Node; starts the server on free ports with temporary databases
 npm run test:worker  # the same suites against the Cloudflare runtime (wrangler dev); Node-only tests are skipped
 npm run test:browser # end-to-end portal run in Chromium (needs Playwright); MYO_TARGET=worker runs it on the Worker
 npm run build  # only rebuilds the archived design-preview stylesheet (needs `npm ci`); the live site has no build

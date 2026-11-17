@@ -14,6 +14,8 @@ import { startServer, adminLogin, password, target } from '../helpers.mjs';
 console.log('Target: ' + target);
 import { deflateSync } from 'node:zlib';
 import { DatabaseSync } from 'node:sqlite';
+import { gunzipSync } from 'node:zlib';
+import { readFile } from 'node:fs/promises';
 
 const server = await startServer();
 const problems = [];
@@ -153,6 +155,14 @@ await img.waitFor();
 log('customer diary photo loaded:', await img.evaluate(i => i.complete && i.naturalWidth > 0));
 await cust.locator('#refresh-diary').click();
 await feedback(cust).filter({ hasText:'up to date' }).waitFor();
+
+// Staff downloads a backup from the settings page.
+await staff.goto(server.base + '/portal/index.html#settings');
+await staff.reload();
+const [download] = await Promise.all([staff.waitForEvent('download'), staff.click('a:has-text("Download backup")')]);
+const archive = JSON.parse(gunzipSync(await readFile(await download.path())));
+log('backup downloaded:', download.suggestedFilename(), '·', archive.tables.events.length, 'diary updates,', Object.keys(archive.photos).length, 'photo(s)');
+if (archive.format !== 'myo-backup' || Object.values(archive.photos).some(photo => !photo)) throw new Error('Backup download is incomplete');
 
 // Paging (Node only, it seeds the database file): older completed visits load through the "Show older" buttons.
 if (server.dbPath) {

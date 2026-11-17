@@ -7,6 +7,7 @@ Updated 2026-11-17 on branch `audit-remediation` (based on `6aad46d`). Finding I
 - **Hosting is decided: Cloudflare.** One Worker serves the site and portal as static assets and forwards `/api/` to a single Durable Object (`MyoApi`) that owns the SQLite database. Photos are in R2. The same app also runs on Node for local development and the fast tests. Deploy steps are in the README ("Deploy to Cloudflare").
 - Security hardening, migrations, the 30-minute booking grid, paged history and diary, and the module split are done and tested on both runtimes.
 - The portal passes an end-to-end browser run in Chromium on both runtimes. Safari and real phones are untested.
+- **Backup and restore** exist: staff download one file with everything (`GET /api/backup`, button in the portal); `scripts/restore.mjs` restores it into a new, empty installation. Downloads are manual.
 
 ## 2. Architecture in one page
 
@@ -31,6 +32,7 @@ lib/stores/    durable.mjs (ctx.storage.sql + transactionSync, R2)   node.mjs (n
 - `GET /api/portal` returns `slots` as bookable start times (`{ id: windowId, starts, ends: windowEnd, service_ids }`) and `windows` (raw published windows). It no longer returns `events`. `bookings` holds upcoming and in-progress bookings plus the newest 20 past ones; `history_next` is the cursor for the rest. For staff, `pets` holds only the pets those bookings reference.
 - `GET /api/history?before=<cursor>` → `{ bookings, pets, next }`, 20 per page, newest first.
 - `GET /api/diary?pet=&visit=&before=<cursor>` → `{ visits, events, pets, next }`, 10 visits per page with all their updates. Cursors are `<starts>.<id>`; `next` is `null` on the last page.
+- `GET /api/backup` (staff) streams `myo-backup-<date>.json.gz`: `{ format, version, schema_version, created, tables, photos }`, no sessions. `POST /api/restore/photo` `{ key, photo }` and `POST /api/restore` (the parsed backup, up to 50 MB) only work while the installation has no customer data; `scripts/restore.mjs` drives them. Routes can raise the 4 MB body limit with `maxBody`.
 - `GET /api/photos/<id>` streams from R2 (or the local photos folder) with `Cache-Control: private, max-age=3600`.
 - Sign-in/register: 429 after 30 requests per minute per address; sign-in 429 after 8 failures per account in 15 minutes. Malformed URLs return 404. Uploaded photos are re-written without metadata; a corrupt image returns 400.
 
@@ -40,9 +42,9 @@ lib/stores/    durable.mjs (ctx.storage.sql + transactionSync, R2)   node.mjs (n
 
 | Command | Runs | Result (Node v22.23.4, wrangler 4.164.0) |
 |---|---|---|
-| `npm test` | all suites on Node | 32 passed |
-| `npm run test:worker` | the same suites under `wrangler dev` (Durable Object SQLite, local R2, static assets) | 24 passed, 8 skipped (Node-only: direct database seeding, backup script, legacy upgrade, Node production checks) |
-| `npm run test:browser` | Chromium, phone viewport, full customer and staff flow; fails on any console or CSP error | clean on Node |
+| `npm test` | all suites on Node | 36 passed |
+| `npm run test:worker` | the same suites under `wrangler dev` (Durable Object SQLite, local R2, static assets) | 28 passed, 8 skipped (Node-only: direct database seeding, backup script, legacy upgrade, Node production checks) |
+| `npm run test:browser` | Chromium, phone viewport, full customer and staff flow plus the backup download; fails on any console or CSP error | clean on Node |
 | `MYO_TARGET=worker npm run test:browser` | the same on the Worker | clean (the database-seeded paging step is skipped) |
 | `npx wrangler deploy --dry-run` | production bundle | 40 KB, no Node-only modules |
 
@@ -56,7 +58,7 @@ OPEN: S5, D2, D3, O1, O2, P1-4, P1-5, P1-6, P2 items, N1. RESOLVED: S1–S3, D1,
 
 - **First deploy needs a human check:** R2 bucket creation, secrets, the `workers.dev` URL, then a custom domain. See README.
 - **Plan:** password hashing (scrypt, about 40 ms CPU per sign-in) exceeds the Workers Free plan's 10 ms CPU limit. Use Workers Paid.
-- **Backups on Cloudflare:** Durable Object point-in-time recovery covers 30 days. R2 photos have no backup or export yet.
+- **Backups:** manual "Download backup" plus 30 days of Durable Object point-in-time recovery for the database. Nothing schedules downloads or copies them off-account yet, and a restore has only been rehearsed in tests, not on a deployed site.
 - **Decisions needed from the owner:** the public domain (then fix `sitemap.xml`/`robots.txt`, O1/P1-8), payment timing and refunds, cancellation and no-show policy, an email provider.
 - Account lockout can be used to lock a known email out for 15 minutes (N1).
 
@@ -64,6 +66,6 @@ OPEN: S5, D2, D3, O1, O2, P1-4, P1-5, P1-6, P2 items, N1. RESOLVED: S1–S3, D1,
 
 1. **First Cloudflare deploy and smoke check.** Follow the README steps, then sign in as staff and as a customer on the `workers.dev` URL and run one visit with a photo. Add the custom domain and fix `sitemap.xml`/`robots.txt`.
 2. **Safari and phone verification (N3 remainder).** Safari on macOS and iOS, Android Chrome, camera capture and iPhone HEIC photos.
-3. **Data export and R2 backup.** A staff-only export (or a scheduled Worker) that copies the database and R2 photos somewhere off-account, and a rehearsed restore.
+3. **Scheduled off-account backups.** Backup download and restore exist. Still to do: a schedule (a Cron Trigger writing the same archive to a second bucket or an off-Cloudflare store, once one is chosen) and a restore rehearsal on the real deployment.
 4. **Lifecycle rules and idempotency (D2, P1-4, D3, O2)** once the owner decides the policy.
 5. **Accounts, email and payments (S5, N1, P1-6, P1-7).** Email provider, verification and recovery; then Stripe Checkout with signed webhooks (a new `public` route that verifies the signature), a payments table and idempotent handling.
