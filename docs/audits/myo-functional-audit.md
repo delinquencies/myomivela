@@ -1,0 +1,23 @@
+# myo. functional requirements audit
+
+The original checkout was a static marketing site with sample screens for booking, checkout, onboarding, diaries, and administration. The homepage, About content, service descriptions, FAQ, and public EN/ES switch already worked. The functional portal now runs on Node and SQLite and uses the existing myo. design.
+
+| Requirements | Current status | Remaining work |
+|---|---|---|
+| 1. Public website | Homepage, About, service descriptions, FAQ, EN/ES, registration and sign-in links work. | Confirm service towns and approved public prices and durations. Add the public catalog and a contact form with real delivery. |
+| 2. Booking | Customers select a service/duration, available day/time and one or more owned pets, add instructions, and see a price quote before requesting. Both roles can track, reschedule and cancel eligible bookings. Staff confirms, starts and completes visits. Server rejects conflicting confirmations. | Define cancellation cutoffs and other rules. Add a reusable “book again” shortcut and richer calendar controls. |
+| 3. Payments | Missing. Static checkout previews remain separate from the portal. | Configure Stripe Checkout and signed webhooks, tips, receipts, refund handling and admin/payment history. |
+| 4–6. Accounts, pets and dashboard | Registration, sign-in/out, pet creation/editing, multiple pets, upcoming and previous appointments, and pet diaries work. Care details use a private text field. | Add account editing, verified email and recovery, structured pet/vet/emergency data, pet portrait uploads, and dedicated active/latest update and photo cards. Payment history depends on Stripe. |
+| 7. Diary | Private reverse-chronological timeline with timestamped visit/pet-linked events, pet and visit filters, and authorized photos. | Add type-specific validated data and a photo gallery. Currently refresh the page to see updates from another session. |
+| 8. Visit tracking | Staff start/finish with timestamps, publish typed activities and optional photos, and write a completed visit summary. | Add dedicated walk timer and optional route/distance recording. Structured activity fields and active-draft recovery are outstanding. |
+| 9. Administration | Staff Today, appointment details, customer contact and pet instructions, booking state changes, service rates and durations, slot publishing/removal, history, and diary publishing. | Add customer/pet search and management, editing of published updates, richer availability/time blocks and reporting. Payment/tip views depend on Stripe. |
+| 10. Notifications | In-app request confirmation and visible booking status work. | Integrate email provider and a persistent delivery queue for lifecycle and payment messages, templates, retries, reminders and delivery history. |
+| 11. Permissions | Server enforces customer ownership and one staff role. Session cookies are HTTP-only and SameSite. Private photos go through the owner/staff authorization check. | Add verified identity and recovery, staff credential rotation and production security review, with HTTPS and secure cookies in deployment. |
+| 12. Language | Public homepage and FAQ switch between English and Spanish. | Translate portal and transactional messages; persist language on the customer record. |
+| 13. Mobile | Responsive portal and camera-capable image input. Sign-in persists across page reloads. | Add installable PWA and draft protection. Exclude private data from offline caches. |
+| 14. Backend and data | Persistent SQLite records for accounts, sessions, pets, services, slots, bookings, visits and diary events. Validated writes and protected media delivery. | Add payments, tips and delivery records, retention/deletion workflow, backups and production configuration. |
+| 15–16. Core workflows and priorities | Booking → approval → care visit → published diary → completion is testable. Customers can reuse existing pet profiles for later requests. | Finish the P0 data/UI gaps above. Implement payment and notification workflows after the business inputs are approved. PWA, routes and recurring bookings follow. |
+
+Before production, confirm rates, service area, availability rules, cancellation/refund terms, privacy notice and care/photo permissions. Decide when payment is due. Then supply Stripe sandbox credentials and an approved email sending domain/provider. Keep preview data separate from operational records.
+
+Verification: the customer browser test registered, added a pet, requested care, viewed the completed diary and signed out. API checks verified staff approval, overlap rejection, action permissions, visit start/completion, and that a second customer could access neither the diary nor its photo.

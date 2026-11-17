@@ -4,28 +4,28 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>myo. Client Journal</title>
-<script src="../../assets/tailwind-config.js"></script>
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<script src="../../assets/tailwind-config.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Be+Vietnam+Pro:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="../../assets/legacy-tailwind.css">
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
 <link href="../../assets/styles.css" rel="stylesheet"/>
 
-  </head>
-<body class="bg-surface font-body text-on-surface selection:bg-primary-container/30">
+  <link rel="stylesheet" href="../../assets/interior.css">
+<meta name="robots" content="noindex">
+</head>
+<body class="myo-interior bg-surface font-body text-on-surface selection:bg-primary-container/30">
 <!-- TopAppBar -->
-<header class="fixed top-0 w-full z-50 bg-[#fff4f2]/80 dark:bg-stone-900/80 backdrop-blur-xl shadow-[0_8px_32px_rgba(65,41,35,0.06)]">
+<header class="fixed top-0 w-full z-50 bg-[#faeee3]/80 dark:bg-stone-900/80 backdrop-blur-xl shadow-[0_8px_32px_rgba(65,41,35,0.06)]">
 <div class="flex items-center justify-between px-6 py-4 w-full max-w-2xl mx-auto">
 <div class="flex items-center gap-3">
-<img alt="Pet profile picture" class="w-10 h-10 rounded-full object-cover ring-2 ring-primary-container/20" data-alt="close up of a happy golden retriever smiling with a soft blurred garden background and warm sunlight" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDqkEOp4OpthIH2HVWV0rrNoWZpKeOq-lC6fCQVw8KSu3-0Yo_DMmLupIWC1trPxrzauuUUbKQ5RU6ZQHA6jbcIAtBppgINdj0L2YmwpSXLctSliE928mra-9HkTPaO8z-6QZjSTAX2Mj7bxR7-AN8yP5WeKjBzLEK3TP0ABSp0H79e-9VFm1YNB0RGkSEBYwRDxdKsUpW0SV6f-ID_Nuwf8yAoA6JpvE36i-QyOM3m-g9Txm3KoH5kq_s_LWgkSXV2zbPduqu8ZA"/>
-<span class="text-2xl font-black text-[#412923] dark:text-[#fff4f2] lowercase font-headline">myo.</span>
+<img alt="Pet profile picture" class="w-10 h-10 rounded-full object-cover ring-2 ring-primary-container/20" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDqkEOp4OpthIH2HVWV0rrNoWZpKeOq-lC6fCQVw8KSu3-0Yo_DMmLupIWC1trPxrzauuUUbKQ5RU6ZQHA6jbcIAtBppgINdj0L2YmwpSXLctSliE928mra-9HkTPaO8z-6QZjSTAX2Mj7bxR7-AN8yP5WeKjBzLEK3TP0ABSp0H79e-9VFm1YNB0RGkSEBYwRDxdKsUpW0SV6f-ID_Nuwf8yAoA6JpvE36i-QyOM3m-g9Txm3KoH5kq_s_LWgkSXV2zbPduqu8ZA"/>
+<span class="text-2xl font-black text-[#231b18] dark:text-[#faeee3] lowercase font-headline" data-myo-wordmark>myo.</span>
 </div>
 <button class="w-10 h-10 flex items-center justify-center rounded-full hover:opacity-80 transition-opacity active:scale-95 duration-200">
-<span class="material-symbols-outlined text-[#412923] dark:text-[#fff4f2]">notifications</span>
+<span class="material-symbols-outlined text-[#231b18] dark:text-[#faeee3]">notifications</span>
 </button>
 </div>
 </header>
 <main class="pt-24 pb-32 px-6 max-w-2xl mx-auto">
+<div class="myo-demo-notice"><strong>Preview only</strong><span>Sample walk diary with fictional entries.</span><a href="../index.html">All preview pages</a></div>
 <!-- Date Header -->
 <div class="mb-8">
 <p class="text-on-surface-variant font-medium tracking-wide mb-1">Today's Journey</p>
@@ -43,7 +43,7 @@
 </div>
 <!-- Stylized Map Component -->
 <div class="relative w-full h-64 bg-surface-container rounded-lg overflow-hidden group">
-<img class="w-full h-full object-cover" data-alt="minimalist stylized illustrative map with soft pastel colors showing a winding path through a park with green areas and light roads" data-location="London" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCAch-hwDpdDKxF9HaBXjSUOdqZhWdp94MzmDAdtpvgyTt80-t-CAyByN3KvAxsA1hAP4WLbdINKMeTEkHR3IqK0_8RvvBg5sHEVrKXxymwgHrpRbHvhk_17RJ6ZhBDSXfad-Gy0yx9ZdJ3zkiP4uuVamKHygxmpRYkLbbbf71d2gTxINQDbunVd4D7P4hNvlEzS6km0aIegsH1GScgFbXIoYOjcNPeoPWezpsjSIOdz29r6PlRQxsBRUYf9OezZxlSwXMxdmwlkw"/>
+<img class="w-full h-full object-cover" alt="minimalist stylized illustrative map with soft pastel colors showing a winding path through a park with green areas and light roads" data-location="London" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCAch-hwDpdDKxF9HaBXjSUOdqZhWdp94MzmDAdtpvgyTt80-t-CAyByN3KvAxsA1hAP4WLbdINKMeTEkHR3IqK0_8RvvBg5sHEVrKXxymwgHrpRbHvhk_17RJ6ZhBDSXfad-Gy0yx9ZdJ3zkiP4uuVamKHygxmpRYkLbbbf71d2gTxINQDbunVd4D7P4hNvlEzS6km0aIegsH1GScgFbXIoYOjcNPeoPWezpsjSIOdz29r6PlRQxsBRUYf9OezZxlSwXMxdmwlkw"/>
 <div class="absolute inset-0 bg-gradient-to-b from-transparent to-black/10"></div>
 <!-- Stats Overlays -->
 <div class="absolute bottom-4 left-4 right-4 flex gap-3">
@@ -73,10 +73,10 @@
 </div>
 <div class="grid grid-cols-2 gap-4">
 <div class="aspect-[4/5] bg-surface-container-low rounded-lg overflow-hidden -rotate-2 hover:rotate-0 transition-transform duration-300">
-<img alt="Moment 1" class="w-full h-full object-cover" data-alt="candid close-up of a small dog running through tall grass with ears flapping in the wind and bright sunny lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCIQtCxQmjFOS6I8lqi6eplRiGw-pPD8LgbKlX38tNABLP1dgF-LW-UivlRBg8lh6ZOoOQ4sEGzt_Nidn6ubvHjzp2iQQkfuj_D5OyPQrn0HdM6ivcDH0LqGnVINHsgoQVNp13APfUoq6KGaLkP9wV6W6fLuN7IA-VpM_4HQQioAbcWi0sKjnomcmyWv187V9StIY7XiYLQr2dGPgmMKHdDcE7Gh3SgW_a_OlwY9-ycqcKTPyugvWYsCaVABD5U6XGhvpM90RU4mg"/>
+<img alt="Moment 1" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCIQtCxQmjFOS6I8lqi6eplRiGw-pPD8LgbKlX38tNABLP1dgF-LW-UivlRBg8lh6ZOoOQ4sEGzt_Nidn6ubvHjzp2iQQkfuj_D5OyPQrn0HdM6ivcDH0LqGnVINHsgoQVNp13APfUoq6KGaLkP9wV6W6fLuN7IA-VpM_4HQQioAbcWi0sKjnomcmyWv187V9StIY7XiYLQr2dGPgmMKHdDcE7Gh3SgW_a_OlwY9-ycqcKTPyugvWYsCaVABD5U6XGhvpM90RU4mg"/>
 </div>
 <div class="aspect-[4/5] bg-surface-container-low rounded-lg overflow-hidden rotate-3 translate-y-4 hover:rotate-0 transition-transform duration-300">
-<img alt="Moment 2" class="w-full h-full object-cover" data-alt="pet dog looking curiously at a butterfly in a sun-dappled woodland setting with soft bokeh and magical lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDTEFSe7IT8ZXEyxLr3Ha0RABqr3yYFGGTqqsXF3MHJkFTvhrenEdAQPArCqddKkh50uv_tL_-jet-nk6IccstdQPZYSbRIYn_y0n8mOmZyK5Fsq_M8MrP2hMZrZ28GcTovN772BtwL4uk-7SPr48OS9kP6idHORLp9UqBD_Kn-RpapnjT4mZE-p4T-hUTn8TzDjB66vI_79BZlvJF68S2YkLzwfFFdn8DByC_P1Evhy_L4DdGM6Wpn7gJmCeedE91NK7ck1KJwQA"/>
+<img alt="Moment 2" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDTEFSe7IT8ZXEyxLr3Ha0RABqr3yYFGGTqqsXF3MHJkFTvhrenEdAQPArCqddKkh50uv_tL_-jet-nk6IccstdQPZYSbRIYn_y0n8mOmZyK5Fsq_M8MrP2hMZrZ28GcTovN772BtwL4uk-7SPr48OS9kP6idHORLp9UqBD_Kn-RpapnjT4mZE-p4T-hUTn8TzDjB66vI_79BZlvJF68S2YkLzwfFFdn8DByC_P1Evhy_L4DdGM6Wpn7gJmCeedE91NK7ck1KJwQA"/>
 </div>
 </div>
 </section>
@@ -143,24 +143,24 @@
 </section>
 </main>
 <!-- BottomNavBar -->
-<nav class="fixed bottom-0 w-full z-50 bg-[#fff4f2]/80 dark:bg-stone-900/80 backdrop-blur-xl rounded-t-[3rem] shadow-[0_-8px_32px_rgba(65,41,35,0.06)]">
+<nav aria-label="Client navigation" class="fixed bottom-0 w-full z-50 bg-[#faeee3]/80 dark:bg-stone-900/80 backdrop-blur-xl rounded-t-[3rem] shadow-[0_-8px_32px_rgba(65,41,35,0.06)]">
 <div class="flex justify-around items-center w-full px-4 pb-6 pt-3 max-w-2xl mx-auto">
 <!-- Active Tab: Journal -->
-<button class="flex flex-col items-center justify-center bg-[#00baff] text-white rounded-full px-5 py-2 hover:scale-105 transition-transform active:scale-90 duration-200">
+<button class="flex flex-col items-center justify-center bg-[#cc3814] text-white rounded-full px-5 py-2 hover:scale-105 transition-transform active:scale-90 duration-200">
 <span class="material-symbols-outlined filled-icon">map</span>
-<span class="font-['Plus_Jakarta_Sans'] font-semibold text-[10px]">Journal</span>
+<span class="font-body font-semibold text-[10px]">Journal</span>
 </button>
-<button class="flex flex-col items-center justify-center text-[#412923] dark:text-[#fff4f2] opacity-60 hover:scale-105 transition-transform active:scale-90 duration-200">
+<button class="flex flex-col items-center justify-center text-[#231b18] dark:text-[#faeee3] hover:scale-105 transition-transform active:scale-90 duration-200">
 <span class="material-symbols-outlined">pets</span>
-<span class="font-['Plus_Jakarta_Sans'] font-semibold text-[10px]">Activities</span>
+<span class="font-body font-semibold text-[10px]">Activities</span>
 </button>
-<button class="flex flex-col items-center justify-center text-[#412923] dark:text-[#fff4f2] opacity-60 hover:scale-105 transition-transform active:scale-90 duration-200">
+<button class="flex flex-col items-center justify-center text-[#231b18] dark:text-[#faeee3] hover:scale-105 transition-transform active:scale-90 duration-200">
 <span class="material-symbols-outlined">calendar_month</span>
-<span class="font-['Plus_Jakarta_Sans'] font-semibold text-[10px]">Bookings</span>
+<span class="font-body font-semibold text-[10px]">Bookings</span>
 </button>
-<button class="flex flex-col items-center justify-center text-[#412923] dark:text-[#fff4f2] opacity-60 hover:scale-105 transition-transform active:scale-90 duration-200">
+<button class="flex flex-col items-center justify-center text-[#231b18] dark:text-[#faeee3] hover:scale-105 transition-transform active:scale-90 duration-200">
 <span class="material-symbols-outlined">person</span>
-<span class="font-['Plus_Jakarta_Sans'] font-semibold text-[10px]">Profile</span>
+<span class="font-body font-semibold text-[10px]">Profile</span>
 </button>
 </div>
 </nav>

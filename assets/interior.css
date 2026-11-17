@@ -1,0 +1,104 @@
+@font-face {
+  font-family: "Fraunces";
+  src: url("home/fraunces.woff2") format("woff2");
+  font-weight: 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "DM Sans";
+  src: url("home/dm-sans.woff2") format("woff2");
+  font-weight: 400 700;
+  font-display: swap;
+}
+
+.myo-interior {
+  min-height: 100dvh;
+  background: #faeee3;
+  color: #231b18;
+  font-family: "DM Sans", system-ui, sans-serif;
+}
+
+.myo-interior :is(h1, h2, h3, h4, .brand, .brand-font, .header-brand) {
+  font-family: Fraunces, Georgia, serif;
+  font-weight: 900;
+  letter-spacing: -.045em;
+  overflow-wrap: anywhere;
+}
+
+.myo-interior :is(header, nav).fixed {
+  background-color: #faeee3;
+  border-color: #e6c7b8;
+  backdrop-filter: none;
+}
+
+.myo-interior .glass-header,
+.myo-interior .glass-panel,
+.myo-interior .bento-card {
+  backdrop-filter: none;
+}
+
+.myo-interior .glass-panel { background: #fff7f0; }
+
+.myo-interior :is(h1, h2, a, p, span, div)[data-myo-wordmark] {
+  display: inline-block;
+  color: #cc3814;
+  font: 900 clamp(1.65rem, 4vw, 2.55rem)/1 Fraunces, Georgia, serif;
+  letter-spacing: -.09em;
+  white-space: nowrap;
+}
+
+.myo-interior :is(button, a)[class*="bg-gradient-"],
+.myo-interior :is(.bubbly-gradient, .pill-gradient, .bg-gradient-primary) {
+  background: #cc3814;
+  color: #fff;
+}
+
+.myo-interior :is(header, nav) a { text-underline-offset: .25em; }
+.myo-interior :is(a, button, input, select, textarea, summary):focus-visible {
+  outline: 2px solid #a13013;
+  outline-offset: 3px;
+}
+
+.myo-interior :is(button, input, a) { scroll-margin-block: 6rem; }
+
+.myo-demo-notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: .35rem .8rem;
+  padding: .85rem 1rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid #ddbaa9;
+  border-radius: 1rem;
+  background: #fff7f0;
+  color: #732b17;
+  font: 500 .875rem/1.35 "DM Sans", sans-serif;
+}
+
+.myo-demo-notice a { font-weight: 700; text-decoration: underline; text-underline-offset: .2em; }
+.myo-interior .active-tag { background: #a13013; border-color: #a13013; }
+.myo-interior nav [class*="text-[#231b18]/50"] { color: #68493c; }
+.myo-interior .material-symbols-outlined { max-width: 1em; overflow: hidden; flex-shrink: 0; }
+.myo-interior :is(button, a).bg-primary { color: #fff; }
+
+@media (max-width: 640px) {
+  .myo-interior nav.fixed.bottom-0 {
+    gap: .125rem;
+    padding-inline: .375rem;
+  }
+  .myo-interior nav.fixed.bottom-0 > * {
+    padding-inline: .35rem;
+    min-width: 0;
+    white-space: normal;
+    text-align: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .myo-interior *, .myo-interior *::before, .myo-interior *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0s !important;
+    animation-duration: 0s !important;
+  }
+}

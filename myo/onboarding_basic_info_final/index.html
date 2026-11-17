@@ -4,28 +4,28 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Pet Onboarding - Basic Info</title>
-<script src="../../assets/tailwind-config.js"></script>
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<script src="../../assets/tailwind-config.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Be+Vietnam+Pro:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="../../assets/legacy-tailwind.css">
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
 <link href="../../assets/styles.css" rel="stylesheet"/>
 
-  </head>
-<body class="bg-background text-on-background font-body-md min-h-screen">
+  <link rel="stylesheet" href="../../assets/interior.css">
+<meta name="robots" content="noindex">
+</head>
+<body class="myo-interior bg-background text-on-background font-body-md min-h-screen">
 <!-- Top Navigation Anchor (Manual suppression of items for transactional flow) -->
-<header class="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-xl border-b border-sky-100/10 shadow-sm">
+<header class="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-xl border-b border-[#fae0cf]/10 shadow-sm">
 <div class="flex justify-between items-center px-6 h-16 w-full max-w-7xl mx-auto">
-<button class="flex items-center justify-center p-2 rounded-full hover:bg-sky-50/50 transition-colors">
+<button class="flex items-center justify-center p-2 rounded-full hover:bg-[#fff7f0]/50 transition-colors">
 <span class="material-symbols-outlined text-primary">arrow_back</span>
 </button>
-<span class="font-headline-lg text-2xl font-black tracking-tight text-sky-500">myo.</span>
+<span class="font-headline-lg text-2xl font-black tracking-tight text-[#a83c20]" data-myo-wordmark>myo.</span>
 <div class="w-10 h-10 rounded-full overflow-hidden border-2 border-primary-container">
-<img alt="User" data-alt="close-up portrait of a smiling young man in a bright studio with soft natural lighting and clean background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAvKMCsrPNYpIaFnHLrXxgtOCc7mJQYzMHFCS3GHvBT0Xperr3-FbpYZ6KX5zSIi9w06bIXht7BohwNuVn1XJfMpUN5BeoD--0ACivjdnekYkTVD7IQlsgBiPhjklir6_sCb4yGU1ilmvhPKjJ1sAZXhC5argxEq6MJ_OsxLqY6TUFfLmjqiMXy9H622RGrTQaax3yJ6wzCS3Jk4OgB6SyI8A-Wyku9ESsWk0InVrbeA_nkV-44a4f-6-omhxnANB8I3sJD8tId8w"/>
+<img alt="User" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAvKMCsrPNYpIaFnHLrXxgtOCc7mJQYzMHFCS3GHvBT0Xperr3-FbpYZ6KX5zSIi9w06bIXht7BohwNuVn1XJfMpUN5BeoD--0ACivjdnekYkTVD7IQlsgBiPhjklir6_sCb4yGU1ilmvhPKjJ1sAZXhC5argxEq6MJ_OsxLqY6TUFfLmjqiMXy9H622RGrTQaax3yJ6wzCS3Jk4OgB6SyI8A-Wyku9ESsWk0InVrbeA_nkV-44a4f-6-omhxnANB8I3sJD8tId8w"/>
 </div>
 </div>
 </header>
 <main class="pt-24 pb-32 px-6 max-w-4xl mx-auto">
+<div class="myo-demo-notice"><strong>Preview only</strong><span>Sample screen. Use fictitious details while exploring.</span><a href="../index.html">All preview pages</a></div>
 <!-- Progress Indicator -->
 <div class="flex items-center justify-center gap-2 mb-12">
 <div class="h-2 w-12 rounded-full bg-primary shadow-sm shadow-primary/20"></div>
@@ -44,7 +44,7 @@
 <div class="md:col-span-5 flex flex-col items-center justify-center p-8 rounded-xl bg-white/40 bento-card shadow-sm text-center">
 <div class="relative group cursor-pointer">
 <div class="w-48 h-48 rounded-full border-4 border-dashed border-primary-container/40 flex items-center justify-center bg-surface-container-low overflow-hidden transition-all group-hover:border-primary">
-<div class="flex flex-col items-center gap-2 text-primary-container group-hover:text-primary transition-colors">
+<div class="flex flex-col items-center gap-2 text-primary group-hover:text-primary transition-colors">
 <span class="material-symbols-outlined text-5xl">add_a_photo</span>
 <span class="font-label-bold text-label-bold">ADD PHOTO</span>
 </div>
@@ -60,7 +60,7 @@
 <!-- Pet Name Card -->
 <div class="p-6 rounded-xl bg-white/60 bento-card shadow-sm">
 <label class="block font-label-bold text-label-bold text-on-surface-variant mb-2">PET NAME</label>
-<input class="w-full bg-surface-container-lowest border-outline-variant/30 rounded-lg p-4 focus:ring-2 focus:ring-primary focus:border-transparent transition-all font-body-xl text-body-xl text-on-surface placeholder:text-outline-variant" placeholder="e.g. Barkley" type="text"/>
+<input class="w-full bg-surface-container-lowest border-outline-variant/30 rounded-lg p-4 focus:ring-2 focus:ring-primary focus:border-transparent transition-all font-body-xl text-body-xl text-on-surface placeholder:text-on-surface-variant" placeholder="e.g. Barkley" type="text"/>
 </div>
 <div class="grid grid-cols-1 sm:grid-cols-2 gap-bento-gap">
 <!-- Breed Card -->
@@ -90,7 +90,7 @@
 <div class="md:col-span-12 p-8 rounded-xl bg-gradient-to-br from-surface-container to-surface-container-high bento-card shadow-sm">
 <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
 <div>
-<h3 class="font-headline-lg text-2xl text-on-background">Describe their personality</h3>
+<h2 class="font-headline-lg text-2xl text-on-background">Describe their personality</h2>
 <p class="font-body-md text-body-md text-on-surface-variant">Select all that apply to your friend.</p>
 </div>
 <div class="flex flex-wrap gap-2">
@@ -104,18 +104,18 @@
 </div>
 <!-- Footer Action -->
 <div class="mt-16 flex flex-col items-center gap-6">
-<button class="w-full max-w-md bg-gradient-to-br from-primary to-blue-600 text-white font-headline-lg text-xl py-5 rounded-full shadow-xl shadow-primary/30 active:scale-95 transition-all flex items-center justify-center gap-3">
+<button class="w-full max-w-md bg-gradient-to-br from-primary to-[#9c3219] text-white font-headline-lg text-xl py-5 rounded-full shadow-xl shadow-primary/30 active:scale-95 transition-all flex items-center justify-center gap-3">
                 Continue to Health
                 <span class="material-symbols-outlined">arrow_forward</span>
 </button>
-<button class="font-label-bold text-label-bold text-outline hover:text-primary transition-colors">SKIP FOR NOW</button>
+<button class="font-label-bold text-label-bold text-on-surface-variant hover:text-primary transition-colors">SKIP FOR NOW</button>
 </div>
 </main>
 <!-- Decorative Elements (Lively Palette) -->
 <div class="fixed top-20 -left-20 w-64 h-64 bg-secondary-container/10 rounded-full blur-3xl pointer-events-none"></div>
 <div class="fixed bottom-20 -right-20 w-96 h-96 bg-tertiary-container/10 rounded-full blur-3xl pointer-events-none"></div>
 <!-- Background Context Image (Softly blurred in background for atmosphere) -->
-<div class="fixed inset-0 -z-10 opacity-5 pointer-events-none">
-<img alt="Pet context" class="w-full h-full object-cover" data-alt="soft focus background of two happy dogs playing in a sun-drenched green meadow during golden hour" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB6OCRHGTG6G11DhxYQRHeHvVuBfBd7tUFfSwHb99EVr2Y_ACOGiCofRs1eW5vHqsdkI7x0fWfnsVd5OvIev_HtdAl5J3e7A4VYWPV1Sw5X-9KCHJP_5YkuEs56NgdNeIKvfeJmkOnWUCRLaoNrOblqBQv3CENFXfRoiuYfwLw48k3TzKvgAW2g5yG-jM8cfg35SI2orh5TdhqG_EfKfGhASvqbM6Hfa6FPJcQMPWtdGMQvGCxzgCxP4c-q_mn9gEej9acuoywwBg"/>
+<div aria-hidden="true" class="fixed inset-0 -z-10 opacity-5 pointer-events-none">
+<img alt="Pet context" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB6OCRHGTG6G11DhxYQRHeHvVuBfBd7tUFfSwHb99EVr2Y_ACOGiCofRs1eW5vHqsdkI7x0fWfnsVd5OvIev_HtdAl5J3e7A4VYWPV1Sw5X-9KCHJP_5YkuEs56NgdNeIKvfeJmkOnWUCRLaoNrOblqBQv3CENFXfRoiuYfwLw48k3TzKvgAW2g5yG-jM8cfg35SI2orh5TdhqG_EfKfGhASvqbM6Hfa6FPJcQMPWtdGMQvGCxzgCxP4c-q_mn9gEej9acuoywwBg"/>
 </div>
 </body></html>

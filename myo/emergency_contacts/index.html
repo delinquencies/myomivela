@@ -3,26 +3,27 @@
 <html lang="en"><head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<script src="../../assets/tailwind-config.js"></script>
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<script src="../../assets/tailwind-config.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&amp;family=Be+Vietnam+Pro:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="../../assets/legacy-tailwind.css">
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
 <link href="../../assets/styles.css" rel="stylesheet"/>
 
-  </head>
-<body class="bg-surface text-on-surface min-h-screen pb-32">
+  <link rel="stylesheet" href="../../assets/interior.css">
+<meta name="robots" content="noindex">
+<title>Emergency Contacts | myo.</title>
+</head>
+<body class="myo-interior bg-surface text-on-surface min-h-screen pb-32">
 <!-- TopAppBar -->
 <header class="fixed top-0 w-full z-50 bg-white/80 dark:bg-stone-900/80 backdrop-blur-xl shadow-[0_8px_32px_rgba(65,41,35,0.06)] flex justify-between items-center px-6 h-16 w-full">
 <div class="flex items-center gap-3">
-<span class="material-symbols-outlined text-sky-500 text-2xl" data-icon="shield_with_heart">shield_with_heart</span>
-<h1 class="font-['Plus_Jakarta_Sans'] font-bold text-lg tracking-tight text-stone-800">myo. safety</h1>
+<span class="material-symbols-outlined text-[#a83c20] text-2xl" data-icon="shield_with_heart">shield_with_heart</span>
+<h1 class="font-body font-bold text-lg tracking-tight text-stone-800">myo. safety</h1>
 </div>
-<button class="hover:scale-95 transition-transform duration-200 text-stone-400">
+<button class="hover:scale-95 transition-transform duration-200 text-on-surface-variant">
 <span class="material-symbols-outlined">more_vert</span>
 </button>
 </header>
 <main class="pt-24 px-6 max-w-2xl mx-auto">
+<div class="myo-demo-notice"><strong>Preview only</strong><span>Sample screen. Use fictitious details while exploring.</span><a href="../index.html">All preview pages</a></div>
 <!-- Hero Section -->
 <section class="mb-8">
 <h2 class="text-3xl font-headline font-extrabold text-on-surface tracking-tight mb-2">Emergency Contacts</h2>
@@ -32,11 +33,11 @@
 <div class="grid gap-6">
 <!-- Contact Card 1: Veterinarian -->
 <div class="bg-surface-container-lowest p-6 rounded-lg shadow-[0_8px_32px_rgba(65,41,35,0.04)] relative overflow-hidden group">
-<div class="absolute top-0 right-0 w-32 h-32 -mr-8 -mt-8 bg-sky-100 rounded-full opacity-50 transition-transform group-hover:scale-110"></div>
+<div class="absolute top-0 right-0 w-32 h-32 -mr-8 -mt-8 bg-[#fae0cf] rounded-full opacity-50 transition-transform group-hover:scale-110"></div>
 <div class="flex items-start justify-between relative z-10">
 <div class="flex gap-4">
 <div class="w-16 h-16 rounded-xl bg-surface-container overflow-hidden flex-shrink-0">
-<img alt="Veterinarian" class="w-full h-full object-cover" data-alt="Professional portrait of a friendly female veterinarian in a clinic setting with soft warm indoor lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDz63G016uurAPeZjKBGssXW17gkX7bTXVLQh065-XWzDySPul__5KVWBQ5S4P-FmH5LBSR-2yYYc3AJDZ5tTiV7IOHvQx3hy3nbHjfebp7v56zUaoE3BElJX7P4PAk1MFpTklbLAYHpbB1tfpwEt5Uc10lRAIXaP2VrCknT9-2FTH6b2Q5jVgqqssgBFTdiuaswsy76HDDZevP5Tfda3wdJMen_BSqW3ioCBTR18G9OvDPlrQlQYJk-pb1JGz5NOmbSRbpaXZAbw"/>
+<img alt="Veterinarian" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDz63G016uurAPeZjKBGssXW17gkX7bTXVLQh065-XWzDySPul__5KVWBQ5S4P-FmH5LBSR-2yYYc3AJDZ5tTiV7IOHvQx3hy3nbHjfebp7v56zUaoE3BElJX7P4PAk1MFpTklbLAYHpbB1tfpwEt5Uc10lRAIXaP2VrCknT9-2FTH6b2Q5jVgqqssgBFTdiuaswsy76HDDZevP5Tfda3wdJMen_BSqW3ioCBTR18G9OvDPlrQlQYJk-pb1JGz5NOmbSRbpaXZAbw"/>
 </div>
 <div>
 <h3 class="text-xl font-headline font-bold text-on-surface">Dr. Sarah</h3>
@@ -121,7 +122,7 @@
 </div>
 </div>
 <!-- Add New Action -->
-<button class="border-2 border-dashed border-outline-variant/30 p-8 rounded-lg flex flex-col items-center justify-center gap-3 text-outline hover:bg-surface-container-low transition-colors duration-200">
+<button class="border-2 border-dashed border-outline-variant/30 p-8 rounded-lg flex flex-col items-center justify-center gap-3 text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200">
 <span class="material-symbols-outlined text-4xl">person_add</span>
 <span class="font-bold text-lg">Add New Contact</span>
 </button>
@@ -134,27 +135,27 @@
 <p class="text-on-secondary-container/80 mt-2">In an emergency, quick access to vaccination logs can save precious time.</p>
 </div>
 <div class="w-32 h-32 md:w-48 md:h-48 flex-shrink-0 rotate-12 -mb-12 -mr-6 md:mb-0 md:mr-0">
-<img alt="Emergency Kit" class="w-full h-full object-cover rounded-xl shadow-xl" data-alt="Close-up of a well-organized pet first aid kit with medical supplies and a stethoscope on a soft neutral background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA_vY6yPdZ5ydG4f6BCHMWcEPYhAGMzdY2dQR2JgpYB7tgm-O9tofNL-Hc9-ZdMvG7yTgExzOQqXniE0qp4-dplX8AOReANt7WQi56Ani64NfRpt41s_p1stXrDW0CmcAqX5Epiyfjbgjy1_wMj9yIqG5xVUyggT0AEABkuC37J6gfXBS0DWoGAftOF4Ipt_9MsNXJJU8vbONEGTUxY5SuFdIMhb4_G9x0deEvOtAIzOQ9i_i-uaugm4MlGQ9NWvAhDlB6Spg3Obw"/>
+<img alt="Emergency Kit" class="w-full h-full object-cover rounded-xl shadow-xl" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA_vY6yPdZ5ydG4f6BCHMWcEPYhAGMzdY2dQR2JgpYB7tgm-O9tofNL-Hc9-ZdMvG7yTgExzOQqXniE0qp4-dplX8AOReANt7WQi56Ani64NfRpt41s_p1stXrDW0CmcAqX5Epiyfjbgjy1_wMj9yIqG5xVUyggT0AEABkuC37J6gfXBS0DWoGAftOF4Ipt_9MsNXJJU8vbONEGTUxY5SuFdIMhb4_G9x0deEvOtAIzOQ9i_i-uaugm4MlGQ9NWvAhDlB6Spg3Obw"/>
 </div>
 </section>
 </main>
 <!-- BottomNavBar -->
-<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-6 pt-3 bg-white/80 dark:bg-stone-900/80 backdrop-blur-xl rounded-t-[3rem] shadow-[0_-12px_48px_rgba(65,41,35,0.06)] z-50">
-<a class="flex flex-col items-center justify-center text-stone-400 dark:text-stone-500 px-5 py-2 hover:text-sky-400" href="../../index.html">
+<nav aria-label="Client navigation" class="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-6 pt-3 bg-white/80 dark:bg-stone-900/80 backdrop-blur-xl rounded-t-[3rem] shadow-[0_-12px_48px_rgba(65,41,35,0.06)] z-50">
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-stone-500 px-5 py-2 hover:text-[#cb5432]" href="../../index.html">
 <span class="material-symbols-outlined" data-icon="home">home</span>
-<span class="font-['Plus_Jakarta_Sans'] font-semibold text-[10px] uppercase tracking-widest mt-1">Home</span>
+<span class="font-body font-semibold text-[10px] uppercase tracking-widest mt-1">Home</span>
 </a>
-<a class="flex flex-col items-center justify-center text-stone-400 dark:text-stone-500 px-5 py-2 hover:text-sky-400" href="../pet_profile_cooper/index.html">
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-stone-500 px-5 py-2 hover:text-[#cb5432]" href="../pet_profile_cooper/index.html">
 <span class="material-symbols-outlined" data-icon="pets">pets</span>
-<span class="font-['Plus_Jakarta_Sans'] font-semibold text-[10px] uppercase tracking-widest mt-1">Pets</span>
+<span class="font-body font-semibold text-[10px] uppercase tracking-widest mt-1">Pets</span>
 </a>
-<a class="flex flex-col items-center justify-center bg-sky-100 dark:bg-sky-900/40 text-sky-700 dark:text-sky-200 rounded-full px-5 py-2" href="../emergency_contacts/index.html">
+<a class="flex flex-col items-center justify-center bg-[#fae0cf] dark:bg-[#542214]/40 text-[#862c16] dark:text-[#f6c8b2] rounded-full px-5 py-2" href="../emergency_contacts/index.html">
 <span class="material-symbols-outlined" data-icon="contact_emergency" style="font-variation-settings: 'FILL' 1;">contact_emergency</span>
-<span class="font-['Plus_Jakarta_Sans'] font-semibold text-[10px] uppercase tracking-widest mt-1">Safety</span>
+<span class="font-body font-semibold text-[10px] uppercase tracking-widest mt-1">Safety</span>
 </a>
-<a class="flex flex-col items-center justify-center text-stone-400 dark:text-stone-500 px-5 py-2 hover:text-sky-400" href="../onboarding_health_medical_final/index.html">
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-stone-500 px-5 py-2 hover:text-[#cb5432]" href="../onboarding_health_medical_final/index.html">
 <span class="material-symbols-outlined" data-icon="medical_services">medical_services</span>
-<span class="font-['Plus_Jakarta_Sans'] font-semibold text-[10px] uppercase tracking-widest mt-1">Care</span>
+<span class="font-body font-semibold text-[10px] uppercase tracking-widest mt-1">Care</span>
 </a>
 </nav>
 </body></html>

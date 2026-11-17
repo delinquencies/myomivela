@@ -4,30 +4,30 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>myo. - Pet Journal</title>
-<script src="../../assets/tailwind-config.js"></script>
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<script src="../../assets/tailwind-config.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&amp;family=Be+Vietnam+Pro:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="../../assets/legacy-tailwind.css">
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
 <link href="../../assets/styles.css" rel="stylesheet"/>
 
-  </head>
-<body class="bg-surface font-body text-on-surface selection:bg-primary-container/30">
+  <link rel="stylesheet" href="../../assets/interior.css">
+<meta name="robots" content="noindex">
+</head>
+<body class="myo-interior bg-surface font-body text-on-surface selection:bg-primary-container/30">
 <!-- TopAppBar -->
-<header class="fixed top-0 left-0 w-full z-50 bg-[#fff4f2]/80 backdrop-blur-2xl dark:bg-stone-950/80">
+<header class="fixed top-0 left-0 w-full z-50 bg-[#faeee3]/80 backdrop-blur-2xl dark:bg-stone-950/80">
 <div class="flex justify-between items-center w-full px-6 py-4">
 <div class="flex items-center gap-3">
 <div class="w-10 h-10 rounded-full bg-surface-container overflow-hidden border-2 border-primary-container/20">
-<img alt="Pet parent" class="w-full h-full object-cover" data-alt="close-up portrait of a smiling young woman with warm natural lighting and soft focus garden background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBAU-qVWrxErY_Q9R4aVPy88oae8YMQR2wlzraA9LIRUm3qDrDQCipK1NBI1tVK807e1UgMTM5T7SKvrziGyghH9Or_PeBX2S2M1MagaRX6WdFqLAj052L_OXEF-mi5uYxo3SiwT_L2XrvkS-UrJhTDTF5xttm2cJxFZhnQxJqhBmrbuYIvLx_BYtrR2h-l-Z-vRWGJ5jqJ11-KS3QK-rYQyT84s59HWQjtpBnWFZgs7pyWP5ue_iD4NGvdeapODqr4mGHxMUE2Sw"/>
+<img alt="Pet parent" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBAU-qVWrxErY_Q9R4aVPy88oae8YMQR2wlzraA9LIRUm3qDrDQCipK1NBI1tVK807e1UgMTM5T7SKvrziGyghH9Or_PeBX2S2M1MagaRX6WdFqLAj052L_OXEF-mi5uYxo3SiwT_L2XrvkS-UrJhTDTF5xttm2cJxFZhnQxJqhBmrbuYIvLx_BYtrR2h-l-Z-vRWGJ5jqJ11-KS3QK-rYQyT84s59HWQjtpBnWFZgs7pyWP5ue_iD4NGvdeapODqr4mGHxMUE2Sw"/>
 </div>
 </div>
-<h1 class="text-3xl font-black tracking-tighter text-stone-800 dark:text-stone-100 font-headline">myo.</h1>
-<button class="w-10 h-10 flex items-center justify-center rounded-full text-sky-500 hover:scale-95 transition-transform duration-200">
+<h1 class="text-3xl font-black tracking-tighter text-stone-800 dark:text-stone-100 font-headline" data-myo-wordmark>myo.</h1>
+<button class="w-10 h-10 flex items-center justify-center rounded-full text-[#a83c20] hover:scale-95 transition-transform duration-200">
 <span class="material-symbols-outlined" data-icon="notifications">notifications</span>
 </button>
 </div>
 </header>
 <main class="pt-24 pb-32 max-w-2xl mx-auto px-4">
+<div class="myo-demo-notice"><strong>Preview only</strong><span>Sample diary with fictional entries.</span><a href="../index.html">All preview pages</a></div>
 <!-- Hero Branding -->
 <section class="mb-12 px-2">
 <h2 class="text-5xl font-headline font-extrabold tracking-tight text-on-surface leading-tight">
@@ -45,8 +45,8 @@
                         Happy
                     </div>
 <!-- Asymmetric Image -->
-<div class="relative -mx-10 mb-8 rounded-lg overflow-hidden transform rotate-2 hover:rotate-0 transition-transform duration-500 shadow-xl">
-<img alt="Happy Dog" class="w-full aspect-[4/5] object-cover" data-alt="joyful golden retriever puppy running through a field of yellow wildflowers with sunlight catching its fur" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDGWX_LF30XfGBwLbKUefC5HHDpqp0HuDCYoXZzTdwsP9vzYxVdxAlo2pbBZaf94c3qzBlftXRkYJvpmCpCFurVkHq50oRwrcIME-7rJ4ZrPeHAZqA-v-yRzs4s5QgBG4smTyRHkKg4DmVCBfjsGniUD62W-agV099MZN6rkkRiJe03o12wcenRd1WgfM1VglmlK9-honJ7NLcmSQZgunOsC48hkKF0do9eGe0cIfGUDrFLlbvJ_2U1jGsrNJ4NQZt5QtT8H2e9Kw"/>
+<div class="relative -mx-2 sm:-mx-10 mb-8 rounded-lg overflow-hidden transform rotate-2 hover:rotate-0 transition-transform duration-500 shadow-xl">
+<img alt="Happy Dog" class="w-full aspect-[4/5] object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDGWX_LF30XfGBwLbKUefC5HHDpqp0HuDCYoXZzTdwsP9vzYxVdxAlo2pbBZaf94c3qzBlftXRkYJvpmCpCFurVkHq50oRwrcIME-7rJ4ZrPeHAZqA-v-yRzs4s5QgBG4smTyRHkKg4DmVCBfjsGniUD62W-agV099MZN6rkkRiJe03o12wcenRd1WgfM1VglmlK9-honJ7NLcmSQZgunOsC48hkKF0do9eGe0cIfGUDrFLlbvJ_2U1jGsrNJ4NQZt5QtT8H2e9Kw"/>
 </div>
 <!-- Content -->
 <div class="space-y-4">
@@ -82,8 +82,8 @@
                         Napping
                     </div>
 <!-- Asymmetric Image -->
-<div class="relative -mx-10 mb-8 rounded-lg overflow-hidden transform -rotate-1 hover:rotate-0 transition-transform duration-500 shadow-xl">
-<img alt="Sleeping Cat" class="w-full aspect-[16/10] object-cover" data-alt="close-up of a fluffy calico cat curled up on a soft cream-colored knit blanket in soft morning light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBWEpDU4DJwqYpoJZFvyzi1843nx_yKJEgZNmwyIp9lqYYKeYq4okqP5Hez5Il59-Uks76P1C45LUlW_uUZA9IEoTerTtWY0K8R7VZ9CS5eEnkIairprTbBlkWmglnPBSzZyclSGzrfmurjiSQVfWQ8-W1asrdgwHU2giTaQZeW6vNu3uG2Eez9mCKuysMj-pgoLOq1kL6oya9WFFnGhFpsD9LBgB2-gR1ewztCzOpnLEWJV6TWujb0T4wCI3qHeyM275FS-6X6YQ"/>
+<div class="relative -mx-2 sm:-mx-10 mb-8 rounded-lg overflow-hidden transform -rotate-1 hover:rotate-0 transition-transform duration-500 shadow-xl">
+<img alt="Sleeping Cat" class="w-full aspect-[16/10] object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBWEpDU4DJwqYpoJZFvyzi1843nx_yKJEgZNmwyIp9lqYYKeYq4okqP5Hez5Il59-Uks76P1C45LUlW_uUZA9IEoTerTtWY0K8R7VZ9CS5eEnkIairprTbBlkWmglnPBSzZyclSGzrfmurjiSQVfWQ8-W1asrdgwHU2giTaQZeW6vNu3uG2Eez9mCKuysMj-pgoLOq1kL6oya9WFFnGhFpsD9LBgB2-gR1ewztCzOpnLEWJV6TWujb0T4wCI3qHeyM275FS-6X6YQ"/>
 </div>
 <!-- Content -->
 <div class="space-y-4">
@@ -115,7 +115,7 @@
 <div class="flex justify-between items-start mb-6">
 <div>
 <h4 class="font-headline font-extrabold text-2xl text-on-secondary-container">Daily Paw-Points</h4>
-<p class="text-on-secondary-container/70">Cooper is having a stellar day!</p>
+<p class="text-on-secondary-container">Cooper is having a stellar day!</p>
 </div>
 <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm">
 <span class="material-symbols-outlined text-secondary text-3xl" data-icon="pets" style="font-variation-settings: 'FILL' 1;">pets</span>
@@ -137,8 +137,8 @@
 <div class="absolute -top-4 right-8 bg-surface-variant text-on-surface-variant px-6 py-2 rounded-full font-headline font-bold text-sm shadow-lg shadow-primary/5 z-10">
                         Refreshed
                     </div>
-<div class="relative -mx-10 mb-8 rounded-lg overflow-hidden transform rotate-1 hover:rotate-0 transition-transform duration-500 shadow-xl">
-<img alt="Clean dog" class="w-full aspect-[4/3] object-cover" data-alt="a freshly groomed small dog with a blue bowtie sitting proudly on a wooden porch in golden afternoon light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDnH4uoiyewnDWA9ya9B31fVfuKznKcCeff5huW756fOy5auQ2Ogs82d2yYh1i1uNAsY12CMqizdVE8YO7trGRAWZ8wW8_Ty3o6mxa4neAbUmTXV2BurzbvV9o_vz2io9xDRm5L6E4WVtB0yP_8ydNqSDX_fNii_LNzVCM4JtWAYgTRUte29y17PBhoXIVyRsSpkhMzRVFBiPc6BDJA1yXUJ0TiYfJgA9RFsdCqZosVotHOrJgwA4OPYI4RL76pKcTqmhnISYJWxA"/>
+<div class="relative -mx-2 sm:-mx-10 mb-8 rounded-lg overflow-hidden transform rotate-1 hover:rotate-0 transition-transform duration-500 shadow-xl">
+<img alt="Clean dog" class="w-full aspect-[4/3] object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDnH4uoiyewnDWA9ya9B31fVfuKznKcCeff5huW756fOy5auQ2Ogs82d2yYh1i1uNAsY12CMqizdVE8YO7trGRAWZ8wW8_Ty3o6mxa4neAbUmTXV2BurzbvV9o_vz2io9xDRm5L6E4WVtB0yP_8ydNqSDX_fNii_LNzVCM4JtWAYgTRUte29y17PBhoXIVyRsSpkhMzRVFBiPc6BDJA1yXUJ0TiYfJgA9RFsdCqZosVotHOrJgwA4OPYI4RL76pKcTqmhnISYJWxA"/>
 </div>
 <div class="space-y-4">
 <div class="flex items-center gap-2 text-on-surface-variant font-label text-xs tracking-widest uppercase font-semibold">
@@ -171,22 +171,22 @@
 <span class="material-symbols-outlined text-3xl" data-icon="add_a_photo">add_a_photo</span>
 </button>
 <!-- BottomNavBar -->
-<nav class="fixed bottom-0 left-0 w-full z-50 bg-white/80 backdrop-blur-2xl dark:bg-stone-900/80 flex justify-around items-end px-8 pb-8 pt-2 rounded-t-[3rem] border-none shadow-[0_-8px_32px_rgba(65,41,35,0.06)]">
-<a class="flex flex-col items-center justify-center bg-gradient-to-tr from-sky-600 to-sky-400 text-white rounded-full p-3 -mt-6 shadow-lg shadow-sky-200 dark:shadow-none hover:text-sky-500 transition-colors" href="../the_day_stay_details/index.html">
+<nav aria-label="Client navigation" class="fixed bottom-0 left-0 w-full z-50 bg-white/80 backdrop-blur-2xl dark:bg-stone-900/80 flex justify-around items-end px-8 pb-8 pt-2 rounded-t-[3rem] border-none shadow-[0_-8px_32px_rgba(65,41,35,0.06)]">
+<a class="flex flex-col items-center justify-center bg-gradient-to-tr from-[#9c3219] to-[#cb5432] text-white rounded-full p-3 -mt-6 shadow-lg shadow-sky-200 dark:shadow-none hover:text-[#a83c20] transition-colors" href="../the_day_stay_details/index.html">
 <span class="material-symbols-outlined" data-icon="pets" style="font-variation-settings: 'FILL' 1;">pets</span>
-<span class="font-['Plus_Jakarta_Sans'] font-semibold text-[10px] tracking-wide uppercase mt-1">Play</span>
+<span class="font-body font-semibold text-[10px] tracking-wide uppercase mt-1">Play</span>
 </a>
-<a class="flex flex-col items-center justify-center text-stone-400 dark:text-stone-500 p-2 hover:text-sky-500 transition-colors" href="../onboarding_health_medical_final/index.html">
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-stone-500 p-2 hover:text-[#a83c20] transition-colors" href="../onboarding_health_medical_final/index.html">
 <span class="material-symbols-outlined" data-icon="favorite">favorite</span>
-<span class="font-['Plus_Jakarta_Sans'] font-semibold text-[10px] tracking-wide uppercase">Wellness</span>
+<span class="font-body font-semibold text-[10px] tracking-wide uppercase">Wellness</span>
 </a>
-<a class="flex flex-col items-center justify-center text-stone-400 dark:text-stone-500 p-2 hover:text-sky-500 transition-colors" href="../client_journal_cute_lively/index.html">
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-stone-500 p-2 hover:text-[#a83c20] transition-colors" href="../client_journal_cute_lively/index.html">
 <span class="material-symbols-outlined" data-icon="visibility">visibility</span>
-<span class="font-['Plus_Jakarta_Sans'] font-semibold text-[10px] tracking-wide uppercase">Paws</span>
+<span class="font-body font-semibold text-[10px] tracking-wide uppercase">Paws</span>
 </a>
-<a class="flex flex-col items-center justify-center text-stone-400 dark:text-stone-500 p-2 hover:text-sky-500 transition-colors" href="../pet_profile_cooper/index.html">
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-stone-500 p-2 hover:text-[#a83c20] transition-colors" href="../pet_profile_cooper/index.html">
 <span class="material-symbols-outlined" data-icon="person">person</span>
-<span class="font-['Plus_Jakarta_Sans'] font-semibold text-[10px] tracking-wide uppercase">Profile</span>
+<span class="font-body font-semibold text-[10px] tracking-wide uppercase">Profile</span>
 </a>
 </nav>
 </body></html>

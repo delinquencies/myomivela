@@ -4,29 +4,29 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Checkout - myo.</title>
-<script src="../../assets/tailwind-config.js"></script>
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<script src="../../assets/tailwind-config.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Be+Vietnam+Pro:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="../../assets/legacy-tailwind.css">
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
 <link href="../../assets/styles.css" rel="stylesheet"/>
 
-  </head>
-<body class="bg-surface font-body text-on-surface min-h-screen">
+  <link rel="stylesheet" href="../../assets/interior.css">
+<meta name="robots" content="noindex">
+</head>
+<body class="myo-interior bg-surface font-body text-on-surface min-h-screen">
 <!-- TopAppBar -->
-<header class="fixed top-0 w-full z-50 bg-[#fff4f2]/80 dark:bg-stone-900/80 backdrop-blur-xl shadow-[0_8px_32px_rgba(65,41,35,0.06)] flex items-center justify-between px-6 py-4">
+<header class="fixed top-0 w-full z-50 bg-[#faeee3]/80 dark:bg-stone-900/80 backdrop-blur-xl shadow-[0_8px_32px_rgba(65,41,35,0.06)] flex items-center justify-between px-6 py-4">
 <div class="flex items-center gap-3">
 <button class="material-symbols-outlined text-on-surface-variant active:scale-95 duration-200">arrow_back</button>
-<span class="text-2xl font-black text-[#412923] dark:text-[#fff4f2] lowercase">myo.</span>
+<span class="text-2xl font-black text-[#231b18] dark:text-[#faeee3] lowercase" data-myo-wordmark>myo.</span>
 </div>
 <div class="flex items-center gap-4">
-<span class="material-symbols-outlined text-[#412923] dark:text-[#fff4f2]">notifications</span>
+<span class="material-symbols-outlined text-[#231b18] dark:text-[#faeee3]">notifications</span>
 <div class="w-8 h-8 rounded-full overflow-hidden bg-surface-container">
-<img alt="Pet profile picture" class="w-full h-full object-cover" data-alt="Close-up portrait of a friendly man with a warm smile, professional lighting, soft background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCRppX3cBzH811el-CBP2w-ASDTFWKvbrtpHuBndMYuBC5Ex8Xu3fgObv1z8BaoG-fOKoLgMPtfvqYfwdbKFm9KQAO8tdmY6XGDBuJ113a-alGp3uabFAt_d7-56bTo8nQySXNW3-SqXTst2MZGTAp2qAtn25q1fUCUZ6j2hr0CKDBxZz03cPNydqLbwU_wymrySri52QEf0EIRMalb1o9IAIPV0TmBufjpEfaylHGGoO_IQIJDBSic9oewxFHv2Vkhzon9u6Hz5w"/>
+<img alt="Pet profile picture" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCRppX3cBzH811el-CBP2w-ASDTFWKvbrtpHuBndMYuBC5Ex8Xu3fgObv1z8BaoG-fOKoLgMPtfvqYfwdbKFm9KQAO8tdmY6XGDBuJ113a-alGp3uabFAt_d7-56bTo8nQySXNW3-SqXTst2MZGTAp2qAtn25q1fUCUZ6j2hr0CKDBxZz03cPNydqLbwU_wymrySri52QEf0EIRMalb1o9IAIPV0TmBufjpEfaylHGGoO_IQIJDBSic9oewxFHv2Vkhzon9u6Hz5w"/>
 </div>
 </div>
 </header>
 <main class="pt-24 pb-32 px-6 max-w-2xl mx-auto">
+<div class="myo-demo-notice"><strong>Preview only</strong><span>Sample recurring booking. Payments are in development.</span><a href="../index.html">All preview pages</a></div>
 <h1 class="font-headline font-extrabold text-3xl mb-8 tracking-tight text-on-background">Review your walk</h1>
 <!-- Pet & Sitter Bento Card -->
 <section class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
@@ -40,11 +40,11 @@
 <span class="text-sm">Today, 4:30 PM</span>
 </div>
 </div>
-<img alt="Luna" class="absolute -right-8 -bottom-8 w-40 h-40 object-cover rounded-full rotate-12 transition-transform group-hover:scale-110" data-alt="Cheerful golden retriever running through tall grass in a sunlit meadow, ears flapping, joyful expression" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCdf2m9C3dcCZuPFd-rdy4GK2YNSuoF58oxCPduZf34TmRFAVq2weK5AjIUb6MfBk14_hdqSqVsxaTK0fWATf34QbIVqRAxqVrZFKJEX_DKqqztdQ0wmd6pqN7XQeaptfwcTBlShdIJzxNSriwNSTLTqWmRtcKl1681GDVWU3ildcjxxx3l1vETr-sKJuet9rrW5Lh-DaqcM9bAAimlUvlhIYpsd2WZTuKitzWFNo_5kGolwBLHWnQuBGCSgctT6tPpXvYRaSkYtg"/>
+<img alt="Luna" class="absolute -right-8 -bottom-8 w-40 h-40 object-cover rounded-full rotate-12 transition-transform group-hover:scale-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCdf2m9C3dcCZuPFd-rdy4GK2YNSuoF58oxCPduZf34TmRFAVq2weK5AjIUb6MfBk14_hdqSqVsxaTK0fWATf34QbIVqRAxqVrZFKJEX_DKqqztdQ0wmd6pqN7XQeaptfwcTBlShdIJzxNSriwNSTLTqWmRtcKl1681GDVWU3ildcjxxx3l1vETr-sKJuet9rrW5Lh-DaqcM9bAAimlUvlhIYpsd2WZTuKitzWFNo_5kGolwBLHWnQuBGCSgctT6tPpXvYRaSkYtg"/>
 </div>
 <div class="bg-primary-container/10 p-6 rounded-lg flex flex-col items-center justify-center text-center border-2 border-dashed border-primary-container/30">
 <div class="w-16 h-16 rounded-full overflow-hidden mb-3 border-4 border-surface-container-lowest shadow-lg">
-<img alt="Sitter profile" class="w-full h-full object-cover" data-alt="Professional pet sitter smiling at camera, wearing a casual outdoor jacket, park background with soft bokeh" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC_xs5448TcY6RpTuSd2B5iRAGUx9QJ9JQlTL-FYNc7d57W6wvHce6BJ8OKM78QFxUgkVCEECtHv61QgCfkfoOCVYB8FEkWwCXoCZtBDEgNhjXwk__JN6KW4do6YRLnu7fOtSFnkbY29qAJ4Fl9943j_H7OmDZ127FXkyueT9lDqnB6JGo5Hnf0m0iGSO0nk1EiFAU9R9MBjP__EPft9VMSfEf6ni8y11JN5NhpAfthCwfUSew3AlO0N0gjajhgVup5-k6f_oAPLw"/>
+<img alt="Sitter profile" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC_xs5448TcY6RpTuSd2B5iRAGUx9QJ9JQlTL-FYNc7d57W6wvHce6BJ8OKM78QFxUgkVCEECtHv61QgCfkfoOCVYB8FEkWwCXoCZtBDEgNhjXwk__JN6KW4do6YRLnu7fOtSFnkbY29qAJ4Fl9943j_H7OmDZ127FXkyueT9lDqnB6JGo5Hnf0m0iGSO0nk1EiFAU9R9MBjP__EPft9VMSfEf6ni8y11JN5NhpAfthCwfUSew3AlO0N0gjajhgVup5-k6f_oAPLw"/>
 </div>
 <p class="text-xs font-bold text-primary mb-1 uppercase tracking-widest">Your Sitter</p>
 <p class="font-headline font-bold text-on-surface">Mark J.</p>
@@ -91,7 +91,7 @@
 <div class="flex gap-3 overflow-x-auto hide-scrollbar pb-2">
 <button class="flex-none px-6 py-3 rounded-full bg-surface-container-lowest border-2 border-primary-container/20 font-bold text-sm text-on-surface hover:bg-primary-container/10 active:scale-90 transition-all">$0</button>
 <button class="flex-none px-6 py-3 rounded-full bg-surface-container-lowest border-2 border-primary-container/20 font-bold text-sm text-on-surface hover:bg-primary-container/10 active:scale-90 transition-all">$5</button>
-<button class="flex-none px-6 py-3 rounded-full bg-primary-container text-white font-bold text-sm shadow-md active:scale-90 transition-all">$10</button>
+<button class="flex-none px-6 py-3 rounded-full bg-primary-container text-on-primary-container font-bold text-sm shadow-md active:scale-90 transition-all">$10</button>
 <button class="flex-none px-6 py-3 rounded-full bg-surface-container-lowest border-2 border-primary-container/20 font-bold text-sm text-on-surface hover:bg-primary-container/10 active:scale-90 transition-all">$15</button>
 <button class="flex-none px-6 py-3 rounded-full bg-surface-container-lowest border-2 border-primary-container/20 font-bold text-sm text-on-surface hover:bg-primary-container/10 active:scale-90 transition-all">Custom</button>
 </div>

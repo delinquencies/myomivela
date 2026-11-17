@@ -4,25 +4,24 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Pet Onboarding - Health &amp; Medical</title>
-<script src="../../assets/tailwind-config.js"></script>
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<script src="../../assets/tailwind-config.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Be+Vietnam+Pro:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="../../assets/legacy-tailwind.css">
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
 <link href="../../assets/styles.css" rel="stylesheet"/>
 
-  </head>
-<body class="bg-background text-on-background font-body-md min-h-screen pb-32">
+  <link rel="stylesheet" href="../../assets/interior.css">
+<meta name="robots" content="noindex">
+</head>
+<body class="myo-interior bg-background text-on-background font-body-md min-h-screen pb-32">
 <!-- Top Navigation (Shell Rule: Suppressed for Transactional Onboarding) -->
 <!-- However, the prompt asks for "Clean and professional but friendly" and "The Day Stay" style -->
 <!-- We use the TopAppBar structure but with a "Back" button as per task guidelines for sub-pages -->
-<nav class="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-xl border-b border-sky-100/10 shadow-sm">
+<nav aria-label="Header navigation" class="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-xl border-b border-[#fae0cf]/10 shadow-sm">
 <div class="flex justify-between items-center px-6 h-16 w-full max-w-7xl mx-auto">
 <div class="flex items-center gap-4">
-<button class="p-2 hover:bg-sky-50 rounded-full transition-colors">
+<button class="p-2 hover:bg-[#fff7f0] rounded-full transition-colors">
 <span class="material-symbols-outlined text-primary">arrow_back</span>
 </button>
-<span class="font-headline-lg text-primary text-xl tracking-tight">myo.</span>
+<span class="font-headline-lg text-primary text-xl tracking-tight" data-myo-wordmark>myo.</span>
 </div>
 <div class="flex items-center gap-2">
 <div class="flex gap-1">
@@ -35,6 +34,7 @@
 </div>
 </nav>
 <main class="max-w-4xl mx-auto px-6 pt-24 pb-12">
+<div class="myo-demo-notice"><strong>Preview only</strong><span>Sample screen. Use fictitious details while exploring.</span><a href="../index.html">All preview pages</a></div>
 <!-- Header Section -->
 <header class="mb-12">
 <div class="inline-flex items-center gap-2 px-3 py-1 bg-primary-container/20 text-primary rounded-full mb-4">
@@ -91,14 +91,14 @@
 </div>
 </section>
 <!-- Quick Tip Card (4 Columns) -->
-<div class="md:col-span-4 bg-gradient-to-br from-primary to-blue-700 rounded-lg p-8 text-white relative overflow-hidden">
+<div class="md:col-span-4 bg-gradient-to-br from-primary to-[#862c16] rounded-lg p-8 text-white relative overflow-hidden">
 <div class="relative z-10 h-full flex flex-col justify-between">
 <div>
 <span class="material-symbols-outlined text-3xl mb-4">lightbulb</span>
 <h3 class="font-headline-lg text-lg mb-2">Why this matters</h3>
 <p class="font-body-md text-sm opacity-90 leading-relaxed">Keeping detailed health records ensures our supervisors can react quickly and safely to any situation during play-time.</p>
 </div>
-<img class="w-24 h-24 rounded-full border-4 border-white/20 mt-6 object-cover self-end" data-alt="portrait of a healthy golden retriever sitting proudly in a sunlit modern veterinary office" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC54cgBu6Guq-sWghlPtrZ3GMA6pKqsmza-OclxtfZRFmccpCbgRZKqMhzGEFAMRpsMwmlCHbLCdWdOVJjgPSh1QCwAdJ6-AfWb-eVzGfnFS-qnTC-rMwgYQdmLzuee01TbSNUBg3Z2MqIQYomgU4auP892Z73aqcFa4t-2yByno2IHa_YUO4xzPRoTO-HKDK8SghgvQiBo1sUnABSlZntVDzDlSBalXTOaQ8WnkvquHBD_vJe63kS8Xj5FFSd2WE_k1Fx5WEctNg"/>
+<img class="w-24 h-24 rounded-full border-4 border-white/20 mt-6 object-cover self-end" alt="portrait of a healthy golden retriever sitting proudly in a sunlit modern veterinary office" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC54cgBu6Guq-sWghlPtrZ3GMA6pKqsmza-OclxtfZRFmccpCbgRZKqMhzGEFAMRpsMwmlCHbLCdWdOVJjgPSh1QCwAdJ6-AfWb-eVzGfnFS-qnTC-rMwgYQdmLzuee01TbSNUBg3Z2MqIQYomgU4auP892Z73aqcFa4t-2yByno2IHa_YUO4xzPRoTO-HKDK8SghgvQiBo1sUnABSlZntVDzDlSBalXTOaQ8WnkvquHBD_vJe63kS8Xj5FFSd2WE_k1Fx5WEctNg"/>
 </div>
 <!-- Abstract Grainy Background Texture for Depth -->
 <div class="absolute inset-0 opacity-20 pointer-events-none bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-white/40 via-transparent to-transparent"></div>
@@ -138,7 +138,7 @@
 <label class="block sm:col-span-2">
 <span class="font-label-bold text-xs text-on-surface-variant mb-2 block uppercase">Emergency Phone</span>
 <div class="relative">
-<span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-outline text-sm">call</span>
+<span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-on-surface-variant text-sm">call</span>
 <input class="w-full rounded-lg border-outline-variant bg-surface-bright focus:border-primary focus:ring-primary p-3 pl-10" placeholder="+1 (555) 000-0000" type="tel"/>
 </div>
 </label>
@@ -146,7 +146,7 @@
 </section>
 <!-- Map Location Placeholder (Full Width) -->
 <section class="md:col-span-12 h-48 rounded-lg overflow-hidden relative group border border-outline-variant/20">
-<img class="w-full h-full object-cover filter saturate-50 contrast-75" data-alt="stylized birds eye view map of an urban neighborhood with soft pastel colors and clean cartography" data-location="Austin, Texas" src="https://lh3.googleusercontent.com/aida-public/AB6AXuANsdHCHwDWrkqgZIwyuOA4tJyIyNDKmc4RPQq_DqG14PwBSoEf239DpUV2jW_C4Uq8TyCwXGtqSTL4xIEaoFrUcco7ynQ1DLYRLwYvVDXyMn8mVdzqUa7xgsn2wBur7uxcAYAi0lvcWDz6NA1iRWgHBbfWoNQFKTA_MPsCwnRRmsY0qal_g0F6Vh67yMXa9m1jBl9CFmRxWnchA8gP4k5MmcBVsOfcG1HHrorEGjtFpvfc7CWUmO7hm6xmnrrbEHPOuLd9l0o8Sw"/>
+<img class="w-full h-full object-cover filter saturate-50 contrast-75" alt="stylized birds eye view map of an urban neighborhood with soft pastel colors and clean cartography" data-location="Austin, Texas" src="https://lh3.googleusercontent.com/aida-public/AB6AXuANsdHCHwDWrkqgZIwyuOA4tJyIyNDKmc4RPQq_DqG14PwBSoEf239DpUV2jW_C4Uq8TyCwXGtqSTL4xIEaoFrUcco7ynQ1DLYRLwYvVDXyMn8mVdzqUa7xgsn2wBur7uxcAYAi0lvcWDz6NA1iRWgHBbfWoNQFKTA_MPsCwnRRmsY0qal_g0F6Vh67yMXa9m1jBl9CFmRxWnchA8gP4k5MmcBVsOfcG1HHrorEGjtFpvfc7CWUmO7hm6xmnrrbEHPOuLd9l0o8Sw"/>
 <div class="absolute inset-0 bg-primary/10 group-hover:bg-transparent transition-colors"></div>
 <div class="absolute top-4 left-4 glass-panel px-4 py-2 rounded-full border border-white/40 flex items-center gap-2">
 <span class="material-symbols-outlined text-primary text-sm">location_on</span>
@@ -164,7 +164,7 @@
 <button class="hidden sm:block font-label-bold text-primary px-4">
                         Step 2 of 4
                     </button>
-<button class="bg-gradient-to-r from-primary to-blue-600 text-white font-label-bold px-8 py-4 rounded-full shadow-lg shadow-primary/20 hover:shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center gap-2">
+<button class="bg-gradient-to-r from-primary to-[#9c3219] text-white font-label-bold px-8 py-4 rounded-full shadow-lg shadow-primary/20 hover:shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center gap-2">
                         Continue to Personality
                         <span class="material-symbols-outlined">arrow_forward</span>
 </button>

@@ -3,21 +3,22 @@
 <html class="light" lang="en"><head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&amp;family=Be+Vietnam+Pro:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
 <link href="../../assets/styles.css" rel="stylesheet"/>
 
-<script src="../../assets/tailwind-config.js"></script>
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-  </head>
-<body class="bg-surface text-on-surface selection:bg-primary-container selection:text-on-primary-container">
+<link rel="stylesheet" href="../../assets/legacy-tailwind.css">
+  <link rel="stylesheet" href="../../assets/interior.css">
+<meta name="robots" content="noindex">
+<title>Stay Report | myo.</title>
+</head>
+<body class="myo-interior bg-surface text-on-surface selection:bg-primary-container selection:text-on-primary-container">
 <!-- TopAppBar -->
 <header class="fixed top-0 w-full z-50 flex items-center justify-between px-6 py-4 glass-header shadow-[0_8px_32px_rgba(65,41,35,0.06)]">
 <div class="flex items-center gap-3">
 <div class="w-10 h-10 rounded-full overflow-hidden border-2 border-primary-container">
-<img alt="Pet profile picture" class="w-full h-full object-cover" data-alt="Close-up portrait of a happy golden retriever puppy with a soft blurred background of a sunny garden" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCauhlT7-k4jPdpuLe6OMih4Jj-bO6Ow3kXaIahVfANk5xLc0dYzAn35MIU-VgP1-jRaPqfGznG1ByQISIdaqMWjDWXUuOEHGj-6_ZWwwkHcm-HwpSYq4n3KYOyieGGkhRCyJPU1U62k5Rr695rUrT7hvkGBeUJVDLwiUO6CueyPaqM_N3Q7Zt2kEgpnEh3N2RE3Cyv4_5J5Q793VjpDxaOzjegczxZiWVj3QTsl_dp0-UjLtHTVoXAH6h_z5ZvEcLzLU6XlMYhqA"/>
+<img alt="Pet profile picture" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCauhlT7-k4jPdpuLe6OMih4Jj-bO6Ow3kXaIahVfANk5xLc0dYzAn35MIU-VgP1-jRaPqfGznG1ByQISIdaqMWjDWXUuOEHGj-6_ZWwwkHcm-HwpSYq4n3KYOyieGGkhRCyJPU1U62k5Rr695rUrT7hvkGBeUJVDLwiUO6CueyPaqM_N3Q7Zt2kEgpnEh3N2RE3Cyv4_5J5Q793VjpDxaOzjegczxZiWVj3QTsl_dp0-UjLtHTVoXAH6h_z5ZvEcLzLU6XlMYhqA"/>
 </div>
-<span class="text-2xl font-black text-on-background lowercase">myo.</span>
+<span class="text-2xl font-black text-on-background lowercase" data-myo-wordmark>myo.</span>
 </div>
 <div class="flex items-center gap-4">
 <button class="text-on-background hover:opacity-80 transition-opacity active:scale-95 duration-200">
@@ -26,6 +27,7 @@
 </div>
 </header>
 <main class="pt-24 pb-32 px-6 max-w-2xl mx-auto space-y-8">
+<div class="myo-demo-notice"><strong>Preview only</strong><span>Sample screen. Use fictitious details while exploring.</span><a href="../index.html">All preview pages</a></div>
 <!-- Hero Summary Section -->
 <section class="relative bg-surface-container-lowest rounded-xl p-8 shadow-[0_8px_48px_rgba(65,41,35,0.04)] overflow-hidden">
 <div class="absolute -right-8 -top-8 w-40 h-40 bg-primary-container/10 rounded-full blur-3xl"></div>
@@ -39,7 +41,7 @@
 <!-- Bento Grid Stats -->
 <div class="grid grid-cols-2 gap-4 mt-8">
 <!-- Total Playtime Card -->
-<div class="bg-primary-container rounded-lg p-6 text-white flex flex-col justify-between aspect-square transform hover:rotate-1 transition-transform">
+<div class="bg-primary-container rounded-lg p-6 text-on-primary-container flex flex-col justify-between aspect-square transform hover:rotate-1 transition-transform">
 <span class="material-symbols-outlined text-4xl" style="font-variation-settings: 'FILL' 1;">sprint</span>
 <div>
 <p class="text-sm font-semibold opacity-80">Total Playtime</p>
@@ -88,10 +90,10 @@
 <!-- Photo Highlight (Asymmetric/Kinetic) -->
 <section class="relative h-64 my-12">
 <div class="absolute inset-0 bg-surface-container rounded-xl overflow-hidden transform rotate-1">
-<img alt="Cooper playing" class="w-full h-full object-cover" data-alt="Action shot of a golden retriever jumping to catch a bright blue ball in a sun-drenched backyard" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCXk8JZbKiS501wLXJCyl0xHzeYTJniFbmR0R5QwYy_q2aeUyG9SOVYhx9JTzWj2Nj-v2qi10J6iq-AKi5IcHY9wOC-sv05vVmAGgmA-7HA4QnjJmggvMIpVTOuYxyg3v3lgALwBkrs0v3ktI2Svi_tMTp6cIZyJaQ90NpGQ-_dgXgHPn9a2_KKhxjFzgFddgEgkws-j04GaQQOLqvndC743eJq8-h4pE9CULFp9Oz2qETw4Wota9DBdkcd8jCcPSzKaoJrN4gVrg"/>
+<img alt="Cooper playing" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCXk8JZbKiS501wLXJCyl0xHzeYTJniFbmR0R5QwYy_q2aeUyG9SOVYhx9JTzWj2Nj-v2qi10J6iq-AKi5IcHY9wOC-sv05vVmAGgmA-7HA4QnjJmggvMIpVTOuYxyg3v3lgALwBkrs0v3ktI2Svi_tMTp6cIZyJaQ90NpGQ-_dgXgHPn9a2_KKhxjFzgFddgEgkws-j04GaQQOLqvndC743eJq8-h4pE9CULFp9Oz2qETw4Wota9DBdkcd8jCcPSzKaoJrN4gVrg"/>
 </div>
 <div class="absolute -bottom-6 -right-4 w-48 h-48 bg-white p-2 rounded-lg shadow-xl transform -rotate-3 transition-transform hover:rotate-0">
-<img alt="Cooper nap" class="w-full h-full object-cover rounded" data-alt="Candid photo of a dog sleeping peacefully on a colorful rug with sunlight filtering through a window" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAqqwJVGPHgrFLvOizBQtYSk1A-xemdt_RF_C6ghqp9QOTeqTtAiI0IphYm4uQO4HotN--sO_so7saNsojFnuSGCypjfuOGyUemKB0wHzMvvdMI9bspXL96DX4-IPyswFLeHzix-1t0_lbXSqudiFFhhmWfWoeDFBXOcm9qjoDoYr9GDyPTNPSIWrkgqUJgHp6oavTR46y5-YZA9zWbKV9d3w4awaRPI8KFejhOZjsfs6_edt-fozDp0l2rp_Kn6cxGoEmPscg1Dw"/>
+<img alt="Cooper nap" class="w-full h-full object-cover rounded" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAqqwJVGPHgrFLvOizBQtYSk1A-xemdt_RF_C6ghqp9QOTeqTtAiI0IphYm4uQO4HotN--sO_so7saNsojFnuSGCypjfuOGyUemKB0wHzMvvdMI9bspXL96DX4-IPyswFLeHzix-1t0_lbXSqudiFFhhmWfWoeDFBXOcm9qjoDoYr9GDyPTNPSIWrkgqUJgHp6oavTR46y5-YZA9zWbKV9d3w4awaRPI8KFejhOZjsfs6_edt-fozDp0l2rp_Kn6cxGoEmPscg1Dw"/>
 </div>
 </section>
 <!-- Sitter Note Section -->
@@ -124,22 +126,22 @@
 </div>
 </main>
 <!-- BottomNavBar -->
-<nav class="fixed bottom-0 w-full z-50 bg-[#fff4f2]/80 backdrop-blur-xl rounded-t-[3rem] shadow-[0_-8px_32px_rgba(65,41,35,0.06)] flex justify-around items-center px-4 pb-6 pt-3">
-<a class="flex flex-col items-center justify-center text-[#412923] opacity-60 hover:scale-105 transition-transform active:scale-90 duration-200" href="../client_journal_cute_lively/index.html">
+<nav aria-label="Client navigation" class="fixed bottom-0 w-full z-50 bg-[#faeee3]/80 backdrop-blur-xl rounded-t-[3rem] shadow-[0_-8px_32px_rgba(65,41,35,0.06)] flex justify-around items-center px-4 pb-6 pt-3">
+<a class="flex flex-col items-center justify-center text-[#231b18] hover:scale-105 transition-transform active:scale-90 duration-200" href="../client_journal_cute_lively/index.html">
 <span class="material-symbols-outlined">map</span>
-<span class="font-['Plus_Jakarta_Sans'] font-semibold text-[10px]">Journal</span>
+<span class="font-body font-semibold text-[10px]">Journal</span>
 </a>
-<a class="flex flex-col items-center justify-center bg-[#00baff] text-white rounded-full px-4 py-2 hover:scale-105 transition-transform active:scale-90 duration-200" href="../stay_report_card/index.html">
+<a class="flex flex-col items-center justify-center bg-[#cc3814] text-white rounded-full px-4 py-2 hover:scale-105 transition-transform active:scale-90 duration-200" href="../stay_report_card/index.html">
 <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">pets</span>
-<span class="font-['Plus_Jakarta_Sans'] font-semibold text-[10px]">Activities</span>
+<span class="font-body font-semibold text-[10px]">Activities</span>
 </a>
-<a class="flex flex-col items-center justify-center text-[#412923] opacity-60 hover:scale-105 transition-transform active:scale-90 duration-200" href="../schedule_a_meet_greet/index.html">
+<a class="flex flex-col items-center justify-center text-[#231b18] hover:scale-105 transition-transform active:scale-90 duration-200" href="../schedule_a_meet_greet/index.html">
 <span class="material-symbols-outlined">calendar_month</span>
-<span class="font-['Plus_Jakarta_Sans'] font-semibold text-[10px]">Bookings</span>
+<span class="font-body font-semibold text-[10px]">Bookings</span>
 </a>
-<a class="flex flex-col items-center justify-center text-[#412923] opacity-60 hover:scale-105 transition-transform active:scale-90 duration-200" href="../pet_profile_cooper/index.html">
+<a class="flex flex-col items-center justify-center text-[#231b18] hover:scale-105 transition-transform active:scale-90 duration-200" href="../pet_profile_cooper/index.html">
 <span class="material-symbols-outlined">person</span>
-<span class="font-['Plus_Jakarta_Sans'] font-semibold text-[10px]">Profile</span>
+<span class="font-body font-semibold text-[10px]">Profile</span>
 </a>
 </nav>
 </body></html>

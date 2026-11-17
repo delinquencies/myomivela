@@ -5,29 +5,30 @@
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>myo. - Emergency Contact Setup</title>
 <!-- Google Fonts -->
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&amp;family=Be+Vietnam+Pro:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
 <!-- Material Symbols -->
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
 <link href="../../assets/styles.css" rel="stylesheet"/>
 
 <!-- Tailwind CSS -->
-<script src="../../assets/tailwind-config.js"></script>
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-  </head>
-<body class="bg-surface selection:bg-primary-container selection:text-on-primary-container">
+<link rel="stylesheet" href="../../assets/legacy-tailwind.css">
+  <link rel="stylesheet" href="../../assets/interior.css">
+<meta name="robots" content="noindex">
+</head>
+<body class="myo-interior bg-surface selection:bg-primary-container selection:text-on-primary-container">
 <!-- Top App Bar -->
-<header class="fixed top-0 w-full z-50 bg-[#fff4f2]/80 dark:bg-[#412923]/80 backdrop-blur-xl flex justify-between items-center px-6 py-4 w-full">
+<header class="fixed top-0 w-full z-50 bg-[#faeee3]/80 dark:bg-[#231b18]/80 backdrop-blur-xl flex justify-between items-center px-6 py-4 w-full">
 <div class="flex items-center gap-4">
-<button class="hover:scale-95 transition-transform duration-200 text-[#412923]/60 dark:text-[#fff4f2]/60">
+<button class="hover:scale-95 transition-transform duration-200 text-[#231b18]/60 dark:text-[#faeee3]/60">
 <span class="material-symbols-outlined" data-icon="arrow_back">arrow_back</span>
 </button>
-<span class="text-2xl font-black text-[#412923] dark:text-[#fff4f2] lowercase">myo.</span>
+<span class="text-2xl font-black text-[#231b18] dark:text-[#faeee3] lowercase" data-myo-wordmark>myo.</span>
 </div>
-<button class="hover:scale-95 transition-transform duration-200 text-[#412923]/60 dark:text-[#fff4f2]/60">
+<button class="hover:scale-95 transition-transform duration-200 text-[#231b18]/60 dark:text-[#faeee3]/60">
 <span class="material-symbols-outlined" data-icon="settings">settings</span>
 </button>
 </header>
 <main class="pt-24 pb-32 px-6 max-w-2xl mx-auto space-y-12">
+<div class="myo-demo-notice"><strong>Preview only</strong><span>Sample screen. Use fictitious details while exploring.</span><a href="../index.html">All preview pages</a></div>
 <!-- Hero Section -->
 <section class="relative overflow-visible">
 <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
@@ -42,7 +43,7 @@
 <div class="relative flex justify-center items-center">
 <!-- Overlapping Illustration -->
 <div class="absolute -z-10 w-64 h-64 bg-secondary-container rounded-full blur-3xl opacity-30"></div>
-<img alt="Happy dog wearing a yellow bandana" class="w-48 h-48 md:w-64 md:h-64 object-cover rounded-xl shadow-2xl -rotate-6 hover:rotate-0 transition-transform duration-500 border-8 border-surface-container-lowest" data-alt="a cheerful golden retriever wearing a vibrant yellow bandana sitting proudly in a sunlit modern living room" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAtbyfRyC5HfngAckovvZZFw9TRagR3JIDjN_AdbtiTW--RMLGsSHSz-IwFNG-YSUsk_7Oivs7Y5q2-RJKKQE6XcaZ5kOBLX7Fi6-ljqd-v9S8h-Tm0HmAVaUHXuvpOfSgE4zO7FByut0ZhdgUpKzcpeNUo8Hgdub98SCgbChKt0_Wg7nEr125emQqg7x3kccayStu4mDEPCctHadzR1bjLoezyrz2hAdRG63EZM1uBNR9kaOY5DcU63SDt5l-PcSPYQxJCTNNvFw"/>
+<img alt="Happy dog wearing a yellow bandana" class="w-48 h-48 md:w-64 md:h-64 object-cover rounded-xl shadow-2xl -rotate-6 hover:rotate-0 transition-transform duration-500 border-8 border-surface-container-lowest" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAtbyfRyC5HfngAckovvZZFw9TRagR3JIDjN_AdbtiTW--RMLGsSHSz-IwFNG-YSUsk_7Oivs7Y5q2-RJKKQE6XcaZ5kOBLX7Fi6-ljqd-v9S8h-Tm0HmAVaUHXuvpOfSgE4zO7FByut0ZhdgUpKzcpeNUo8Hgdub98SCgbChKt0_Wg7nEr125emQqg7x3kccayStu4mDEPCctHadzR1bjLoezyrz2hAdRG63EZM1uBNR9kaOY5DcU63SDt5l-PcSPYQxJCTNNvFw"/>
 <div class="absolute -bottom-4 -right-4 bg-primary p-4 rounded-full shadow-lg">
 <span class="material-symbols-outlined text-on-primary text-3xl" style="font-variation-settings: 'FILL' 1;">medical_services</span>
 </div>
@@ -71,7 +72,7 @@
 <span class="material-symbols-outlined text-sm">call</span> (555) 123-4567
                             </p>
 </div>
-<button class="text-outline hover:text-error transition-colors p-2">
+<button class="text-on-surface-variant hover:text-error transition-colors p-2">
 <span class="material-symbols-outlined">delete</span>
 </button>
 </div>
@@ -91,7 +92,7 @@
 <span class="material-symbols-outlined text-sm">call</span> (555) 987-6543
                             </p>
 </div>
-<button class="text-outline hover:text-error transition-colors p-2">
+<button class="text-on-surface-variant hover:text-error transition-colors p-2">
 <span class="material-symbols-outlined">delete</span>
 </button>
 </div>
@@ -107,7 +108,7 @@
                 </h2>
 <p class="text-on-surface-variant">Fill in the details for your pet's new emergency contact.</p>
 </div>
-<form class="space-y-6">
+<div class="space-y-6">
 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 <div class="space-y-2">
 <label class="text-sm font-bold text-on-surface/70 ml-2">Name</label>
@@ -116,7 +117,7 @@
 <div class="space-y-2">
 <label class="text-sm font-bold text-on-surface/70 ml-2">Relationship</label>
 <div class="relative">
-<select class="w-full bg-surface-container-lowest border-none rounded-md p-4 pr-10 focus:ring-2 focus:ring-primary/40 text-on-surface font-medium appearance-none">
+<select aria-label="Relationship" class="w-full bg-surface-container-lowest border-none rounded-md p-4 pr-10 focus:ring-2 focus:ring-primary/40 text-on-surface font-medium appearance-none">
 <option>Select Relationship</option>
 <option>Vet</option>
 <option>Family</option>
@@ -141,7 +142,7 @@
                         Cancel
                     </button>
 </div>
-</form>
+</div>
 </section>
 <!-- Safety Tip -->
 <section class="bg-tertiary-dim/5 p-6 rounded-lg border border-tertiary-container/30 flex gap-4 items-start">
@@ -155,23 +156,23 @@
 </section>
 </main>
 <!-- Bottom Navigation Bar -->
-<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-8 pb-6 pt-4 bg-[#fff4f2]/80 dark:bg-[#412923]/80 backdrop-blur-xl z-50 rounded-t-[3rem] shadow-[0_-8px_32px_0_rgba(65,41,35,0.06)]">
-<a class="flex flex-col items-center justify-center text-[#412923]/50 dark:text-[#fff4f2]/50 p-2 hover:text-[#00BAFF] transition-colors scale-95 active:scale-90 duration-200" href="../../index.html">
+<nav aria-label="Client navigation" class="fixed bottom-0 left-0 w-full flex justify-around items-center px-8 pb-6 pt-4 bg-[#faeee3]/80 dark:bg-[#231b18]/80 backdrop-blur-xl z-50 rounded-t-[3rem] shadow-[0_-8px_32px_0_rgba(65,41,35,0.06)]">
+<a class="flex flex-col items-center justify-center text-[#231b18]/50 dark:text-[#faeee3]/50 p-2 hover:text-[#cc3814] transition-colors scale-95 active:scale-90 duration-200" href="../../index.html">
 <span class="material-symbols-outlined" data-icon="home">home</span>
-<span class="font-['Plus_Jakarta_Sans'] text-[10px] font-semibold uppercase tracking-widest mt-1">Home</span>
+<span class="font-body text-[10px] font-semibold uppercase tracking-widest mt-1">Home</span>
 </a>
-<a class="flex flex-col items-center justify-center text-[#412923]/50 dark:text-[#fff4f2]/50 p-2 hover:text-[#00BAFF] transition-colors scale-95 active:scale-90 duration-200" href="../pet_profile_cooper/index.html">
+<a class="flex flex-col items-center justify-center text-[#231b18]/50 dark:text-[#faeee3]/50 p-2 hover:text-[#cc3814] transition-colors scale-95 active:scale-90 duration-200" href="../pet_profile_cooper/index.html">
 <span class="material-symbols-outlined" data-icon="pets">pets</span>
-<span class="font-['Plus_Jakarta_Sans'] text-[10px] font-semibold uppercase tracking-widest mt-1">Pets</span>
+<span class="font-body text-[10px] font-semibold uppercase tracking-widest mt-1">Pets</span>
 </a>
 <!-- ACTIVE TAB: Emergencies -->
-<a class="flex flex-col items-center justify-center bg-gradient-to-tr from-[#005578] to-[#00BAFF] text-white rounded-full p-3 scale-110 -translate-y-2 shadow-lg" href="../emergency_contact_setup/index.html">
+<a class="flex flex-col items-center justify-center bg-gradient-to-tr from-[#9d2e15] to-[#cc3814] text-white rounded-full p-3 scale-110 -translate-y-2 shadow-lg" href="../emergency_contact_setup/index.html">
 <span class="material-symbols-outlined" data-icon="contact_emergency" style="font-variation-settings: 'FILL' 1;">contact_emergency</span>
-<span class="font-['Plus_Jakarta_Sans'] text-[10px] font-semibold uppercase tracking-widest mt-1">Emergencies</span>
+<span class="font-body text-[10px] font-semibold uppercase tracking-widest mt-1">Emergencies</span>
 </a>
-<a class="flex flex-col items-center justify-center text-[#412923]/50 dark:text-[#fff4f2]/50 p-2 hover:text-[#00BAFF] transition-colors scale-95 active:scale-90 duration-200" href="../pet_profile_cooper/index.html">
+<a class="flex flex-col items-center justify-center text-[#231b18]/50 dark:text-[#faeee3]/50 p-2 hover:text-[#cc3814] transition-colors scale-95 active:scale-90 duration-200" href="../pet_profile_cooper/index.html">
 <span class="material-symbols-outlined" data-icon="person">person</span>
-<span class="font-['Plus_Jakarta_Sans'] text-[10px] font-semibold uppercase tracking-widest mt-1">Profile</span>
+<span class="font-body text-[10px] font-semibold uppercase tracking-widest mt-1">Profile</span>
 </a>
 </nav>
 </body></html>
