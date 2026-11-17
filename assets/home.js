@@ -49,6 +49,26 @@ try {
   // English is already present in the HTML.
 }
 
+const siteMenu = document.querySelector('.site-menu');
+if (siteMenu) {
+  const menuToggle = siteMenu.querySelector('summary');
+
+  siteMenu.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape' || !siteMenu.open) return;
+    event.preventDefault();
+    siteMenu.open = false;
+    menuToggle.focus();
+  });
+
+  siteMenu.addEventListener('click', (event) => {
+    if (event.target.closest('nav a')) siteMenu.open = false;
+  });
+
+  document.addEventListener('click', (event) => {
+    if (siteMenu.open && !siteMenu.contains(event.target)) siteMenu.open = false;
+  });
+}
+
 const portrait = document.querySelector('.portrait-wrap');
 if (portrait && 'IntersectionObserver' in window) {
   const observer = new IntersectionObserver(([entry]) => {
