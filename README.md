@@ -33,6 +33,7 @@ lib/headers.mjs       Security headers (CSP etc.), JSON errors, URL decoding
 lib/site.mjs          Which files are public; used by the Node static server and the Cloudflare build
 lib/static.mjs        Node only: serves the public files
 assets/portal.js      Customer and staff portal (renders into portal/index.html)
+assets/drafts.js      Keeps unsaved form input across re-renders and tab reloads (sessionStorage, cleared on sign-out)
 assets/diary.js       Diary rendering shared by the portal and the public sample
 assets/home.js        Public site: language switch, service cards
 assets/*.css          Checked-in styles (no build step)
@@ -144,6 +145,7 @@ There is no linter or type checker configured. CI is defined in `.github/workflo
 - **Pets:** create and edit pet profiles (breed, medical, diet, emergency contacts and notes as one JSON profile).
 - **Booking:** customers request a service for one or more of their pets at a start time on a 30-minute grid inside staff-published windows. Staff approve, decline, reschedule and cancel; customers can cancel or reschedule. Overlapping approvals and approvals for withdrawn windows are rejected. The price is snapshotted on the booking.
 - **Visits and diary:** staff start and complete visits (a summary is required), publish typed activity updates with an optional photo, and customers see them grouped by visit. Photo access is checked per request, and photo metadata (including GPS) is removed on upload.
+- **Unsaved typing is kept:** saving one form no longer wipes what was typed or chosen in the others (including a half-filled booking, open editors and a chosen photo), and drafts survive a reload of the tab. They are kept in the tab's session storage, cleared on sign-out and when the form is saved; passwords are never kept.
 - **Safe retries:** every portal form sends an `Idempotency-Key`; if the connection drops, the portal retries and the server runs the write once (bookings, approvals, diary updates and so on).
 - **Staff tools:** service prices and durations, appointment windows, today’s visits, history, and diary publishing.
 

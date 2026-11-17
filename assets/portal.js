@@ -1,4 +1,5 @@
 import { activityIcons, escapeHtml as text, formatVisitDate as date, renderDiaryVisits } from './diary.js';
+import { createDrafts } from './drafts.js';
 
 const app = document.querySelector('#app');
 const feedback = document.querySelector('#feedback');
@@ -21,6 +22,7 @@ const serviceNames = new Map([
 ]);
 const requestedService = () => serviceNames.get(new URLSearchParams(location.search).get('service'));
 const bookingIntake = '#pet-intake';
+const drafts = createDrafts();
 let data;
 let filterPet = '';
 let filterVisit = '';
@@ -271,6 +273,9 @@ const section = (id,title,contents) => '<section id="'+id+'"><h2>'+title+'</h2>'
 function render() {
   logout.hidden = !data?.user;
   if (!data?.user) { auth(); return; }
+  // Keep anything typed into other forms: record it before replacing the page, put it back afterwards.
+  drafts.use(data.user.id);
+  drafts.capture(app);
   const admin = data.user.admin;
   const today = day(Date.now());
   const bookings = data.bookings.filter(b => b.starts >= Date.now() || b.status === 'In Progress');
@@ -297,6 +302,10 @@ function render() {
       (admin ? publishingDesk()+'<h3>Published updates</h3>' : '')+'<div id="diary-feed">'+diary()+'</div>')+
     (admin ? section('history','Booking history',cards(history)+older) : '');
   updateQuote();
+  drafts.restore(app, {
+    onChoice:(form, input) => { if (form.dataset.action === 'bookings' && ['service','day'].includes(input.name)) updateQuote({ target:input }); },
+    onFile:(form, input, file) => showPhotoSelection(form, file),
+  });
   showSection();
 }
 function showSection(focus = false) {
@@ -403,6 +412,10 @@ async function updateDiaryFilter(name, value) {
     filter.querySelector(':checked')?.focus({ preventScroll:true });
   }
 }
+// Save drafts shortly after typing stops, and when the tab is hidden, so a reload or a discarded tab keeps them.
+let draftTimer;
+app.addEventListener('input', () => { clearTimeout(draftTimer); draftTimer = setTimeout(() => data?.user && drafts.capture(app), 400); });
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden' && data?.user) drafts.capture(app); });
 app.addEventListener('click', async event => {
   const clearPhoto = event.target.closest('[data-clear-photo]');
   if (clearPhoto) {
@@ -488,6 +501,8 @@ app.addEventListener('submit',async event => {
     try { await api(action,payload,key); }
     catch (error) { if (!error.network) pendingKeys.delete(form); throw error; }
     pendingKeys.delete(form);
+    form.dataset.submitted = '1'; // saved: start this form empty on the next render
+    drafts.forget(form);
     const resumeBooking = action === 'pets' && !form.dataset.id && location.hash === bookingIntake;
     if (resumeBooking) history.replaceState(null,'','#book');
     if (action === 'bookings') {
@@ -508,6 +523,7 @@ app.addEventListener('submit',async event => {
 logout.addEventListener('click',async () => {
   try {
     await api('logout',{});
+    drafts.clear();
     history.replaceState(null,'',location.pathname+location.search+(new URLSearchParams(location.search).get('staff') === '1' ? '#diary' : ''));
     filterPet = filterVisit = '';
     await refresh();

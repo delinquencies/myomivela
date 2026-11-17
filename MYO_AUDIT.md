@@ -242,7 +242,15 @@ Unchanged. Needs policy decisions (no-show, early-start window, cancellation cut
 - **Remaining limitations:** upcoming bookings are not paged; the schedule bounds them, but a staff member with hundreds of future requests would receive all of them. The visit filter lists only the visits loaded so far. A browser can keep a photo in its private cache for up to an hour after sign-out on a shared device.
 
 ### O1 — Hosting mismatch in sitemap/robots · Medium · OPEN (depends on the hosting decision)
-### O2 — Whole-page re-render loses unsaved input · Low–Medium · OPEN
+### O2 — Whole-page re-render loses unsaved input · Low–Medium · RESOLVED
+- **Files:** `assets/drafts.js` (new), `assets/portal.js`, `tests/browser/portal-smoke.mjs`
+- **Fix:** before each re-render the portal records, for every form, the fields that differ from what was rendered: text, choices, chosen photo, and whether its panel is open. Afterwards it puts them back. The booking form rebuilds its days and times as the restored service and day are applied. Only changed fields are kept, so a draft never masks newer server data. Drafts are also written to the tab's `sessionStorage`, after typing pauses and when the tab is hidden, so a reload or a discarded background tab keeps them. A successfully saved form starts empty; sign-out clears every draft. Passwords are never kept.
+- **Verification:** the browser smoke test, on both runtimes:
+  - The customer types a new pet, edits an existing pet, and half-fills a booking (pet, a later time, notes). They then save the edited pet. The new-pet text and the entire booking draft survive; the booking then submits and its form empties, while the new-pet draft remains.
+  - Staff half-write a diary note and choose a photo, then save a service price. Both survive. After a reload the note survives (the photo cannot), and after publishing the form is empty.
+  - After sign-out no drafts remain in storage, and signing back in shows empty forms.
+  - With the restore step disabled, the test fails as the original bug did.
+- **Remaining limitations:** a chosen photo is lost on reload (browsers cannot restore files). Drafts are per tab, not synced across devices. Draft text, which may include care or medical notes, sits in the tab's session storage until the form is saved, the user signs out or the tab closes.
 ### O3 — Runtime and tooling · RESOLVED (tests, `engines`); CI IMPLEMENTED — UNVERIFIED
 - **Files:** `package.json`, `.github/workflows/test.yml`, `tests/`
 - **Fix:** `npm test`, `npm run backup`, `engines.node >= 22.13.0`, and a workflow running syntax checks and tests on Node 22 and 24.
@@ -302,7 +310,7 @@ Background checked against Cloudflare documentation on 2026-11-17: the original 
 | D4 | Ad hoc schema management | Medium | RESOLVED |
 | D5 | Unbounded portal payload | Medium | RESOLVED |
 | O1 | Static hosting mismatch | Medium | IN PROGRESS: site and API served together by the Worker; sitemap/robots await the domain |
-| O2 | Re-render loses input | Low–Med | OPEN |
+| O2 | Re-render loses input | Low–Med | RESOLVED |
 | O3 | No tests/CI/engines | Medium | RESOLVED; CI (Node and Worker jobs) IMPLEMENTED — UNVERIFIED |
 | P0-1 | Automated tests | P0 | RESOLVED (36 Node, 28 Worker, browser smoke on both) |
 | P0-5 | Backup tooling | P0 | RESOLVED (manual download + tested restore, both runtimes); scheduling OPEN |

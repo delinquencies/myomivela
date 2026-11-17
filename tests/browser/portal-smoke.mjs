@@ -91,14 +91,42 @@ await book.locator('input[name=pets]').locator('xpath=..').click();
 await book.locator('[data-booking-times] input[name=slot]').nth(0).locator('xpath=..').click();
 await book.locator('button[type=submit]').click();
 await waitSaved(cust);
-// Second booking later in same window
-await cust.goto(server.base + '/portal/index.html#book');
+// Unsaved typing survives other saves. Start a new pet and edit an existing one, half-fill a booking,
+// then save the edited pet: the new-pet draft and the whole booking draft (pet, chosen time, notes) must remain.
+const section = (page, id) => page.evaluate(id => { location.hash = id; }, id); // hash only, as the portal nav does
+await cust.goto(server.base + '/portal/index.html#pets');
+await cust.locator('#pets form[data-id=""] [name=name]').fill('Draft pet');
+await cust.locator('#pets details:has-text("Edit profile") summary').first().click();
+await cust.locator('#pets form[data-action=pets]:not([data-id=""]) [name=behavior]').first().fill('Pulls on the lead');
+await section(cust, 'book');
 await book.locator('input[name=pets]').locator('xpath=..').click();
 const secondCount = await book.locator('[data-booking-times] input[name=slot]').count();
+const chosenTime = await book.locator('[data-booking-times] input[name=slot]').nth(3).getAttribute('value');
 await book.locator('[data-booking-times] input[name=slot]').nth(3).locator('xpath=..').click();
+await book.locator('[name=notes]').fill('Gate code 1234');
+await section(cust, 'pets');
+await cust.locator('#pets form[data-action=pets]:not([data-id=""]) button[type=submit]').first().click();
+await waitSaved(cust);
+const keptPet = await cust.locator('#pets form[data-id=""] [name=name]').inputValue();
+const savedNote = await cust.locator('#pets form[data-action=pets]:not([data-id=""]) [name=behavior]').first().inputValue();
+await section(cust, 'book');
+const keptBooking = {
+  pet: await book.locator('input[name=pets]').isChecked(),
+  time: await book.locator('[data-booking-times] input[name=slot]:checked').getAttribute('value') === chosenTime,
+  notes: await book.locator('[name=notes]').inputValue(),
+};
+log('after saving a pet: new-pet draft', JSON.stringify(keptPet), '· saved edit', JSON.stringify(savedNote), '· booking draft', JSON.stringify(keptBooking));
+if (keptPet !== 'Draft pet' || savedNote !== 'Pulls on the lead' || !keptBooking.pet || !keptBooking.time || keptBooking.notes !== 'Gate code 1234') {
+  throw new Error('Unsaved form input was lost after another save');
+}
 await book.locator('button[type=submit]').click();
 await waitSaved(cust);
 log('second booking placed; times offered before it:', secondCount);
+await section(cust, 'pets');
+if (await cust.locator('#pets form[data-id=""] [name=name]').inputValue() !== 'Draft pet') throw new Error('New-pet draft lost after booking');
+await section(cust, 'book');
+if (await book.locator('[name=notes]').inputValue() !== '') throw new Error('The booking form should be empty after it was submitted');
+await cust.goto(server.base + '/portal/index.html#upcoming');
 
 // Staff: approve both, reschedule one, start one
 await staff.goto(server.base + '/portal/index.html#upcoming');
@@ -137,6 +165,24 @@ const png = (() => { // 1x1 PNG
 })();
 const ev = staff.locator('#diary form[data-action=events]').first();
 await ev.waitFor();
+// A half-written diary note and chosen photo survive saving something else, and the note survives a reload.
+await ev.locator('[name=notes]').fill('Half-written note');
+await ev.locator('input[name=photo]').setInputFiles({ name:'draft.png', mimeType:'image/png', buffer:png });
+// Switch sections by hash: a full navigation is a reload, which cannot keep a chosen file
+// (on Cloudflare /portal/index.html redirects to /portal/, so goto() would reload).
+await section(staff, 'settings');
+await staff.locator('[data-action=services] [name=minutes]').fill('45');
+await staff.locator('[data-action=services] [name=price]').fill('32');
+await staff.locator('[data-action=services] button[type=submit]').click();
+await waitSaved(staff);
+await section(staff, 'diary');
+const noteAfterSave = await ev.locator('[name=notes]').inputValue();
+const photoAfterSave = await ev.locator('[data-photo-status]').textContent();
+await staff.reload();
+await ev.waitFor();
+const noteAfterReload = await ev.locator('[name=notes]').inputValue();
+log('diary draft after another save:', JSON.stringify(noteAfterSave), '·', JSON.stringify(photoAfterSave), '· after reload:', JSON.stringify(noteAfterReload));
+if (noteAfterSave !== 'Half-written note' || !photoAfterSave.includes('draft.png') || noteAfterReload !== 'Half-written note') throw new Error('Unsaved diary note or photo was lost');
 await ev.locator('input[name=kind]').first().locator('xpath=..').click();
 await ev.locator('[name=notes]').fill('Great walk');
 await ev.locator('input[name=photo]').setInputFiles({ name:'p.png', mimeType:'image/png', buffer:png });
@@ -156,6 +202,8 @@ expected.push(/\/api\/events.*(ERR_CONNECTION_RESET|net::ERR_FAILED)|ERR_CONNECT
 const published = await staff.locator('#diary-feed li:has-text("Great walk")').count();
 log('dropped connection on publish → diary shows the update', published, 'time(s)');
 if (published !== 1) throw new Error('Expected the retried diary update once, found ' + published);
+const noteAfterPublish = await ev.locator('[name=notes]').inputValue();
+if (noteAfterPublish !== '') throw new Error('The diary form should be empty after publishing, found ' + JSON.stringify(noteAfterPublish));
 await staff.goto(server.base + '/portal/index.html#upcoming');
 const done = staff.locator('form[data-action=status]:has(input[value=Completed])').first();
 await done.locator('[name=summary]').fill('All good');
@@ -208,6 +256,20 @@ await cust.locator('#diary-feed article.diary-visit').nth(firstPage).waitFor();
 log('diary visits:', firstPage, '→', await diaryVisits());
 if (firstPage !== 10) throw new Error('Expected a first diary page of 10 visits, got ' + firstPage);
 }
+
+// Signing out forgets drafts, so nothing typed lingers for the next person on a shared phone.
+await cust.goto(server.base + '/portal/index.html#pets');
+await cust.locator('#logout').click();
+await feedback(cust).filter({ hasText:'Signed out' }).waitFor();
+const leftover = await cust.evaluate(() => Object.keys(sessionStorage).filter(key => key.startsWith('myo-drafts:')).length);
+await cust.locator('[data-action=login] [name=email]').fill('casey@example.test');
+await cust.locator('[data-action=login] [name=password]').fill(password);
+await cust.locator('[data-action=login] button').click();
+await cust.locator('h1', { hasText:'My account' }).waitFor();
+await cust.goto(server.base + '/portal/index.html#pets');
+const afterSignIn = await cust.locator('#pets form[data-id=""] [name=name]').inputValue();
+log('after sign-out and back in: stored drafts', leftover, '· new pet form', JSON.stringify(afterSignIn));
+if (leftover || afterSignIn) throw new Error('Drafts survived sign-out');
 
 await browser.close();
 await server.stop();
