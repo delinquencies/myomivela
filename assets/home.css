@@ -1,13 +1,15 @@
 @font-face {
   font-family: Fraunces;
-  src: url("home/fraunces.woff2") format("woff2");
+  src: url("home/fraunces.woff2") format("woff2"),
+       url("https://raw.githubusercontent.com/delinquencies/myomivela/6bd39fed30729e61c1d7f9b1fa0f3d5baaefaaed/assets/home/fraunces.woff2") format("woff2");
   font-weight: 900;
   font-display: swap;
 }
 
 @font-face {
   font-family: Outfit;
-  src: url("home/outfit.ttf") format("truetype");
+  src: url("home/outfit.ttf") format("truetype"),
+       url("https://raw.githubusercontent.com/delinquencies/myomivela/6bd39fed30729e61c1d7f9b1fa0f3d5baaefaaed/assets/home/outfit.ttf") format("truetype");
   font-weight: 100 900;
   font-display: swap;
 }
