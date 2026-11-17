@@ -6,12 +6,19 @@ const find = (rows,id) => rows.find(row => row.id === id);
 const money = cents => new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(cents / 100);
 const date = value => new Intl.DateTimeFormat('en-US',{dateStyle:'medium',timeStyle:'short',timeZone:'America/New_York'}).format(value);
 const day = value => new Intl.DateTimeFormat('en-CA',{dateStyle:'short',timeZone:'America/New_York'}).format(value);
-const option = (value,label) => '<option value="'+text(value)+'">'+text(label)+'</option>';
+const option = (value,label,selected = false) => '<option value="'+text(value)+'"'+(selected ? ' selected' : '')+'>'+text(label)+'</option>';
 const button = (label, style = '') => '<button class="'+style+'" type="submit">'+label+'</button>';
 const form = (action, contents, id = '') => '<form data-action="'+action+'" data-id="'+id+'">'+contents+'</form>';
 const input = (label,name,attributes = '') => '<label>'+label+'<input name="'+name+'" '+attributes+'></label>';
 const area = (label,name,value = '',max = 3000) => '<label>'+label+'<textarea maxlength="'+max+'" name="'+name+'">'+text(value)+'</textarea></label>';
 const select = (label,name,options,attributes = '') => '<label>'+label+'<select name="'+name+'" '+attributes+'>'+options+'</select></label>';
+const serviceNames = new Map([
+  ['pet-sitting', 'Overnight pet sitting'],
+  ['dog-walking', 'Dog walking'],
+  ['drop-in', 'Drop-in visit'],
+]);
+const requestedService = () => serviceNames.get(new URLSearchParams(location.search).get('service'));
+const bookingIntake = '#pet-intake';
 let data;
 let filterPet = '';
 let filterVisit = '';
@@ -38,7 +45,10 @@ function auth() {
   document.querySelector('.portal h1').textContent = 'Client portal.';
   const fields = input('Email','email','required type="email" maxlength="254" autocomplete="email"') +
     input('Password','password','required type="password" maxlength="128"');
-  app.innerHTML = (location.hash === '#book' ? '<p>Sign in or create an account to request a visit.</p>' : '<p>Sign in to manage bookings, pet profiles, and your Pet Diary.</p>') + '<div class="grid">'+
+  const service = requestedService();
+  const bookingPrompt = service ? 'Sign in or create an account to request '+text(service.toLowerCase())+'.'
+    : 'Sign in or create an account to request a visit.';
+  app.innerHTML = (['#book', bookingIntake].includes(location.hash) ? '<p>'+bookingPrompt+'</p>' : '<p>Sign in to manage bookings, pet profiles, and your Pet Diary.</p>') + '<div class="grid">'+
     form('login','<h2>Sign in</h2>'+fields+button('Sign in'))+
     form('register','<h2>Create an account</h2>'+input('Name','name','required maxlength="100" autocomplete="name"')+
       fields+'<small>Use at least 12 characters for your password.</small>'+button('Create account'))+'</div>';
@@ -89,13 +99,19 @@ function slotOptions(slots) {
   return slots.map(slot => option(slot.id,date(slot.starts))).join('');
 }
 function bookingForm() {
-  if (!data.pets.length) return '<p><a class="text-link" href="#pets">Add a pet profile</a> to request care.</p>';
-  if (!data.services.length || !data.slots.length) return '<p>No appointments are posted yet. Check back for availability.</p>';
+  if (!data.pets.length) return '<p><a class="text-link" href="'+bookingIntake+'">Add a pet profile</a> to request care.</p>';
+  if (!data.services.length) return '<p>There are no services available to book right now. Check back for availability.</p>';
+  const serviceName = requestedService();
+  const preferred = data.services.find(service => service.name === serviceName);
+  const unavailable = serviceName && !preferred;
+  const serviceOptions = data.services.map(service =>
+    option(service.id,service.name+' · '+service.minutes+' min · '+money(service.cents),service.id === preferred?.id)
+  ).join('');
   return '<p>Appointment times are shown in Massachusetts time. Myomi reviews each request before confirming.</p>' +
-    form('bookings',select('Service','service',data.services.map(s => option(s.id,s.name+' · '+s.minutes+' min · '+money(s.cents))).join(''))+
+    form('bookings',select('Service','service',(unavailable ? option('',serviceName+' (unavailable)',true) : '')+serviceOptions,'required')+
     '<fieldset><legend>Pets attending</legend>'+ data.pets.map(p => '<label><input type="checkbox" name="pets" value="'+p.id+'"> '+text(p.name)+'</label>').join('')+'</fieldset>'+
     select('Available day','day','')+select('Appointment','slot','','required')+area('Care instructions for this visit','notes','',1500)+
-    '<p data-quote></p>'+button('Submit booking request'));
+    '<p data-availability role="status" hidden></p><p data-quote></p>'+button('Submit booking request'));
 }
 function statusForm(booking,status,label) {
   const summary = status === 'Completed' ? '<label>Visit summary<textarea required maxlength="3000" name="summary"></textarea></label>' : '';
@@ -231,7 +247,7 @@ function render() {
 function showSection(focus = false) {
   const panels = [...app.querySelectorAll(':scope > section')];
   if (!panels.length) return;
-  const requested = location.hash.slice(1);
+  const requested = location.hash === bookingIntake ? 'pets' : location.hash.slice(1);
   const id = panels.some(panel => panel.id === requested) ? requested : 'upcoming';
   for (const panel of panels) panel.hidden = panel.id !== id;
   for (const link of app.querySelectorAll('nav a')) {
@@ -249,14 +265,22 @@ function updateQuote(event) {
   const booking = app.querySelector('[data-action="bookings"]');
   if (!booking) return;
   const service = find(data.services,Number(booking.elements.service.value));
-  const slots = availableSlots(service.minutes,undefined,service.id);
+  const slots = service ? availableSlots(service.minutes,undefined,service.id) : [];
   const picker = booking.elements.day;
+  const appointment = booking.elements.slot;
   if (event?.target.name !== 'day') {
     picker.innerHTML = [...new Set(slots.map(slot => day(slot.starts)))].map(value => option(value,value)).join('');
   }
-  booking.elements.slot.innerHTML = slotOptions(slots.filter(slot => day(slot.starts) === picker.value));
-  booking.querySelector('[data-quote]').textContent = 'Request total: '+money(service.cents)+' · '+service.minutes+' minutes.';
-  booking.querySelector('button').disabled = booking.elements.slot.options.length === 0;
+  appointment.innerHTML = slotOptions(slots.filter(slot => day(slot.starts) === picker.value));
+  picker.disabled = slots.length === 0;
+  appointment.disabled = appointment.options.length === 0;
+  const availability = booking.querySelector('[data-availability]');
+  availability.hidden = slots.length > 0;
+  availability.textContent = service
+    ? 'No times are available for this service right now. Try another service or check back later.'
+    : 'This service is unavailable right now. Choose another service or check back later.';
+  booking.querySelector('[data-quote]').textContent = service ? 'Request total: '+money(service.cents)+' · '+service.minutes+' minutes.' : '';
+  booking.querySelector('button').disabled = appointment.disabled;
 }
 async function refresh() {
   const user = await api('session');
@@ -343,8 +367,10 @@ app.addEventListener('submit',async event => {
     }
     for (const key of ['service','slot','pet','minutes']) if (key in payload) payload[key] = Number(payload[key]);
     if (action === 'bookings') {
+      const service = find(data.services,payload.service);
+      if (!service || !payload.slot) throw new Error('Choose a service and an available appointment.');
       payload.pets = fields.getAll('pets').map(Number);
-      payload.cents = find(data.services,payload.service).cents;
+      payload.cents = service.cents;
     }
     if (action === 'services') payload.cents = Math.round(Number(payload.price)*100);
     if (action === 'slots' && !payload.id) {
@@ -356,10 +382,19 @@ app.addEventListener('submit',async event => {
       delete payload.camera;
     }
     await api(action,payload);
-    if (action === 'bookings') history.replaceState(null,'','#upcoming');
+    const resumeBooking = action === 'pets' && !form.dataset.id && location.hash === bookingIntake;
+    if (resumeBooking) history.replaceState(null,'','#book');
+    if (action === 'bookings') {
+      const next = new URL(location.href);
+      next.searchParams.delete('service');
+      next.hash = 'upcoming';
+      history.replaceState(null,'',next);
+    }
     if (action === 'status' && payload.status === 'In Progress') history.replaceState(null,'','#diary');
     await refresh();
+    if (resumeBooking) showSection(true);
     feedback.textContent = action === 'bookings' ? 'Request sent. Myomi still needs to confirm your appointment.'
+      : resumeBooking ? 'Pet added. You can continue booking.'
       : action === 'events' ? 'Published to the customer’s Pet Diary.' : 'Saved.';
   } catch (error) { feedback.textContent = error.message; }
   finally { control.disabled = false; }

@@ -247,7 +247,9 @@ async function api(request, response, path) {
       const allowed = user.admin ? transitions[booking.status] || [] : ['Requested','Confirmed'].includes(booking.status) && booking.starts > Date.now() ? ['Cancelled'] : [];
       requireThat(allowed.includes(data.status),'This booking cannot make that change.',409);
       if (data.status === 'Confirmed') {
-        requireThat(booking.starts > Date.now() && !conflict(booking.starts,booking.ends,booking.id),'Choose an available future time.',409);
+        const published = get('SELECT 1 FROM slots WHERE starts=? AND ends>=? LIMIT 1',booking.starts,booking.ends);
+        requireThat(booking.starts > Date.now() && published,'This appointment window is no longer available. Reschedule the request before confirming.',409);
+        requireThat(!conflict(booking.starts,booking.ends,booking.id),'This time overlaps another booking. Reschedule the request before confirming.',409);
       }
       const arrived = data.status === 'In Progress' ? Date.now() : booking.arrived;
       const departed = data.status === 'Completed' ? Date.now() : booking.departed;
