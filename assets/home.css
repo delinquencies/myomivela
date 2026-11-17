@@ -313,23 +313,28 @@ h3 { font-size: clamp(2.1rem, 4.2vw, 4.5rem); }
 .closing-flourish { width: clamp(1.75rem, 6vw, 5rem); color: #ffb284; }
 .closing-star { fill: currentColor; }
 .closing-action-lines { stroke: currentColor; stroke-width: 3; stroke-linecap: round; }
-.closing > .section-wrap > .button { font-size: clamp(1rem, 1.55vw, 1.3rem); }
-.reviews { max-width: 53rem; margin: clamp(1.5rem, 4vw, 3rem) auto 1rem; }
-.review-preview { margin-block: .4rem .25rem; color: #f2c7ad; }
+.reviews { max-width: 53rem; margin: 0 auto; }
+.review-preview { margin: 0 0 .45rem; color: #f2c7ad; font-size: .9rem; }
 .review-controls { display: flex; justify-content: center; gap: .65rem; margin-top: .25rem; }
 .review-controls[hidden] { display: none; }
 .review-controls button {
-  width: 48px;
-  height: 48px;
-  border: 1px solid var(--ink);
-  border-radius: 50%;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: .45rem;
+  min-width: 48px;
+  min-height: 48px;
+  padding: 0 .85rem;
+  border: 1px solid #ffb284;
+  border-radius: 99px;
   background: var(--cream);
-  color: var(--ink);
-  font-size: 1.4rem;
+  color: #842b16;
+  font-size: .92rem;
+  font-weight: 700;
   cursor: pointer;
 }
+.review-controls button:first-child { padding: 0; font-size: 1.25rem; }
 .review-controls button[aria-disabled="true"] { opacity: .5; cursor: default; }
-.reviews h3 { font-size: clamp(1.55rem, 3vw, 2.6rem); }
 .review-rail {
   display: flex;
   gap: 1rem;
@@ -337,11 +342,13 @@ h3 { font-size: clamp(2.1rem, 4.2vw, 4.5rem); }
   padding: 1rem .85rem;
   scroll-padding-inline: .85rem;
   scroll-snap-type: x mandatory;
+  scrollbar-width: none;
 }
+.review-rail::-webkit-scrollbar { display: none; }
 .review-card {
   flex: 0 0 min(83%, 19rem);
   position: relative;
-  padding: 1.2rem 1rem 1.45rem;
+  padding: .7rem .7rem 1.25rem;
   border-radius: .45rem;
   background: var(--cream);
   color: var(--ink);
@@ -360,9 +367,9 @@ h3 { font-size: clamp(2.1rem, 4.2vw, 4.5rem); }
   background: #edaf8bd9;
   transform: translateX(-50%) rotate(-5deg);
 }
-.review-mark { display: block; color: #9f3018; font-size: 1.9rem; line-height: 1; }
-.review-card h4 { margin: .35rem 0 0; font: 900 clamp(1.2rem, 2.35vw, 1.65rem)/1.15 var(--display); }
-.review-card blockquote { margin: 0; }
+.review-card img { width: 100%; aspect-ratio: 5 / 4; object-fit: cover; object-position: center 43%; border-radius: .18rem; }
+.review-stars { display: block; margin: .75rem .25rem .35rem; color: #976000; font-size: 1.15rem; letter-spacing: .13em; line-height: 1; }
+.review-card blockquote { margin: 0 .25rem; font-size: clamp(.98rem, 1.5vw, 1.08rem); line-height: 1.45; }
 .review-card figcaption { margin-top: .75rem; color: #9f3018; font-weight: 700; }
 .footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem 1.5rem; padding-block: 1.2rem; }
 .footer-brand { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem .85rem; }
