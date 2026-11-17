@@ -13,5 +13,5 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
-      - run: node --check server.mjs && node --check lib/image.mjs && node --check scripts/backup.mjs
+      - run: for f in server.mjs lib/*.mjs lib/routes/*.mjs scripts/*.mjs; do node --check "$f"; done
       - run: npm test

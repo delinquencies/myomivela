@@ -13,8 +13,18 @@ myo. is Myomi’s pet-care website and portal. Customers request visits and read
 Node.js (22.13 or newer; the tests and CI use 22 and 24) with the built-in `node:http` and `node:sqlite` modules. There are **no runtime dependencies**. The front end is plain HTML, CSS and ES modules. `node:sqlite` is still marked experimental by Node and prints a warning at startup.
 
 ```
-server.mjs            HTTP server, JSON API, auth, scheduling, migrations (single file)
-lib/image.mjs         Strips EXIF/XMP/text metadata from uploaded photos
+server.mjs            Start-up checks and the HTTP server; wires the modules below
+lib/config.mjs        Every environment variable, and the production checks
+lib/db.mjs            SQLite connection, ordered migrations, query helpers, transaction()
+lib/validate.mjs      Input checks (requireThat, field, integer, email) and JSON body reading
+lib/auth.mjs          Password hashing, sessions and cookies, admin bootstrap, rate limiting
+lib/domain.mjs        Service names, activity types, status transitions, booking step
+lib/scheduling.mjs    Windows, bookable start times, overlap checks
+lib/bookings.mjs      Access-checked booking queries and page cursors
+lib/photos.mjs        Upload validation; lib/image.mjs strips EXIF/XMP/text metadata
+lib/api.mjs           Route table and access rules (public / user / staff), origin check
+lib/routes/           Handlers: account, portal, diary, bookings, admin
+lib/static.mjs        Security headers (CSP etc.) and the allow-listed static files
 assets/portal.js      Customer and staff portal (renders into portal/index.html)
 assets/diary.js       Diary rendering shared by the portal and the public sample
 assets/home.js        Public site: language switch, service cards
@@ -23,7 +33,7 @@ index.html, myo/      Public homepage, FAQ, sample diary
 portal/index.html     Portal shell
 scripts/backup.mjs    Consistent, verified SQLite backup
 scripts/scrub-photos.mjs  One-time metadata scrub for photos stored before stripping existed
-tests/                node:test suites (API, images, operations)
+tests/                node:test suites (API, pagination, routes, images, operations); tests/browser/ smoke test
 .github/workflows/    CI: runs `npm test` on Node 22 and 24
 docs/                 Handoff notes, earlier audits, archived design previews
 MYO_AUDIT.md          Current audit with remediation log
@@ -73,7 +83,7 @@ On PowerShell use `$env:NAME = 'value'`. Use fictional customers and a separate 
 
 ## Database and migrations
 
-SQLite via `node:sqlite`. The schema is created and upgraded automatically at startup by the ordered `migrations` list in `server.mjs`; the applied count is stored in `PRAGMA user_version` (currently 3). To change the schema, **append** a migration. Never edit an earlier one. An older database opens and upgrades in place (covered by a test).
+SQLite via `node:sqlite`. The schema is created and upgraded automatically at startup by the ordered `migrations` list in `lib/db.mjs`; the applied count is stored in `PRAGMA user_version` (currently 3). To change the schema, **append** a migration. Never edit an earlier one. An older database opens and upgrades in place (covered by a test).
 
 Backups and maintenance:
 
@@ -88,7 +98,7 @@ Restore by stopping the server and copying a backup over `MYO_DB`. Scheduling ba
 ## Tests and builds
 
 ```sh
-npm test       # 28 tests; starts the server on free ports with temporary databases
+npm test       # 32 tests; starts the server on free ports with temporary databases
 npm run test:browser   # end-to-end portal run in Chromium (needs Playwright); fails on any CSP or console error
 npm run build  # only rebuilds the archived design-preview stylesheet (needs `npm ci`); the live site has no build
 ```

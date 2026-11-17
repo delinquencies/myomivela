@@ -32,7 +32,7 @@ Security, reliability, scheduling and test coverage from the audit. No redesign 
 
 ## 3. Files and systems modified
 
-- `server.mjs`: migrations, async scrypt, rate limiting, production checks, security headers, malformed-URL handling, start-time grid (`slotStep`, `reserveTime`, `/api/portal`), metadata stripping in `photoFrom`.
+- `server.mjs` was split into `lib/` modules (see the README layout): migrations in `lib/db.mjs`, scrypt, sessions and rate limiting in `lib/auth.mjs`, production checks in `lib/config.mjs`, CSP and headers in `lib/static.mjs`, the start-time grid in `lib/scheduling.mjs`, metadata stripping in `lib/photos.mjs`. To add an endpoint, add an entry with `method`, `path`, `access` and `handler` to a file in `lib/routes/`; `tests/routes.test.mjs` checks its access rule automatically. Keep `transaction()` callbacks synchronous (it throws if given an async one).
 - `assets/portal.js`: `slotKey`, sends `start` with `slot`, admin window list reads `data.windows`. Nine changed lines.
 - `lib/image.mjs`, `scripts/backup.mjs`, `scripts/scrub-photos.mjs`: new.
 - `tests/` (`helpers.mjs`, `api.test.mjs`, `image.test.mjs`, `operations.test.mjs`): new.
@@ -58,7 +58,7 @@ Security, reliability, scheduling and test coverage from the audit. No redesign 
 
 ## 5. Tests executed and results
 
-- `npm test` (28 tests): **28 passed, 0 failed** on Node v22.23.4. Covers the booking lifecycle, cross-customer isolation, the grid (overlap, off-grid, boundaries), double approval, withdrawn windows, price mismatch, headers, malformed URLs, account lockout, proxy-aware limiting, production configuration, image stripping for each format, a legacy-database upgrade, backup, and photo scrubbing.
+- `npm test` (32 tests): **32 passed, 0 failed** on Node v22.23.4. Covers the booking lifecycle, cross-customer isolation, the grid (overlap, off-grid, boundaries), double approval, withdrawn windows, price mismatch, headers, malformed URLs, account lockout, proxy-aware limiting, production configuration, image stripping for each format, a legacy-database upgrade, backup, and photo scrubbing.
 - Regression check: with metadata stripping disabled, the photo test failed; with the per-address limit disabled, the proxy test failed.
 - `node --check` on all changed JavaScript passed.
 - **Not run:** Node 24; the GitHub Actions workflow; any browser or phone; real phone photos; any deployment. No linter or type checker exists in the repo.
@@ -69,7 +69,7 @@ OPEN: S5, D2, D3, O1, O2, P1-4, P1-5, P1-6, P1-8, P2 items. RESOLVED since: D5, 
 
 ## 7. Known bugs and blockers
 
-- **Unverified UI:** the portal was not exercised after the grid and CSP changes. If the page fails to load or shows blocked resources, check the browser console first; the CSP is in `server.mjs` (`contentSecurityPolicy`).
+- **Unverified UI:** the portal was not exercised after the grid and CSP changes. If the page fails to load or shows blocked resources, check the browser console first; the CSP is in `lib/static.mjs` (`contentSecurityPolicy`).
 - **Decisions needed from the owner:** hosting (Node host vs. Workers/D1), payment timing and refund rules, cancellation and no-show policy, email provider.
 - Rate-limit state is in memory only.
 - Account lockout is a denial-of-service lever for a known email (N1).

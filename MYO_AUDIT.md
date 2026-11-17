@@ -251,7 +251,14 @@ Unchanged. Needs policy decisions (no-show, early-start window, cancellation cut
 - **Verification:** a copy of a live database contains the data; a second run to the same path fails.
 - **Remaining limitations:** no schedule, no off-machine copy, and restore is a documented manual copy that I did not rehearse end to end.
 
+### P2-4 — Split `server.mjs` into modules · RESOLVED (server side)
+- **Files:** `server.mjs` (now start-up and the HTTP server only), `lib/config.mjs`, `lib/db.mjs`, `lib/validate.mjs`, `lib/auth.mjs`, `lib/domain.mjs`, `lib/scheduling.mjs`, `lib/bookings.mjs`, `lib/photos.mjs`, `lib/api.mjs`, `lib/routes/*.mjs`, `lib/static.mjs`, `tests/routes.test.mjs` (new), `.github/workflows/test.yml`
+- **Fix:** each concern has its own module, and every endpoint is an entry in a route table that declares `access` (`public`, `user` or `staff`). The dispatcher enforces that level before the handler runs. Environment variables are read only in `lib/config.mjs`. The production check runs before the database is opened. `transaction()` now refuses an async callback, which protects the no-await rule the race-freedom depends on (§4.1). Service names and activity types are defined once on the server (`lib/domain.mjs`). Behaviour is unchanged, except that an unknown POST route from a signed-in customer now returns 404 instead of 403, and a customer calling a staff route gets 403 before the body is read.
+- **Verification:** the existing 28 tests and the browser smoke test pass unchanged. 4 new tests walk the route table: every non-public route returns 401 when signed out, every staff route returns 403 to a customer, and unknown routes return 404.
+- **Remaining limitations:** the portal client still hard-codes service names and icons (`assets/portal.js`). It is still one process with in-memory rate limits.
+
 ### P0-6 — Hosting decision · BLOCKED (needs your decision)
+Checked against Cloudflare documentation on 2026-11-17: the server **cannot run on Cloudflare as-is**. Workers can now host a `node:http` server (with `nodejs_compat`), but `node:sqlite` is a non-functional stub there and Workers have no local disk, so the database layer (`lib/db.mjs`) would have to move to D1 or Durable Object SQLite. D1 has no interactive `BEGIN…COMMIT`, so the confirm-with-overlap logic would need redesign. A Durable Object's synchronous SQLite with `transactionSync` is the closest match to today's model. Cloudflare Containers can run the Node process unchanged, but their disk is ephemeral (snapshots are in beta with a 30-day TTL), so the SQLite file would be lost. The practical Cloudflare option today is to run Node on a host with a persistent disk and put Cloudflare in front (DNS/proxy or Tunnel) with `MYO_TRUST_PROXY=cloudflare`.
 
 ### New findings from the remediation
 - **N1 — Account lockout can be abused to lock a victim out for 15 minutes.** Medium-low. OPEN. Consider lockout keyed on address + account together, or a CAPTCHA, once email verification exists.
@@ -281,7 +288,7 @@ Unchanged. Needs policy decisions (no-show, early-start window, cancellation cut
 | O1 | Static hosting mismatch | Medium | OPEN |
 | O2 | Re-render loses input | Low–Med | OPEN |
 | O3 | No tests/CI/engines | Medium | RESOLVED; CI IMPLEMENTED — UNVERIFIED |
-| P0-1 | Automated tests | P0 | RESOLVED (28 tests + browser smoke) |
+| P0-1 | Automated tests | P0 | RESOLVED (32 tests + browser smoke) |
 | P0-5 | Backup tooling | P0 | RESOLVED; scheduling BLOCKED |
 | P0-6 | Hosting decision | P0 | BLOCKED |
 | P1-3 | Pagination / server-side filters | P1 | RESOLVED |
@@ -290,6 +297,7 @@ Unchanged. Needs policy decisions (no-show, early-start window, cancellation cut
 | P1-6 | Email verification and recovery | P1 | OPEN (needs provider) |
 | P1-7 | Stripe Checkout | P1 | BLOCKED (needs payment decisions) |
 | P1-8 | Sitemap/robots vs hosting | P1 | OPEN |
+| P2-4 | Split `server.mjs` into modules | P2 | RESOLVED (client service names still duplicated) |
 | P2-* | Edit diary updates, idempotency, i18n, module split, form drafts, staff accounts, new product features | P2 | OPEN |
 
 **Priority changes caused by the fixes:** (1) browser and phone verification of the portal (N3) is now the top item, because the grid and CSP changes touch every customer flow; (2) the hosting decision (P0-6) now gates backup scheduling and the sitemap, so it moves ahead of pagination; (3) the scheduling work no longer blocks Stripe, so payments depend only on business decisions and email.
