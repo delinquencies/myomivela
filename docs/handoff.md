@@ -15,3 +15,5 @@ The audits describe the state at the time of review. The [design archive](archiv
 - [Functional requirements audit](audits/myo-functional-audit.md)
 - [Follow-up audit and Cloudflare plan](audits/myo-follow-up-audit.md)
 - [Pet Diary audit](audits/myo-pet-diary-audit.md)
+
+**Update 2026-11-17:** see [DEVELOPMENT_HANDOFF.md](../DEVELOPMENT_HANDOFF.md) and [MYO_AUDIT.md](../MYO_AUDIT.md) for the current state. The paragraph above about scheduling windows predates the 30-minute start-time grid.

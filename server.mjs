@@ -1,17 +1,27 @@
 import { createServer } from 'node:http';
 import { DatabaseSync } from 'node:sqlite';
-import { randomBytes, scryptSync, timingSafeEqual, createHash } from 'node:crypto';
+import { randomBytes, scrypt, timingSafeEqual, createHash } from 'node:crypto';
 import { readFile, mkdir } from 'node:fs/promises';
 import { resolve, dirname, extname, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { stripMetadata } from './lib/image.mjs';
 
 const root = dirname(fileURLToPath(import.meta.url));
+// Production must be explicit about HTTPS so cookies are Secure and the origin check matches the public URL.
+if (process.env.NODE_ENV === 'production') {
+  const problems = [];
+  if (!/^https:\/\/[^/]+$/.test(process.env.MYO_ORIGIN || '')) problems.push('MYO_ORIGIN must be the public https origin, for example https://example.com');
+  if (process.env.MYO_SECURE_COOKIES !== '1') problems.push('MYO_SECURE_COOKIES must be 1');
+  if (problems.length) { console.error('Refusing to start in production:\n- ' + problems.join('\n- ')); process.exit(1); }
+}
 const database = resolve(process.env.MYO_DB || '.myo/data.sqlite');
 await mkdir(dirname(database), { recursive: true });
 const db = new DatabaseSync(database);
-db.exec(`
-  PRAGMA foreign_keys = ON;
-  PRAGMA journal_mode = WAL;
+db.exec('PRAGMA foreign_keys = ON; PRAGMA journal_mode = WAL;');
+// Ordered, append-only migrations. The applied count is stored in SQLite's user_version.
+// Never edit a released migration; add a new one at the end.
+const migrations = [
+  () => db.exec(`
   CREATE TABLE IF NOT EXISTS users(id INTEGER PRIMARY KEY, email TEXT UNIQUE NOT NULL, name TEXT NOT NULL, password TEXT NOT NULL, admin INTEGER NOT NULL DEFAULT 0);
   CREATE TABLE IF NOT EXISTS sessions(token TEXT PRIMARY KEY, user INTEGER NOT NULL REFERENCES users(id), expires INTEGER NOT NULL);
   CREATE TABLE IF NOT EXISTS pets(id INTEGER PRIMARY KEY, owner INTEGER NOT NULL REFERENCES users(id), name TEXT NOT NULL, species TEXT NOT NULL, details TEXT NOT NULL);
@@ -22,9 +32,32 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS events(id INTEGER PRIMARY KEY, booking INTEGER NOT NULL REFERENCES bookings(id), pet INTEGER NOT NULL REFERENCES pets(id), kind TEXT NOT NULL, notes TEXT NOT NULL, published INTEGER NOT NULL, mime TEXT, photo BLOB);
   CREATE INDEX IF NOT EXISTS booking_time ON bookings(starts, ends, status);
   CREATE INDEX IF NOT EXISTS diary_pet ON events(pet,published);
-`);
-if (!db.prepare('PRAGMA table_info(bookings)').all().some(column => column.name === 'summary')) {
-  db.exec("ALTER TABLE bookings ADD COLUMN summary TEXT NOT NULL DEFAULT ''");
+`),
+  () => {
+    if (!db.prepare('PRAGMA table_info(bookings)').all().some(column => column.name === 'summary')) {
+      db.exec("ALTER TABLE bookings ADD COLUMN summary TEXT NOT NULL DEFAULT ''");
+    }
+  },
+  () => db.exec(`
+  CREATE INDEX IF NOT EXISTS events_booking ON events(booking);
+  CREATE INDEX IF NOT EXISTS bookings_owner ON bookings(owner,starts);
+  CREATE INDEX IF NOT EXISTS booking_pets_pet ON booking_pets(pet);
+  CREATE INDEX IF NOT EXISTS pets_owner ON pets(owner);
+  CREATE INDEX IF NOT EXISTS sessions_user ON sessions(user);
+  CREATE INDEX IF NOT EXISTS slots_starts ON slots(starts);
+`),
+];
+{
+  const applied = db.prepare('PRAGMA user_version').get().user_version;
+  requireThat(applied <= migrations.length, 'The database was created by a newer version of myo.', 500);
+  for (let index = applied; index < migrations.length; index++) {
+    db.exec('BEGIN IMMEDIATE');
+    try {
+      migrations[index]();
+      db.exec('PRAGMA user_version = ' + (index + 1));
+      db.exec('COMMIT');
+    } catch (error) { db.exec('ROLLBACK'); throw error; }
+  }
 }
 
 const get = (sql, ...args) => db.prepare(sql).get(...args);
@@ -47,8 +80,10 @@ function email(value) {
   requireThat(/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(address), 'Enter a valid email.');
   return address;
 }
-function passwordHash(password, salt = randomBytes(16).toString('hex')) {
-  return salt + ':' + scryptSync(password, salt, 64).toString('hex');
+// Asynchronous so password checks run on the libuv thread pool and cannot stall every other request.
+const derive = (password, salt) => new Promise((done, fail) => scrypt(password, salt, 64, (error, key) => error ? fail(error) : done(key)));
+async function passwordHash(password, salt = randomBytes(16).toString('hex')) {
+  return salt + ':' + (await derive(password, salt)).toString('hex');
 }
 const adminEmail = process.env.MYO_ADMIN_EMAIL;
 const adminPassword = process.env.MYO_ADMIN_PASSWORD;
@@ -57,7 +92,7 @@ if (adminEmail && adminPassword) {
   requireThat(adminPassword.length >= 12 && adminPassword.length <= 128, 'Use an admin password of 12–128 characters.');
   const existing = get('SELECT admin FROM users WHERE email=?', address);
   requireThat(!existing || existing.admin, 'The configured admin email is already registered as a customer.');
-  if (!existing) run('INSERT INTO users(email,name,password,admin) VALUES(?,?,?,1)', address, 'Myomi', passwordHash(adminPassword));
+  if (!existing) run('INSERT INTO users(email,name,password,admin) VALUES(?,?,?,1)', address, 'Myomi', await passwordHash(adminPassword));
 }
 
 function transaction(fn) {
@@ -109,13 +144,16 @@ const transitions = {
   Confirmed: ['In Progress','Cancelled'],
   'In Progress': ['Completed'],
 };
-function reserveTime(slotId, service, exclude = 0) {
+// Appointments may start at any step inside a published window, measured from the window start.
+const slotStep = 30 * 60_000;
+function reserveTime(slotId, service, exclude = 0, start) {
   const slot = get('SELECT * FROM slots WHERE id=?', integer(slotId));
-  requireThat(slot && slot.starts > Date.now(), 'This time is no longer available.', 409);
-  const end = slot.starts + service.minutes * 60_000;
+  const begin = start === undefined ? slot?.starts : integer(start);
+  requireThat(slot && begin > Date.now() && begin >= slot.starts && (begin - slot.starts) % slotStep === 0, 'This time is no longer available.', 409);
+  const end = begin + service.minutes * 60_000;
   requireThat(end <= slot.ends, 'This service does not fit the appointment window.', 409);
-  requireThat(!conflict(slot.starts,end,exclude), 'This time has already been reserved.', 409);
-  return [slot.starts,end];
+  requireThat(!conflict(begin,end,exclude), 'This time has already been reserved.', 409);
+  return [begin,end];
 }
 function conflict(start, end, exclude) {
   return get("SELECT id FROM bookings WHERE id<>? AND status IN ('Confirmed','In Progress') AND starts<? AND ends>?", exclude,end,start);
@@ -136,18 +174,39 @@ function photoFrom(data) {
     : mime === 'image/png' ? bytes.subarray(0,8).toString('hex') === '89504e470d0a1a0a'
     : bytes.toString('ascii',0,4) === 'RIFF' && bytes.toString('ascii',8,12) === 'WEBP';
   requireThat(valid && bytes.length <= 2_500_000, 'Use a valid photo smaller than 2.5 MB.');
-  return [mime,bytes];
+  // Remove location and device metadata so a photo never reveals more than its pixels.
+  try { return [mime,stripMetadata(mime,bytes)]; } catch { requireThat(false, 'Use a valid photo smaller than 2.5 MB.'); }
 }
 
+// MYO_TRUST_PROXY=1 reads the client address the reverse proxy appended to X-Forwarded-For;
+// MYO_TRUST_PROXY=cloudflare reads CF-Connecting-IP. Leave it unset when the server is reached directly.
+function clientAddress(request) {
+  const mode = process.env.MYO_TRUST_PROXY;
+  if (mode === 'cloudflare') return request.headers['cf-connecting-ip']?.trim() || request.socket.remoteAddress;
+  if (mode === '1') return request.headers['x-forwarded-for']?.split(',').pop().trim() || request.socket.remoteAddress;
+  return request.socket.remoteAddress;
+}
 const attempts = new Map();
+function bucket(key, limit, windowMs, message, now = Date.now()) {
+  for (const [name, entry] of attempts) if (entry.until <= now) attempts.delete(name);
+  const entry = attempts.get(key) || { count:0, until:now + windowMs };
+  requireThat(entry.count < limit, message, 429);
+  return entry;
+}
+// Per-address cap on all sign-in and registration requests.
 function limitLogin(request) {
-  const key = request.socket.remoteAddress;
-  const now = Date.now();
-  for (const [ip, entry] of attempts) if (entry.until <= now) attempts.delete(ip);
-  const entry = attempts.get(key) || { count:0, until:now + 60_000 };
-  requireThat(entry.count < 12, 'Too many attempts. Try again in a minute.', 429);
+  const key = 'ip:' + clientAddress(request);
+  const entry = bucket(key, 30, 60_000, 'Too many attempts. Try again in a minute.');
   entry.count++;
   attempts.set(key, entry);
+}
+// Per-account cap on failed sign-ins, so one address rotating cannot guess a single password list.
+const accountKey = address => 'account:' + address;
+const accountFailures = address => bucket(accountKey(address), 8, 15 * 60_000, 'Too many failed attempts for this account. Try again in 15 minutes.');
+function failedSignIn(address) {
+  const entry = accountFailures(address);
+  entry.count++;
+  attempts.set(accountKey(address), entry);
 }
 async function api(request, response, path) {
   const token = sessionToken(request);
@@ -164,15 +223,22 @@ async function api(request, response, path) {
     const address = email(data.email);
     requireThat(typeof data.password === 'string' && data.password.length > 0 && data.password.length <= 128, 'Enter a valid password.');
     const password = data.password;
-    const existing = get('SELECT * FROM users WHERE email=?',address);
     if (path === '/api/register') {
       requireThat(password.length >= 12, 'Use at least 12 characters for your password.');
-      requireThat(!existing && address !== adminEmail?.toLowerCase(), 'This email cannot be registered.', 409);
-      run('INSERT INTO users(email,name,password) VALUES(?,?,?)',address,field(data.name,100),passwordHash(password));
+      const name = field(data.name,100);
+      const stored = await passwordHash(password);
+      // Everything below runs without an await, so the existence check and the insert cannot interleave with another request.
+      requireThat(!get('SELECT id FROM users WHERE email=?',address) && address !== adminEmail?.toLowerCase(), 'This email cannot be registered.', 409);
+      run('INSERT INTO users(email,name,password) VALUES(?,?,?)',address,name,stored);
       return signIn(response,get('SELECT * FROM users WHERE email=?',address));
     }
-    const candidate = passwordHash(password,existing?.password.split(':')[0] || 'no-account');
-    requireThat(existing && timingSafeEqual(Buffer.from(candidate),Buffer.from(existing.password)), 'Email or password is incorrect.', 401);
+    accountFailures(address);
+    const existing = get('SELECT * FROM users WHERE email=?',address);
+    const candidate = await passwordHash(password,existing?.password.split(':')[0] || 'no-account');
+    const valid = existing && timingSafeEqual(Buffer.from(candidate),Buffer.from(existing.password));
+    if (!valid) failedSignIn(address);
+    requireThat(valid, 'Email or password is incorrect.', 401);
+    attempts.delete(accountKey(address));
     return signIn(response,existing);
   }
   if (request.method === 'GET' && path === '/api/session') return user ? publicUser(user) : null;
@@ -200,14 +266,22 @@ async function api(request, response, path) {
         FROM events e JOIN bookings b ON b.id=e.booking ${user.admin ? '' : 'WHERE b.owner=?'} ORDER BY e.published DESC,e.id DESC
       `,...params);
       const services = all('SELECT * FROM services ORDER BY name,minutes');
-      const slots = all('SELECT * FROM slots WHERE starts>? ORDER BY starts',Date.now()).map(slot => ({
-        ...slot,
-        service_ids: services.filter(service => {
-          const end = slot.starts + service.minutes * 60_000;
-          return end <= slot.ends && !conflict(slot.starts,end,0);
-        }).map(service => service.id),
-      }));
-      return { user:publicUser(user), pets:all('SELECT * FROM pets'+owner+' ORDER BY name',...params), services, slots, bookings, events, activityTypes };
+      // Expand each published window into the start times a customer can actually book.
+      const now = Date.now();
+      const windows = all('SELECT * FROM slots WHERE ends>? ORDER BY starts',now);
+      const held = all("SELECT starts,ends FROM bookings WHERE status IN ('Confirmed','In Progress') AND ends>?",now);
+      const slots = [];
+      for (const window of windows) {
+        for (let begin = window.starts; begin < window.ends; begin += slotStep) {
+          if (begin <= now) continue;
+          const service_ids = services.filter(service => {
+            const end = begin + service.minutes * 60_000;
+            return end <= window.ends && !held.some(booking => booking.starts < end && booking.ends > begin);
+          }).map(service => service.id);
+          if (service_ids.length) slots.push({ id:window.id, starts:begin, ends:window.ends, service_ids });
+        }
+      }
+      return { user:publicUser(user), pets:all('SELECT * FROM pets'+owner+' ORDER BY name',...params), services, slots, windows, bookings, events, activityTypes };
     }
   }
   requireThat(request.method === 'POST', 'Route not found.', 404);
@@ -234,7 +308,7 @@ async function api(request, response, path) {
       requireThat(Array.isArray(data.pets) && data.pets.length && data.pets.length <= 12,'Choose at least one pet.');
       const petIds = [...new Set(data.pets.map(value => integer(value)))];
       for (const id of petIds) requireThat(get('SELECT id FROM pets WHERE id=? AND owner=?',id,user.id),'Pet not found.',404);
-      const [starts,ends] = reserveTime(data.slot,service);
+      const [starts,ends] = reserveTime(data.slot,service,0,data.start);
       requireThat(!get("SELECT id FROM bookings WHERE owner=? AND status='Requested' AND starts<? AND ends>?",user.id,ends,starts),'You already have a request for this time.',409);
       const result = run('INSERT INTO bookings(owner,service,starts,ends,cents,notes) VALUES(?,?,?,?,?,?)',user.id,service.id,starts,ends,service.cents,field(data.notes,1500,false));
       for (const pet of petIds) run('INSERT INTO booking_pets VALUES(?,?)',result.lastInsertRowid,pet);
@@ -247,7 +321,7 @@ async function api(request, response, path) {
       const allowed = user.admin ? transitions[booking.status] || [] : ['Requested','Confirmed'].includes(booking.status) && booking.starts > Date.now() ? ['Cancelled'] : [];
       requireThat(allowed.includes(data.status),'This booking cannot make that change.',409);
       if (data.status === 'Confirmed') {
-        const published = get('SELECT 1 FROM slots WHERE starts=? AND ends>=? LIMIT 1',booking.starts,booking.ends);
+        const published = get('SELECT 1 FROM slots WHERE starts<=? AND ends>=? LIMIT 1',booking.starts,booking.ends);
         requireThat(booking.starts > Date.now() && published,'This appointment window is no longer available. Reschedule the request before confirming.',409);
         requireThat(!conflict(booking.starts,booking.ends,booking.id),'This time overlaps another booking. Reschedule the request before confirming.',409);
       }
@@ -262,7 +336,7 @@ async function api(request, response, path) {
     return transaction(() => {
       const booking = bookingFor(user,data.id);
       requireThat(['Requested','Confirmed'].includes(booking.status) && (user.admin || booking.starts > Date.now()),'This booking cannot be moved.',409);
-      const [starts,ends] = reserveTime(data.slot,{ minutes:(booking.ends-booking.starts)/60_000 },booking.id);
+      const [starts,ends] = reserveTime(data.slot,{ minutes:(booking.ends-booking.starts)/60_000 },booking.id,data.start);
       run('UPDATE bookings SET starts=?,ends=?,status=? WHERE id=?',starts,ends,user.admin ? booking.status : 'Requested',booking.id);
       return {};
     });
@@ -306,12 +380,18 @@ const publicMyoPages = new Set([
   '/myo/client_journal_cute_lively/',
   '/myo/client_journal_cute_lively/index.html',
 ]);
+// Scripts and styles are same-origin only; the font host mirrors the fallback URLs in assets/home.css.
+const contentSecurityPolicy = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; font-src 'self' https://raw.githubusercontent.com; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'";
 const server = createServer(async (request,response) => {
   response.setHeader('X-Content-Type-Options','nosniff');
   response.setHeader('Referrer-Policy','same-origin');
   response.setHeader('X-Frame-Options','DENY');
+  response.setHeader('Content-Security-Policy',contentSecurityPolicy);
+  response.setHeader('Permissions-Policy','camera=(self), microphone=(), geolocation=(), payment=()');
+  if (process.env.MYO_SECURE_COOKIES === '1') response.setHeader('Strict-Transport-Security','max-age=31536000');
   try {
-    const path = decodeURIComponent(new URL(request.url,'http://localhost').pathname);
+    let path;
+    try { path = decodeURIComponent(new URL(request.url,'http://localhost').pathname); } catch { requireThat(false,'Page not found.',404); }
     if (path.startsWith('/api/')) {
       response.setHeader('Cache-Control','private, no-store');
       const data = await api(request,response,path);

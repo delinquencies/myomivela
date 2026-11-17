@@ -99,8 +99,10 @@ function availableSlots(minutes, exclude, serviceId) {
 }
 const appointmentTime = new Intl.DateTimeFormat('en-US',{timeStyle:'short',timeZone:'America/New_York'});
 const appointmentDay = new Intl.DateTimeFormat('en-US',{weekday:'short',month:'short',day:'numeric',timeZone:'America/New_York'});
+// A bookable time is a published window id plus a start time inside it.
+const slotKey = slot => slot.id+':'+slot.starts;
 function slotChoices(slots, labelFor = slot => date(slot.starts), { selected } = {}) {
-  return slots.map(slot => choice('slot',slot.id,labelFor(slot),{ checked:slot.id === selected, required:true })).join('');
+  return slots.map(slot => choice('slot',slotKey(slot),labelFor(slot),{ checked:slotKey(slot) === selected, required:true })).join('');
 }
 function bookingForm() {
   if (!data.pets.length) return '<p>Add a pet profile to request care.</p>'+tapLink(bookingIntake,'Add a pet profile','🐾');
@@ -229,7 +231,7 @@ function adminSettings() {
     form('slots','<h3>Publish an appointment window</h3><p>Enter the window in your device’s local time. The portal displays Massachusetts time.</p>'+
     input('Starts','starts','type="datetime-local" required')+input('Ends','ends','type="datetime-local" required')+button('Publish window','','📅'))+'</div>'+
     '<p class="appointment-details">'+data.services.map(s=>text(s.name)+' · '+s.minutes+' min · '+money(s.cents)).join('<br>')+'</p>'+
-    data.slots.map(s=>form('slots','<p class="appointment-details">'+date(s.starts)+' – '+date(s.ends)+'</p>'+button('Remove window','secondary','✕'),s.id)).join('');
+    data.windows.map(s=>form('slots','<p class="appointment-details">'+date(s.starts)+' – '+date(s.ends)+'</p>'+button('Remove window','secondary','✕'),s.id)).join('');
 }
 const section = (id,title,contents) => '<section id="'+id+'"><h2>'+title+'</h2>'+contents+'</section>';
 function render() {
@@ -293,7 +295,7 @@ function updateQuote(event) {
   }
   const appointments = slots.filter(slot => day(slot.starts) === chosenDay);
   booking.querySelector('[data-booking-times]').innerHTML = appointments.length
-    ? choiceGroup('Appointment',slotChoices(appointments,slot => appointmentTime.format(slot.starts),{ selected:appointments[0].id }))
+    ? choiceGroup('Appointment',slotChoices(appointments,slot => appointmentTime.format(slot.starts),{ selected:slotKey(appointments[0]) }))
     : '';
   const availability = booking.querySelector('[data-availability]');
   availability.hidden = slots.length > 0;
@@ -417,6 +419,7 @@ app.addEventListener('submit',async event => {
       payload.details = JSON.stringify(profile);
       if (payload.details.length > 3000) throw new Error('Shorten the care notes so the profile can be saved.');
     }
+    if (typeof payload.slot === 'string' && payload.slot.includes(':')) [payload.slot,payload.start] = payload.slot.split(':').map(Number);
     for (const key of ['service','slot','pet','minutes']) if (key in payload) payload[key] = Number(payload[key]);
     if (action === 'bookings') {
       const service = find(data.services,payload.service);

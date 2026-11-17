@@ -1,31 +1,58 @@
 # myomivela
 
-myo. is Myomi’s pet-care website and portal. Customers can request a visit and read their private Pet Diary. Staff can publish availability, approve requests, start and complete visits, and post activity updates and photos.
+myo. is Myomi’s pet-care website and portal. Customers request visits and read a private Pet Diary. Staff publish availability, approve requests, run visits and post updates with photos.
+
+## Status at a glance
+
+- **Implemented:** the flow from request to approval, visit, diary update and completion summary, with data stored in SQLite. See [What works today](#what-works-today).
+- **Not implemented:** payments, recurring bookings and packages, care checklists, GPS walk tracking, messaging, email and notifications, password recovery, and a Spanish portal. See [Not built yet](#not-built-yet).
+- **Not production-ready for public launch.** Read [Known limitations](#known-limitations) and the [audit](MYO_AUDIT.md) first.
+
+## Technology and structure
+
+Node.js (22.13 or newer; the tests and CI use 22 and 24) with the built-in `node:http` and `node:sqlite` modules. There are **no runtime dependencies**. The front end is plain HTML, CSS and ES modules. `node:sqlite` is still marked experimental by Node and prints a warning at startup.
+
+```
+server.mjs            HTTP server, JSON API, auth, scheduling, migrations (single file)
+lib/image.mjs         Strips EXIF/XMP/text metadata from uploaded photos
+assets/portal.js      Customer and staff portal (renders into portal/index.html)
+assets/diary.js       Diary rendering shared by the portal and the public sample
+assets/home.js        Public site: language switch, service cards
+assets/*.css          Checked-in styles (no build step)
+index.html, myo/      Public homepage, FAQ, sample diary
+portal/index.html     Portal shell
+scripts/backup.mjs    Consistent, verified SQLite backup
+scripts/scrub-photos.mjs  One-time metadata scrub for photos stored before stripping existed
+tests/                node:test suites (API, images, operations)
+.github/workflows/    CI: runs `npm test` on Node 22 and 24
+docs/                 Handoff notes, earlier audits, archived design previews
+MYO_AUDIT.md          Current audit with remediation log
+DEVELOPMENT_HANDOFF.md  Where Claude stopped, and what Codex should do next
+```
 
 ## Run locally
-
-Install Node.js 24 and run the following from the repository root. The current site and portal use checked-in CSS and have no install or build step for local preview.
 
 ```sh
 npm start
 ```
 
-Open [the local homepage](http://127.0.0.1:45838/). Use separate browser profiles or a private window for the [client portal](http://127.0.0.1:45838/portal/) and [staff sign-in](http://127.0.0.1:45838/portal/?staff=1#diary) so they keep separate sessions.
+Open <http://127.0.0.1:45838/>. Use separate browser profiles or a private window for the [client portal](http://127.0.0.1:45838/portal/) and the [staff sign-in](http://127.0.0.1:45838/portal/?staff=1#diary), because they use different sessions.
+
+### Environment variables
+
+Names only; set them in the shell or your host. Never commit values.
+
+| Variable | Purpose |
+| --- | --- |
+| `MYO_DB` | SQLite file path. Default `.myo/data.sqlite` (ignored by git). Keep it on private storage. |
+| `MYO_ADMIN_EMAIL`, `MYO_ADMIN_PASSWORD` | Creates the staff account at startup if that email does not exist (password 12–128 characters). Changing the password variable later does **not** change an existing account. |
+| `PORT`, `HOST` | Listener. Defaults `45838` and `127.0.0.1`. |
+| `NODE_ENV` | `production` makes the server refuse to start unless `MYO_ORIGIN` is an `https://` origin and `MYO_SECURE_COOKIES=1`. |
+| `MYO_ORIGIN` | Exact public origin (for example `https://example.com`). Browser POSTs with a different `Origin` are rejected. Without it the server expects `http://<host>`. |
+| `MYO_SECURE_COOKIES` | `1` adds `Secure` to the session cookie and sends HSTS. Required in production. |
+| `MYO_TRUST_PROXY` | `1` takes the client address from the last `X-Forwarded-For` entry; `cloudflare` uses `CF-Connecting-IP`. Set only when exactly one trusted proxy sits in front, otherwise leave unset. Used for rate limiting. |
 
 ### Create a test staff account
-
-Set `MYO_ADMIN_EMAIL` and `MYO_ADMIN_PASSWORD` in the terminal before starting the server. Use a unique password of 12–128 characters. Use fictional customers and a separate SQLite database for testing.
-
-PowerShell:
-
-```powershell
-$env:MYO_ADMIN_EMAIL = 'staff@example.test'
-$env:MYO_ADMIN_PASSWORD = 'replace-with-a-unique-test-password'
-$env:MYO_DB = '.myo/preview.sqlite'
-npm start
-```
-
-macOS or Linux:
 
 ```sh
 export MYO_ADMIN_EMAIL='staff@example.test'
@@ -34,34 +61,81 @@ export MYO_DB='.myo/preview.sqlite'
 npm start
 ```
 
-On startup, the server creates the staff account if the configured email does not already exist in the selected database. Changing the password variable leaves the existing account password intact. SQLite defaults to `.myo/data.sqlite`. The server listens on `127.0.0.1:45838` by default. `HOST` and `PORT` override the listener. Use the exact `MYO_ORIGIN` and `MYO_SECURE_COOKIES=1` when testing the Node server behind HTTPS. Keep the database on private storage.
+On PowerShell use `$env:NAME = 'value'`. Use fictional customers and a separate database for testing.
 
-### Test a booking and diary update
+### Try a booking and diary update
 
-1. Sign in as staff. Under **Services & availability**, set a test price and duration and publish a future appointment window long enough for that service. Staff enter the window in their device’s local time. Customers see Massachusetts time.
-2. Open a service card as a new customer. Register, add a pet, and verify that saving the pet returns you to the selected service. Choose an appointment and submit a request. The request awaits staff confirmation.
-3. Approve the request, start the visit, publish a diary update with a photo, and complete the visit with a summary. Verify that the customer sees it under **Pet Diary** and that another customer cannot open the update or photo.
-4. With a fresh request, remove its appointment window and verify staff approval is rejected. Check that an already confirmed booking stays confirmed and that overlapping requests cannot both be approved.
-5. On iPhone and Android, test one-handed use, the camera and photo-library buttons, and the customer’s diary refresh. This device pass is still open.
+1. Sign in as staff. Under **Services & availability**, set a price and duration and publish a future appointment window. Customers can book any 30-minute start inside the window that is long enough for the service. Staff enter the window in their device’s time zone; the portal displays Massachusetts time.
+2. In another profile, register as a customer from a service card, add a pet, choose a time and submit.
+3. As staff, approve the request, start the visit, publish a diary update with a photo, then complete the visit with a summary.
+4. As the customer, open **Pet Diary**. A second customer must not be able to open the update or its photo.
+5. Still open: run this on real iPhone and Android devices, including the camera and photo-library buttons.
+
+## Database and migrations
+
+SQLite via `node:sqlite`. The schema is created and upgraded automatically at startup by the ordered `migrations` list in `server.mjs`; the applied count is stored in `PRAGMA user_version` (currently 3). To change the schema, **append** a migration. Never edit an earlier one. An older database opens and upgrades in place (covered by a test).
+
+Backups and maintenance:
+
+```sh
+npm run backup -- backups/myo-$(date +%F).sqlite   # consistent copy, safe while the server runs; verified; never overwrites
+node scripts/scrub-photos.mjs                       # dry run: photos stored before metadata stripping
+node scripts/scrub-photos.mjs --apply               # after taking a backup
+```
+
+Restore by stopping the server and copying a backup over `MYO_DB`. Scheduling backups and keeping copies off the machine is a deployment task that is not set up.
+
+## Tests and builds
+
+```sh
+npm test       # 22 tests; starts the server on free ports with temporary databases
+npm run build  # only rebuilds the archived design-preview stylesheet (needs `npm ci`); the live site has no build
+```
+
+There is no linter or type checker configured. CI is defined in `.github/workflows/test.yml`.
 
 ## What works today
 
-- Bilingual homepage and FAQ, service cards linked to booking, and a fictional diary sample based on the private portal layout.
-- Customer registration and sign-in, pet profiles, booking requests, cancellation and rescheduling, and private visit summaries, activity updates, and photos. The portal currently uses English.
-- Staff pricing and availability, booking approval, visit tracking, and tap-friendly diary publishing. **Walk started** and **Walk completed** record diary activities.
+- **Public site:** bilingual (English/Spanish) homepage and FAQ, service cards linking to booking, and a fictional sample diary using the same layout as the real one.
+- **Accounts:** customer registration, sign-in and sign-out with scrypt password hashes, hashed server-side sessions, and a per-address and per-account rate limit.
+- **Pets:** create and edit pet profiles (breed, medical, diet, emergency contacts and notes as one JSON profile).
+- **Booking:** customers request a service for one or more of their pets at a start time on a 30-minute grid inside staff-published windows. Staff approve, decline, reschedule and cancel; customers can cancel or reschedule. Overlapping approvals and approvals for withdrawn windows are rejected. The price is snapshotted on the booking.
+- **Visits and diary:** staff start and complete visits (a summary is required), publish typed activity updates with an optional photo, and customers see them grouped by visit. Photo access is checked per request, and photo metadata (including GPS) is removed on upload.
+- **Staff tools:** service prices and durations, appointment windows, today’s visits, history, and diary publishing.
 
-## What’s left to figure out
+## Not built yet
 
-| Area | Next decision or work |
+Payments and checkout (Stripe), recurring bookings and packages, care plans and per-visit checklists, structured medication logging (today “Medication” is a free-text activity type), GPS walk tracking and distance (“Walk started/completed” are diary labels only), messaging, email and other notifications, email verification and password recovery, a Spanish portal, editing or deleting published diary updates, customer search and management for staff, and pagination of long histories.
+
+## Existing integrations
+
+None. There is no payment provider, email provider or analytics. Fonts fall back to files served from `raw.githubusercontent.com` if the local copies fail to load.
+
+## Known limitations
+
+- Portal changes for the start-time grid and the new Content-Security-Policy have **not been exercised in a real browser** or on phones.
+- Rate-limit counters live in server memory (reset on restart, not shared between instances).
+- Account lockout after repeated failures also locks out the real owner for 15 minutes.
+- Staff is a single shared account created from environment variables; there is no password change or second staff user.
+- The whole diary and booking history is returned on each portal load (no pagination).
+- Photos are stored inside the database file.
+- Booking lifecycle policy (no-show, early start, cancellation cutoffs) is undecided and unenforced.
+- `sitemap.xml` and `robots.txt` point at GitHub Pages, which cannot run the portal. Production hosting is undecided (see below).
+
+## Decisions still needed
+
+| Area | Needed |
 | --- | --- |
-| Service area and pricing | Confirm towns or ZIP codes, launch services, visit lengths, hours, capacity, fees, and the booking contact. The proposed rates for client review are **$30 for a 30-minute walk**, **$35 for a 30-minute drop-in**, and **$110 per in-home overnight**. Confirm overnight coverage and included daytime visits. |
-| Care and booking policies | Approve cancellation, rescheduling, refund and payment timing. Decide which feeding, allergy, medication, vet, and emergency contact details are needed before approval or visit start. Confirm home access, emergency authorization, photo and location consent, and retention. Publish the approved policies and add field-level care validation. |
-| Launch content | Supply approved contact and social links, portrait and photos, and testimonials with permission and attribution. Review the public English and Spanish copy. |
-| Production hosting | The current backend runs on Node and SQLite. The intended production setup is Cloudflare Workers with D1 and private R2. Stage HTTPS, sessions, concurrent approvals, private media access, backups and restore, and the public routes and sitemap. GitHub Pages can serve static files only. |
-| Account and payment features | Add email verification, password recovery, booking emails, and Spanish portal copy. Choose a payment provider and add hosted checkout after payment timing and refund rules are approved. |
-| Staff app and GPS | If Myomi wants walks to track with the phone locked, prototype a small native staff app on her phone. Decide what route data to retain and what customers may see. The current portal records neither GPS routes nor distance. |
-| Diary follow-up | Verify native camera capture and end-to-end publishing on phones. Decide how staff correct a published update and add a last-updated indicator. Revisit server-side filtering and pagination as history grows. |
+| Service area and pricing | Confirm towns/ZIP codes, services, visit lengths, hours, capacity and fees. Proposed client-review rates: **$30 / 30-minute walk**, **$35 / 30-minute drop-in**, **$110 / in-home overnight**. |
+| Policies | Cancellation, rescheduling, refund and payment timing; required care and emergency details; home access, emergency authorization, photo and location consent, retention. |
+| Launch content | Contact and social links, portrait and photos, testimonials with permission, review of English and Spanish copy. |
+| Production hosting | The server needs Node and a persistent disk. The earlier plan was Cloudflare Workers + D1 + R2, which requires rewriting the API and atomic booking logic; a Node host with backups is a shorter path. Decide before building more. |
+| Payments and email | Choose providers and approve payment timing before integrating. |
+| GPS | If walks must track with the phone locked, prototype a native staff app; decide what route data to keep and show. |
 
-See the [handoff](docs/handoff.md) and [four audits](docs/audits/) for the earlier findings. The [design archive](docs/archive/design-previews/) holds the retired mockups and screenshots, including the Scenic Route GPS concept. The Node server serves the active FAQ and fictional Pet Diary sample under `myo/`. Archived routes are outside the served site.
+## Documentation
 
-If you edit the archived prototypes, rebuild their Tailwind stylesheet with `npm ci` followed by `npm run build`.
+- [MYO_AUDIT.md](MYO_AUDIT.md): findings, statuses and the remediation log.
+- [DEVELOPMENT_HANDOFF.md](DEVELOPMENT_HANDOFF.md): what changed and the next tasks for Codex.
+- [docs/handoff.md](docs/handoff.md) and [docs/audits/](docs/audits/): earlier notes, kept for history.
+- [docs/archive/design-previews/](docs/archive/design-previews/): retired mockups. They are not served. Rebuild their stylesheet with `npm ci` then `npm run build`.
