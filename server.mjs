@@ -299,7 +299,7 @@ async function api(request, response, path) {
   requireThat(false,'Route not found.',404);
 }
 
-const types = { '.html':'text/html; charset=utf-8','.css':'text/css','.js':'text/javascript','.png':'image/png','.jpg':'image/jpeg','.woff2':'font/woff2','.xml':'application/xml','.txt':'text/plain' };
+const types = { '.html':'text/html; charset=utf-8','.css':'text/css','.js':'text/javascript','.png':'image/png','.jpg':'image/jpeg','.woff2':'font/woff2','.ttf':'font/ttf','.xml':'application/xml','.txt':'text/plain' };
 const publicMyoPages = new Set([
   '/myo/safety_first_faq/',
   '/myo/safety_first_faq/index.html',

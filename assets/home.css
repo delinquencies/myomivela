@@ -6,9 +6,9 @@
 }
 
 @font-face {
-  font-family: "DM Sans";
-  src: url("home/dm-sans.woff2") format("woff2");
-  font-weight: 400 700;
+  font-family: Outfit;
+  src: url("home/outfit.ttf") format("truetype");
+  font-weight: 100 900;
   font-display: swap;
 }
 
@@ -28,7 +28,7 @@
   --cream: #fff7f0;
   --gutter: clamp(1.25rem, 3.5vw, 4rem);
   --display: Fraunces, Georgia, serif;
-  --sans: "DM Sans", system-ui, sans-serif;
+  --sans: Outfit, system-ui, sans-serif;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
