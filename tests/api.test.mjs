@@ -43,10 +43,12 @@ test('request → approve → start → diary update → complete is visible to 
   assert.equal((await call('staff','POST','/api/status',{ id, status:'Completed' })).status, 400, 'completion needs a summary');
   assert.equal((await call('staff','POST','/api/status',{ id, status:'Completed', summary:'All good' })).status, 200);
   assert.equal((await call('staff','POST','/api/events',{ id, pet, kind:'Feeding', notes:'late' })).status, 409);
-  const mine = await portal('ann');
+  const mine = (await call('ann','GET','/api/diary?visit='+id)).json;
   assert.equal(mine.events.filter(e => e.booking === id).length, 1);
-  assert.equal(mine.bookings.find(b => b.id === id).summary, 'All good');
-  assert.equal((await portal('bob')).events.some(e => e.booking === id), false);
+  assert.equal(mine.visits[0].summary, 'All good');
+  assert.equal((await portal('ann')).bookings.find(b => b.id === id).summary, 'All good');
+  const theirs = (await call('bob','GET','/api/diary?visit='+id)).json;
+  assert.equal(theirs.visits.length + theirs.events.length, 0, 'another customer cannot read the visit');
 });
 
 test('customers cannot touch each other’s bookings, pets, or staff endpoints', async () => {

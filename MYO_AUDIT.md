@@ -231,8 +231,11 @@ Unchanged. Needs policy decisions (no-show, early-start window, cancellation cut
 - **Verification:** a legacy database with no version and no `summary` column upgrades to version 3 with its data intact.
 - **Remaining limitations:** photos are still BLOBs in the main database (see §4.7). No down-migrations. Query speed improvement was not measured.
 
-### D5 — `/api/portal` returns everything, N×M queries · Medium · IN PROGRESS
-The per-slot-per-service query loop is gone; availability is computed in one in-memory pass over active bookings. Pagination, server-side diary filters and photo caching are **not** done.
+### D5 — `/api/portal` returns everything, N×M queries · Medium · RESOLVED (also P1-3)
+- **Files:** `server.mjs` (`bookingRows`, `historyPage`, `petsFor`, `/api/history`, `/api/diary`, photo route), `assets/portal.js` (`loadDiary`, `mergePets`, "Show older" buttons), `tests/pagination.test.mjs` (new), `tests/api.test.mjs`, `tests/image.test.mjs`, `tests/browser/portal-smoke.mjs`
+- **Fix:** the per-slot-per-service query loop is gone (availability is one in-memory pass over held bookings). `/api/portal` now returns upcoming and in-progress bookings, plus only the newest 20 past bookings and a `history_next` cursor. It no longer includes diary events. Staff receive only the pets referenced by the returned bookings, not every pet in the system. `GET /api/history?before=` pages older bookings. `GET /api/diary?pet=&visit=&before=` returns 10 visits per page with all of their updates, filtered by pet and visit on the server. Cursors are `starts.id`, so visits with the same start time are neither skipped nor repeated. Photos are sent with `Cache-Control: private, max-age=3600`. The client loads more pages on demand and no longer repeats the server's conflict check when listing times (§4.4).
+- **Verification:** 6 new tests. Paging returns every past booking and visit exactly once, newest first. The pet filter is applied on the server, to updates as well as visits. A customer probing another customer's visit or pet gets an empty page. Staff pets match the bookings. Malformed cursors return 400. Photos carry the cache header. The browser smoke test loads older bookings (20 → 25) and older diary visits (10 → 20) through the buttons. On a database seeded with 500 visits and 5,000 updates, `/api/portal` fell from 1,302 KB to 8.8 KB, and the first diary page is 26 KB.
+- **Remaining limitations:** upcoming bookings are not paged; the schedule bounds them, but a staff member with hundreds of future requests would receive all of them. The visit filter lists only the visits loaded so far. A browser can keep a photo in its private cache for up to an hour after sign-out on a shared device.
 
 ### O1 — Hosting mismatch in sitemap/robots · Medium · OPEN (depends on the hosting decision)
 ### O2 — Whole-page re-render loses unsaved input · Low–Medium · OPEN
@@ -274,14 +277,14 @@ The per-slot-per-service query loop is gone; availability is computed in one in-
 | D2 | Visit lifecycle loose ends | Medium | OPEN (policy needed) |
 | D3 | No write idempotency | Low–Med | OPEN |
 | D4 | Ad hoc schema management | Medium | RESOLVED |
-| D5 | Unbounded portal payload | Medium | IN PROGRESS |
+| D5 | Unbounded portal payload | Medium | RESOLVED |
 | O1 | Static hosting mismatch | Medium | OPEN |
 | O2 | Re-render loses input | Low–Med | OPEN |
 | O3 | No tests/CI/engines | Medium | RESOLVED; CI IMPLEMENTED — UNVERIFIED |
-| P0-1 | Automated tests | P0 | RESOLVED (22 tests) |
+| P0-1 | Automated tests | P0 | RESOLVED (28 tests + browser smoke) |
 | P0-5 | Backup tooling | P0 | RESOLVED; scheduling BLOCKED |
 | P0-6 | Hosting decision | P0 | BLOCKED |
-| P1-3 | Pagination / server-side filters | P1 | OPEN |
+| P1-3 | Pagination / server-side filters | P1 | RESOLVED |
 | P1-4 | Lifecycle guards | P1 | OPEN |
 | P1-5 | Structured pet care profile | P1 | OPEN |
 | P1-6 | Email verification and recovery | P1 | OPEN (needs provider) |
@@ -297,6 +300,6 @@ The per-slot-per-service query loop is gone; availability is computed in one in-
 
 1. **Device verification (N3, remainder).** Chromium is covered by `npm run test:browser`. Still to do: Safari (macOS and iOS) and Android Chrome by hand, including camera capture and HEIC photos from an iPhone.
 2. **Hosting decision and deployment setup (P0-6, O1, P0-5 scheduling).** Decide Node host vs. Workers/D1. If Node: set `NODE_ENV=production`, `MYO_ORIGIN`, `MYO_SECURE_COOKIES=1`, `MYO_TRUST_PROXY`; schedule `npm run backup` with an off-machine copy and rehearse a restore; fix `sitemap.xml`/`robots.txt`. Run `scripts/scrub-photos.mjs` on any existing database after a backup (N2).
-3. **Bounded API responses (D5, P1-3).** Paginate bookings and diary events, add server-side pet/visit filters, and let photos cache privately. Keep the isolation tests passing.
+3. ~~Bounded API responses (D5, P1-3).~~ Done; see D5 in §7.
 4. **Lifecycle policy and guards (D2, P1-4, D3).** After you decide the rules: no-show state, how early a visit can start, cancellation cutoff, what rescheduling a Confirmed booking does; idempotency keys for bookings and diary events.
 5. **Account lifecycle and payments (S5, N1, P1-6, P1-7).** Email provider, verification and recovery, then Stripe Checkout with signed webhooks, a payments table and idempotency. Payments are blocked on the policy decisions listed in the README.

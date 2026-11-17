@@ -72,9 +72,10 @@ test('uploaded photos are stored without GPS metadata', async () => {
   await call('s','POST','/api/status',{ id, status:'In Progress' });
   const upload = await call('s','POST','/api/events',{ id, pet:data.pets[0].id, kind:'Observation', notes:'', photo:'data:image/jpeg;base64,'+jpeg(6).toString('base64') });
   assert.equal(upload.status, 200);
-  const eventId = (await call('c','GET','/api/portal')).json.events[0].id;
+  const eventId = (await call('c','GET','/api/diary')).json.events[0].id;
   const photo = await call('c','GET','/api/photos/'+eventId);
   assert.equal(photo.status, 200);
+  assert.equal(photo.headers.get('cache-control'), 'private, max-age=3600', 'photos may be cached privately');
   assert.ok(!photo.bytes.includes('GPSLatitude'), 'GPS removed before storage');
   const garbage = await call('s','POST','/api/events',{ id, pet:data.pets[0].id, kind:'Observation', notes:'', photo:'data:image/jpeg;base64,'+Buffer.from([0xff,0xd8,0xff,0xe1,0xff,0xff,1]).toString('base64') });
   assert.equal(garbage.status, 400, 'corrupt JPEG is refused');

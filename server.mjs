@@ -178,6 +178,39 @@ function photoFrom(data) {
   try { return [mime,stripMetadata(mime,bytes)]; } catch { requireThat(false, 'Use a valid photo smaller than 2.5 MB.'); }
 }
 
+const historyPageSize = 20;
+const diaryPage = 10;
+const pageCursor = row => row.starts + '.' + row.id;
+function cursor(value) {
+  if (!value) return null;
+  const match = /^(\d{1,16})\.(\d{1,16})$/.exec(value);
+  requireThat(match, 'Invalid page.');
+  return [Number(match[1]), Number(match[2])];
+}
+// Bookings visible to this user, with service, customer and pet ids. `where` filters the aliased table `b`.
+function bookingRows(user, where, params, tail) {
+  return all(`
+    SELECT b.*, s.name AS service_name, u.name AS customer, u.email,
+      (SELECT json_group_array(bp.pet) FROM booking_pets bp WHERE bp.booking=b.id) AS pet_ids
+    FROM bookings b JOIN services s ON s.id=b.service JOIN users u ON u.id=b.owner
+    WHERE ${user.admin ? '1' : 'b.owner=?'} AND ${where} ${tail}
+  `,...(user.admin ? [] : [user.id]),...params).map(row => ({ ...row, pet_ids:JSON.parse(row.pet_ids) }));
+}
+function historyPage(user, now, before) {
+  const conditions = ['b.starts<? AND b.status<>?'];
+  const params = [now,'In Progress'];
+  if (before) { conditions.push('(b.starts<? OR (b.starts=? AND b.id<?))'); params.push(before[0],before[0],before[1]); }
+  const rows = bookingRows(user,conditions.join(' AND '),params,'ORDER BY b.starts DESC, b.id DESC LIMIT '+(historyPageSize + 1));
+  const bookings = rows.slice(0,historyPageSize);
+  return { bookings, next:rows.length > historyPageSize ? pageCursor(bookings.at(-1)) : null };
+}
+// Customers get all their own pets; staff get only the pets referenced by the bookings in the response.
+function petsFor(user, bookings) {
+  if (!user.admin) return all('SELECT * FROM pets WHERE owner=? ORDER BY name',user.id);
+  const ids = [...new Set(bookings.flatMap(booking => booking.pet_ids))];
+  return ids.length ? all(`SELECT * FROM pets WHERE id IN (${ids.map(() => '?').join(',')}) ORDER BY name`,...ids) : [];
+}
+
 // MYO_TRUST_PROXY=1 reads the client address the reverse proxy appended to X-Forwarded-For;
 // MYO_TRUST_PROXY=cloudflare reads CF-Connecting-IP. Leave it unset when the server is reached directly.
 function clientAddress(request) {
@@ -248,26 +281,19 @@ async function api(request, response, path) {
     if (media) {
       const event = get('SELECT events.*, bookings.owner FROM events JOIN bookings ON bookings.id=events.booking WHERE events.id=?', Number(media[1]));
       requireThat(event?.photo && (user.admin || event.owner === user.id), 'Photo not found.', 404);
-      response.writeHead(200, { 'Content-Type':event.mime, 'Content-Length':event.photo.length });
+      // Photos never change once published, so the browser may keep its private copy for an hour.
+      response.writeHead(200, { 'Content-Type':event.mime, 'Content-Length':event.photo.length, 'Cache-Control':'private, max-age=3600' });
       response.end(event.photo);
       return;
     }
+    const url = new URL(request.url,'http://localhost');
     if (path === '/api/portal') {
-      const owner = user.admin ? '' : ' WHERE owner=?';
-      const params = user.admin ? [] : [user.id];
-      const bookings = all(`
-        SELECT b.*, s.name AS service_name, u.name AS customer, u.email,
-          (SELECT json_group_array(p.id) FROM booking_pets bp JOIN pets p ON p.id=bp.pet WHERE bp.booking=b.id) AS pet_ids
-        FROM (SELECT * FROM bookings${owner}) b JOIN services s ON s.id=b.service JOIN users u ON u.id=b.owner
-        ORDER BY b.starts
-      `,...params).map(row => ({...row,pet_ids:JSON.parse(row.pet_ids)}));
-      const events = all(`
-        SELECT e.id,e.booking,e.pet,e.kind,e.notes,e.published,e.photo IS NOT NULL AS has_photo
-        FROM events e JOIN bookings b ON b.id=e.booking ${user.admin ? '' : 'WHERE b.owner=?'} ORDER BY e.published DESC,e.id DESC
-      `,...params);
+      const now = Date.now();
+      // Upcoming and active bookings are bounded by the schedule; past ones are paged through /api/history.
+      const current = bookingRows(user,'(b.starts>=? OR b.status=?)',[now,'In Progress'],'ORDER BY b.starts, b.id');
+      const history = historyPage(user,now);
       const services = all('SELECT * FROM services ORDER BY name,minutes');
       // Expand each published window into the start times a customer can actually book.
-      const now = Date.now();
       const windows = all('SELECT * FROM slots WHERE ends>? ORDER BY starts',now);
       const held = all("SELECT starts,ends FROM bookings WHERE status IN ('Confirmed','In Progress') AND ends>?",now);
       const slots = [];
@@ -281,7 +307,31 @@ async function api(request, response, path) {
           if (service_ids.length) slots.push({ id:window.id, starts:begin, ends:window.ends, service_ids });
         }
       }
-      return { user:publicUser(user), pets:all('SELECT * FROM pets'+owner+' ORDER BY name',...params), services, slots, windows, bookings, events, activityTypes };
+      const bookings = [...current,...history.bookings];
+      return { user:publicUser(user), pets:petsFor(user,bookings), services, slots, windows, bookings, history_next:history.next, activityTypes };
+    }
+    if (path === '/api/history') {
+      const page = historyPage(user,Date.now(),cursor(url.searchParams.get('before')));
+      return { bookings:page.bookings, pets:petsFor(user,page.bookings), next:page.next };
+    }
+    if (path === '/api/diary') {
+      // A page of visits (newest first) with every update for those visits, optionally narrowed to one pet or visit.
+      const pet = url.searchParams.get('pet') ? integer(Number(url.searchParams.get('pet'))) : null;
+      const visit = url.searchParams.get('visit') ? integer(Number(url.searchParams.get('visit'))) : null;
+      const before = cursor(url.searchParams.get('before'));
+      const conditions = ["(b.status IN ('In Progress','Completed') OR EXISTS(SELECT 1 FROM events e WHERE e.booking=b.id))"];
+      const params = [];
+      if (pet) { conditions.push('EXISTS(SELECT 1 FROM booking_pets bp WHERE bp.booking=b.id AND bp.pet=?)'); params.push(pet); }
+      if (visit) { conditions.push('b.id=?'); params.push(visit); }
+      if (before) { conditions.push('(b.starts<? OR (b.starts=? AND b.id<?))'); params.push(before[0],before[0],before[1]); }
+      const rows = bookingRows(user,conditions.join(' AND '),params,'ORDER BY b.starts DESC, b.id DESC LIMIT '+(diaryPage + 1));
+      const visits = rows.slice(0,diaryPage);
+      const ids = visits.map(row => row.id);
+      const events = ids.length ? all(`
+        SELECT id,booking,pet,kind,notes,published,photo IS NOT NULL AS has_photo FROM events
+        WHERE booking IN (${ids.map(() => '?').join(',')})${pet ? ' AND pet=?' : ''} ORDER BY published DESC,id DESC
+      `,...ids,...(pet ? [pet] : [])) : [];
+      return { visits, events, pets:petsFor(user,visits), next:rows.length > diaryPage ? pageCursor(visits.at(-1)) : null };
     }
   }
   requireThat(request.method === 'POST', 'Route not found.', 404);

@@ -12,6 +12,7 @@ async function loadPlaywright() {
 const { chromium } = await loadPlaywright();
 import { startServer, adminLogin, password } from '../helpers.mjs';
 import { deflateSync } from 'node:zlib';
+import { DatabaseSync } from 'node:sqlite';
 
 const server = await startServer();
 const problems = [];
@@ -151,6 +152,36 @@ await img.waitFor();
 log('customer diary photo loaded:', await img.evaluate(i => i.complete && i.naturalWidth > 0));
 await cust.locator('#refresh-diary').click();
 await feedback(cust).filter({ hasText:'up to date' }).waitFor();
+
+// Paging: seed older completed visits, then load them through the "Show older" buttons.
+{
+  const db = new DatabaseSync(server.dbPath);
+  const owner = db.prepare("SELECT id FROM users WHERE email='casey@example.test'").get().id;
+  const pet = db.prepare('SELECT id FROM pets WHERE owner=?').get(owner).id;
+  const service = db.prepare('SELECT id FROM services').get().id;
+  for (let i = 1; i <= 25; i++) {
+    const starts = Date.now() - i * 86400e3;
+    const id = db.prepare("INSERT INTO bookings(owner,service,starts,ends,cents,notes,status,summary) VALUES(?,?,?,?,2500,'','Completed','Old visit')")
+      .run(owner, service, starts, starts + 1800e3).lastInsertRowid;
+    db.prepare('INSERT INTO booking_pets VALUES(?,?)').run(id, pet);
+  }
+  db.close();
+}
+await cust.goto(server.base + '/portal/index.html#upcoming');
+await cust.reload();
+const pastCards = () => cust.locator('#upcoming article:has-text("Old visit")').count();
+const beforeMore = await pastCards();
+await cust.click('#more-history');
+await cust.locator('#upcoming article:has-text("Old visit")').nth(beforeMore).waitFor();
+log('past visits shown:', beforeMore, '→', await pastCards(), '(older button gone:', !(await cust.locator('#more-history').count()) + ')');
+if (await pastCards() !== 25) throw new Error('Expected all 25 seeded visits after loading older bookings');
+await cust.goto(server.base + '/portal/index.html#diary');
+const diaryVisits = () => cust.locator('#diary-feed article.diary-visit').count();
+const firstPage = await diaryVisits();
+await cust.click('#more-diary');
+await cust.locator('#diary-feed article.diary-visit').nth(firstPage).waitFor();
+log('diary visits:', firstPage, '→', await diaryVisits());
+if (firstPage !== 10) throw new Error('Expected a first diary page of 10 visits, got ' + firstPage);
 
 await browser.close();
 await server.stop();

@@ -28,7 +28,7 @@ Security, reliability, scheduling and test coverage from the audit. No redesign 
 | O3 tooling | RESOLVED; CI IMPLEMENTED — UNVERIFIED |
 | S4 headers/CSP | IMPLEMENTED — UNVERIFIED (CSP never loaded in a browser); malformed-URL fix RESOLVED |
 | D1 one booking per window | IMPLEMENTED — UNVERIFIED (API tested; portal UI not run) |
-| D5 portal payload | IN PROGRESS (query loop removed; pagination open) |
+| D5 portal payload | RESOLVED (paged history and diary, private photo caching) |
 
 ## 3. Files and systems modified
 
@@ -47,6 +47,9 @@ Security, reliability, scheduling and test coverage from the audit. No redesign 
 **API.**
 - `POST /api/bookings` and `POST /api/reschedule` accept an optional `start` (epoch ms) alongside `slot` (window id). It must be inside the window, on a 30-minute step from the window start, in the future, and free of conflicts. Without `start` the window start is used, as before.
 - `GET /api/portal` now returns `slots` as individual bookable start times (`{ id: windowId, starts, ends: windowEnd, service_ids }`) and a new `windows` array with the raw published windows. Anything that read `slots` as windows (the admin list) must read `windows`.
+- `GET /api/portal` no longer returns `events`. `bookings` holds upcoming and in-progress bookings plus the newest 20 past ones, and `history_next` is the cursor for the rest. For staff, `pets` holds only the pets those bookings reference.
+- `GET /api/history?before=<cursor>` → `{ bookings, pets, next }`, 20 past bookings per page, newest first.
+- `GET /api/diary?pet=&visit=&before=<cursor>` → `{ visits, events, pets, next }`, 10 visits per page with all their updates. Cursors are `<starts>.<id>`; `next` is `null` on the last page.
 - Sign-in and register: 429 after 30 requests per minute per address; sign-in 429 after 8 failures per account in 15 minutes.
 - Photo uploads are re-written without metadata; a corrupt image returns 400.
 - Malformed URLs return 404.
@@ -55,14 +58,14 @@ Security, reliability, scheduling and test coverage from the audit. No redesign 
 
 ## 5. Tests executed and results
 
-- `npm test` (22 tests): **22 passed, 0 failed** on Node v22.23.4. Covers the booking lifecycle, cross-customer isolation, the grid (overlap, off-grid, boundaries), double approval, withdrawn windows, price mismatch, headers, malformed URLs, account lockout, proxy-aware limiting, production configuration, image stripping for each format, a legacy-database upgrade, backup, and photo scrubbing.
+- `npm test` (28 tests): **28 passed, 0 failed** on Node v22.23.4. Covers the booking lifecycle, cross-customer isolation, the grid (overlap, off-grid, boundaries), double approval, withdrawn windows, price mismatch, headers, malformed URLs, account lockout, proxy-aware limiting, production configuration, image stripping for each format, a legacy-database upgrade, backup, and photo scrubbing.
 - Regression check: with metadata stripping disabled, the photo test failed; with the per-address limit disabled, the proxy test failed.
 - `node --check` on all changed JavaScript passed.
 - **Not run:** Node 24; the GitHub Actions workflow; any browser or phone; real phone photos; any deployment. No linter or type checker exists in the repo.
 
 ## 6. Remaining audit findings
 
-OPEN: S5, D2, D3, O1, O2, P1-3, P1-4, P1-5, P1-6, P1-8, P2 items. IN PROGRESS: D5. BLOCKED: P0-6 (hosting decision), P1-7 (Stripe, needs payment decisions), backup scheduling. New: N1 (account lockout can be abused), N2 (old photos unscrubbed), N3 (Chromium covered by `npm run test:browser`; Safari and devices untested). See MYO_AUDIT.md §8.
+OPEN: S5, D2, D3, O1, O2, P1-4, P1-5, P1-6, P1-8, P2 items. RESOLVED since: D5, P1-3. BLOCKED: P0-6 (hosting decision), P1-7 (Stripe, needs payment decisions), backup scheduling. New: N1 (account lockout can be abused), N2 (old photos unscrubbed), N3 (Chromium covered by `npm run test:browser`; Safari and devices untested). See MYO_AUDIT.md §8.
 
 ## 7. Known bugs and blockers
 
@@ -74,7 +77,7 @@ OPEN: S5, D2, D3, O1, O2, P1-3, P1-4, P1-5, P1-6, P1-8, P2 items. IN PROGRESS: D
 
 ## 8. Partially completed work
 
-- **D5:** the N×M availability queries are gone, but `/api/portal` still returns the full booking and event history, and photos are served with `no-store`.
+- **D5:** resolved. Upcoming bookings are still unpaged (bounded by the schedule), and the diary's visit filter lists only the pages loaded so far.
 - **D1:** the 30-minute step is a constant. There is no buffer, travel time or multi-staff concept.
 - **S4:** headers are set, but the CSP is unproven in a browser.
 
@@ -82,6 +85,6 @@ OPEN: S5, D2, D3, O1, O2, P1-3, P1-4, P1-5, P1-6, P1-8, P2 items. IN PROGRESS: D
 
 1. **Safari and phone verification (N3 remainder).** Chromium passes `npm run test:browser` (the full customer and staff flow, with no CSP violations). Still to check by hand: Safari on macOS and iOS, Android Chrome, camera capture and iPhone HEIC photos.
 2. **Hosting and operations (P0-6, O1, backups, N2).** Pick the host (a Node host with a persistent disk is the shortest path), set the production variables, schedule `npm run backup` with an off-machine copy and rehearse a restore, run the photo scrub after a backup, and fix `sitemap.xml` and `robots.txt`.
-3. **Bounded responses (D5, P1-3).** Paginate bookings and diary events, filter by pet and visit on the server, and cache photos privately. Keep `tests/api.test.mjs` isolation tests green.
+3. ~~Bounded responses (D5, P1-3).~~ Done: `/api/history`, `/api/diary`, private photo caching, `tests/pagination.test.mjs`.
 4. **Lifecycle rules and idempotency (D2, P1-4, D3, O2).** Once the owner decides the policy: no-show, early-start limit, cancellation cutoff, rescheduling a Confirmed booking, idempotency keys, and preserving unsaved form input.
 5. **Accounts, email and payments (S5, N1, P1-6, P1-7).** Add an email provider, verification and recovery; then Stripe Checkout with signed webhooks, a payments table and idempotent handling, gating "Start visit" per the agreed policy.

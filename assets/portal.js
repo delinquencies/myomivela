@@ -92,10 +92,23 @@ function petForm(pet) {
     ).join('')+'</div></fieldset>').join('');
   return form('pets',groups+button(pet ? 'Save changes' : 'Add pet','','🐾'),pet?.id);
 }
-function availableSlots(minutes, exclude, serviceId) {
-  return data.slots.filter(slot => slot.ends-slot.starts >= minutes*60_000 &&
-    (!serviceId || slot.service_ids.includes(serviceId)) &&
-    !data.bookings.some(b => b.id !== exclude && ['Confirmed','In Progress'].includes(b.status) && slot.starts < b.ends && slot.starts + minutes*60_000 > b.starts));
+// The server already removes times held by confirmed visits; this only checks the visit fits before the window ends.
+function availableSlots(minutes, serviceId) {
+  return data.slots.filter(slot => slot.ends-slot.starts >= minutes*60_000 && (!serviceId || slot.service_ids.includes(serviceId)));
+}
+// Pets arrive with each page of bookings or diary visits; keep one list so names resolve everywhere.
+function mergePets(rows = []) {
+  const known = new Map(data.pets.map(pet => [pet.id,pet]));
+  for (const pet of rows) known.set(pet.id,pet);
+  data.pets = [...known.values()].sort((a,b) => a.name.localeCompare(b.name));
+}
+async function loadDiary({ more = false } = {}) {
+  const query = new URLSearchParams();
+  if (filterPet) query.set('pet',filterPet);
+  if (more && data.diary?.next) query.set('before',data.diary.next);
+  const page = await api('diary'+(query.size ? '?'+query : ''));
+  mergePets(page.pets);
+  data.diary = more ? { visits:[...data.diary.visits,...page.visits], events:[...data.diary.events,...page.events], next:page.next } : page;
 }
 const appointmentTime = new Intl.DateTimeFormat('en-US',{timeStyle:'short',timeZone:'America/New_York'});
 const appointmentDay = new Intl.DateTimeFormat('en-US',{weekday:'short',month:'short',day:'numeric',timeZone:'America/New_York'});
@@ -177,7 +190,7 @@ function bookingCard(booking) {
     actions += statusForm(booking,'Cancelled','Cancel booking');
   }
   if (['Requested','Confirmed'].includes(booking.status) && (data.user.admin || booking.starts > Date.now())) {
-    const slots = availableSlots((booking.ends-booking.starts)/60000,booking.id);
+    const slots = availableSlots((booking.ends-booking.starts)/60000);
     if (slots.length) actions += '<details class="reschedule-options"><summary>'+emoji('📅')+'Reschedule</summary>'+
       form('reschedule',choiceGroup('New time',slotChoices(slots))+button('Confirm new time','secondary','✓'),booking.id)+'</details>';
   }
@@ -190,16 +203,13 @@ function bookingCard(booking) {
     actions+'</article>';
 }
 function diary() {
+  // The server has already applied the pet filter; the visit filter narrows the pages loaded so far.
   const eventsByVisit = new Map();
-  for (const event of data.events) {
-    if (filterPet && String(event.pet) !== filterPet) continue;
+  for (const event of data.diary.events) {
     if (!eventsByVisit.has(event.booking)) eventsByVisit.set(event.booking, []);
     eventsByVisit.get(event.booking).push(event);
   }
-  const visits = data.bookings.filter(booking =>
-    (!filterPet || booking.pet_ids.some(id => String(id) === filterPet)) &&
-    (eventsByVisit.has(booking.id) || ['In Progress','Completed'].includes(booking.status))
-  ).sort((a,b) => b.starts-a.starts);
+  const visits = data.diary.visits;
   if (!visits.some(visit => String(visit.id) === filterVisit)) filterVisit = '';
   const visible = visits.filter(visit => !filterVisit || String(visit.id) === filterVisit);
   return '<div class="diary-toolbar"><div class="diary-filters">'+
@@ -210,7 +220,8 @@ function diary() {
       if (!event.has_photo) return null;
       const url = '/api/photos/'+event.id;
       return { src:url, href:url, alt:'Open full photo from the care visit' };
-    });
+    })+
+    (data.diary.next && !filterVisit ? '<button type="button" class="secondary" id="more-diary">'+emoji('⬇️')+'Show older visits</button>' : '');
 }
 function diaryFilter(name, icon, label, allLabel, current, rows, labelFor) {
   if (!rows.length) return '';
@@ -240,8 +251,9 @@ function render() {
   const admin = data.user.admin;
   const today = day(Date.now());
   const bookings = data.bookings.filter(b => b.starts >= Date.now() || b.status === 'In Progress');
-  const history = data.bookings.filter(b => !bookings.includes(b));
+  const history = data.bookings.filter(b => !bookings.includes(b)).sort((a,b) => b.starts-a.starts);
   const cards = rows => rows.length ? rows.map(bookingCard).join('') : '<p>No appointments here yet.</p>';
+  const older = data.history_next ? '<button type="button" class="secondary" id="more-history">'+emoji('⬇️')+'Show older bookings</button>' : '';
   const main = admin ? 'Today' : 'My bookings';
   const title = admin ? 'Myomi’s dashboard' : 'My account';
   document.querySelector('.portal h1').textContent = title;
@@ -254,13 +266,13 @@ function render() {
     links.map(([id,label,icon]) => '<a href="#'+id+'">'+emoji(icon)+'<span>'+label+'</span></a>').join('')+'</nav>'+
     section('upcoming',main,admin ? cards(bookings.filter(b=>b.status === 'In Progress' || day(b.starts) === today)) +
       '<h3>Other upcoming bookings</h3>'+cards(bookings.filter(b=>b.status !== 'In Progress' && day(b.starts) !== today))
-      : '<h3>Upcoming visits</h3>'+cards(bookings)+'<h3>Past visits</h3>'+cards(history.slice().reverse()))+
+      : '<h3>Upcoming visits</h3>'+cards(bookings)+'<h3>Past visits</h3>'+cards(history)+older)+
     (admin ? section('settings','Services and availability',adminSettings()) :
       section('pets','Pet profiles',data.pets.map(p=>'<article><h3>'+text(p.name)+'</h3>'+profileSummary(p)+'<details><summary>Edit profile</summary>'+petForm(p)+'</details></article>').join('')+'<h3>Add a pet</h3>'+petForm())+
       section('book','Request care',bookingForm()))+
     section('diary',admin ? 'Publish updates' : 'Pet Diary',
       (admin ? publishingDesk()+'<h3>Published updates</h3>' : '')+'<div id="diary-feed">'+diary()+'</div>')+
-    (admin ? section('history','Booking history',cards(history.slice().reverse())) : '');
+    (admin ? section('history','Booking history',cards(history)+older) : '');
   updateQuote();
   showSection();
 }
@@ -285,7 +297,7 @@ function updateQuote(event) {
   const booking = app.querySelector('[data-action="bookings"]');
   if (!booking) return;
   const service = find(data.services,Number(booking.querySelector('[name="service"]:checked')?.value));
-  const slots = service ? availableSlots(service.minutes,undefined,service.id) : [];
+  const slots = service ? availableSlots(service.minutes,service.id) : [];
   const days = new Map(slots.map(slot => [day(slot.starts),appointmentDay.format(slot.starts)]));
   const chosenDay = event?.target.name === 'day' ? event.target.value : days.keys().next().value;
   if (event?.target.name !== 'day') {
@@ -309,6 +321,7 @@ function updateQuote(event) {
 async function refresh() {
   const user = await api('session');
   data = user ? await api('portal') : null;
+  if (data) await loadDiary();
   app.setAttribute('aria-busy','false');
   render();
 }
@@ -352,18 +365,21 @@ app.addEventListener('change', event => {
     showPhotoSelection(form,file || other.files[0]);
   }
   if (form?.dataset.action === 'bookings' && ['service','day'].includes(name)) updateQuote(event);
-  if (name === 'filter-pet' || name === 'filter-visit') {
-    if (name === 'filter-pet') filterPet = value;
-    else filterVisit = value;
-    const feed = document.querySelector('#diary-feed');
-    feed.innerHTML = diary();
-    const filter = feed.querySelector('[data-diary-filter="'+name+'"]');
-    if (filter) {
-      filter.open = true;
-      filter.querySelector(':checked')?.focus({ preventScroll:true });
-    }
-  }
+  if (name === 'filter-pet' || name === 'filter-visit') updateDiaryFilter(name,value);
 });
+async function updateDiaryFilter(name, value) {
+  if (name === 'filter-pet') {
+    filterPet = value;
+    try { await loadDiary(); } catch (error) { feedback.textContent = error.message; return; }
+  } else filterVisit = value;
+  const feed = document.querySelector('#diary-feed');
+  feed.innerHTML = diary();
+  const filter = feed.querySelector('[data-diary-filter="'+name+'"]');
+  if (filter) {
+    filter.open = true;
+    filter.querySelector(':checked')?.focus({ preventScroll:true });
+  }
+}
 app.addEventListener('click', async event => {
   const clearPhoto = event.target.closest('[data-clear-photo]');
   if (clearPhoto) {
@@ -374,17 +390,26 @@ app.addEventListener('click', async event => {
     form.elements.camera.focus({ preventScroll:true });
     return;
   }
-  const control = event.target.closest('#refresh-diary');
+  const control = event.target.closest('#refresh-diary, #more-diary, #more-history');
   if (!control) return;
   const before = data;
   control.disabled = true;
   try {
-    const latest = await api('portal');
+    if (control.id === 'more-history') {
+      const page = await api('history?before='+encodeURIComponent(data.history_next));
+      if (data !== before) return;
+      mergePets(page.pets);
+      data.bookings = [...data.bookings,...page.bookings];
+      data.history_next = page.next;
+      render();
+      document.querySelector(data.user.admin ? '#history' : '#upcoming')?.querySelector('article:last-of-type')?.scrollIntoView({ block:'nearest' });
+      return;
+    }
+    await loadDiary({ more:control.id === 'more-diary' });
     if (data !== before) return;
-    data = latest;
     document.querySelector('#diary-feed').innerHTML = diary();
-    document.querySelector('#refresh-diary')?.focus({preventScroll:true});
-    feedback.textContent = 'Diary is up to date.';
+    document.querySelector('#'+(control.id === 'more-diary' && data.diary.next ? 'more-diary' : 'refresh-diary'))?.focus({preventScroll:true});
+    if (control.id === 'refresh-diary') feedback.textContent = 'Diary is up to date.';
   } catch (error) {
     if (data === before) feedback.textContent = error.message;
   } finally {

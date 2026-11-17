@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node server.mjs",
     "test": "node --test tests/*.test.mjs",
-    "test:browser": "node tests/browser/portal-smoke.mjs",
+    "test:browser": "node --no-warnings tests/browser/portal-smoke.mjs",
     "backup": "node scripts/backup.mjs",
     "build": "tailwindcss -c docs/archive/design-previews/tailwind.config.cjs -i docs/archive/design-previews/assets/legacy-tailwind.input.css -o docs/archive/design-previews/assets/legacy-tailwind.css --minify"
   },
