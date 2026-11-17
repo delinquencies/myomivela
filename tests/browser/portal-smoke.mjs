@@ -19,6 +19,7 @@ import { readFile } from 'node:fs/promises';
 
 const server = await startServer();
 const problems = [];
+const expected = []; // problems a step causes on purpose (the simulated dropped connection)
 const log = (...a) => console.log('•', ...a);
 const browser = await chromium.launch();
 function watch(page, who) {
@@ -139,8 +140,22 @@ await ev.waitFor();
 await ev.locator('input[name=kind]').first().locator('xpath=..').click();
 await ev.locator('[name=notes]').fill('Great walk');
 await ev.locator('input[name=photo]').setInputFiles({ name:'p.png', mimeType:'image/png', buffer:png });
+// Simulate a phone losing signal: the first publish reaches the server and is saved, but the answer never
+// arrives. The portal must retry on its own with the same Idempotency-Key, and the update must appear once.
+let dropped = false;
+await staff.route('**/api/events', async route => {
+  if (dropped) return route.continue();
+  dropped = true;
+  await route.fetch();
+  await route.abort('connectionreset');
+});
 await ev.locator('button:has-text("Publish diary update")').click();
 await waitSaved(staff);
+await staff.unroute('**/api/events');
+expected.push(/\/api\/events.*(ERR_CONNECTION_RESET|net::ERR_FAILED)|ERR_CONNECTION_RESET/);
+const published = await staff.locator('#diary-feed li:has-text("Great walk")').count();
+log('dropped connection on publish → diary shows the update', published, 'time(s)');
+if (published !== 1) throw new Error('Expected the retried diary update once, found ' + published);
 await staff.goto(server.base + '/portal/index.html#upcoming');
 const done = staff.locator('form[data-action=status]:has(input[value=Completed])').first();
 await done.locator('[name=summary]').fill('All good');
@@ -196,6 +211,9 @@ if (firstPage !== 10) throw new Error('Expected a first diary page of 10 visits,
 
 await browser.close();
 await server.stop();
+const unexpected = problems.filter(problem => !expected.some(pattern => pattern.test(problem)));
+if (problems.length !== unexpected.length) log('ignored', problems.length - unexpected.length, 'expected problem(s) from the simulated dropped connection');
+problems.splice(0, problems.length, ...unexpected);
 if (problems.length) {
   console.error('\nBrowser problems (' + problems.length + '):\n' + problems.join('\n'));
   process.exitCode = 1;

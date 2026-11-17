@@ -24,6 +24,7 @@ lib/auth.mjs          Password hashing, sessions and cookies, admin bootstrap, r
 lib/domain.mjs        Service names, activity types, status transitions, booking step
 lib/scheduling.mjs    Windows, bookable start times, overlap checks
 lib/bookings.mjs      Access-checked booking queries and page cursors
+lib/idempotency.mjs   Safe retries: a write repeated with the same Idempotency-Key runs once
 lib/backup.mjs        Whole-installation backup (streamed, gzip JSON) and restore into an empty installation
 lib/photos.mjs        Upload validation; lib/image.mjs strips EXIF/XMP/text metadata
 lib/api.mjs           Route table and access rules (public / user / staff), origin check
@@ -106,7 +107,7 @@ npm run deploy
 
 ## Database and migrations
 
-SQLite in both runtimes: the Durable Object's built-in SQLite on Cloudflare, `node:sqlite` locally. The schema is created and upgraded automatically on start by the ordered `migrations` list in `lib/db.mjs`. The applied count is stored in the `meta` table (`schema_version`, currently 4), because Durable Objects do not allow `PRAGMA user_version`. To change the schema, **append** a migration that is safe to re-run. Never edit an earlier one. Photos are not in the database: they are stored in R2 (Cloudflare) or files (Node) under the event's `photo_key`.
+SQLite in both runtimes: the Durable Object's built-in SQLite on Cloudflare, `node:sqlite` locally. The schema is created and upgraded automatically on start by the ordered `migrations` list in `lib/db.mjs`. The applied count is stored in the `meta` table (`schema_version`, currently 5), because Durable Objects do not allow `PRAGMA user_version`. To change the schema, **append** a migration that is safe to re-run. Never edit an earlier one. Photos are not in the database: they are stored in R2 (Cloudflare) or files (Node) under the event's `photo_key`.
 
 ### Backups and restore
 
@@ -128,7 +129,7 @@ Also available:
 ## Tests and builds
 
 ```sh
-npm test             # 36 tests against Node; starts the server on free ports with temporary databases
+npm test             # 42 tests against Node; starts the server on free ports with temporary databases
 npm run test:worker  # the same suites against the Cloudflare runtime (wrangler dev); Node-only tests are skipped
 npm run test:browser # end-to-end portal run in Chromium (needs Playwright); MYO_TARGET=worker runs it on the Worker
 npm run build  # only rebuilds the archived design-preview stylesheet (needs `npm ci`); the live site has no build
@@ -143,6 +144,7 @@ There is no linter or type checker configured. CI is defined in `.github/workflo
 - **Pets:** create and edit pet profiles (breed, medical, diet, emergency contacts and notes as one JSON profile).
 - **Booking:** customers request a service for one or more of their pets at a start time on a 30-minute grid inside staff-published windows. Staff approve, decline, reschedule and cancel; customers can cancel or reschedule. Overlapping approvals and approvals for withdrawn windows are rejected. The price is snapshotted on the booking.
 - **Visits and diary:** staff start and complete visits (a summary is required), publish typed activity updates with an optional photo, and customers see them grouped by visit. Photo access is checked per request, and photo metadata (including GPS) is removed on upload.
+- **Safe retries:** every portal form sends an `Idempotency-Key`; if the connection drops, the portal retries and the server runs the write once (bookings, approvals, diary updates and so on).
 - **Staff tools:** service prices and durations, appointment windows, today’s visits, history, and diary publishing.
 
 ## Not built yet

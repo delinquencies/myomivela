@@ -25,13 +25,34 @@ let data;
 let filterPet = '';
 let filterVisit = '';
 
-async function api(path, payload) {
-  const response = await fetch('/api/'+path, payload === undefined ? {} : {
-    method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload),
-  });
+// `key` (optional) is an Idempotency-Key: the server runs a write once per key and replays its answer to repeats,
+// so a write can be retried safely when the connection drops before the answer arrives.
+async function api(path, payload, key) {
+  const options = payload === undefined ? {} : {
+    method:'POST', headers:{ 'Content-Type':'application/json', ...(key ? { 'Idempotency-Key':key } : {}) }, body:JSON.stringify(payload),
+  };
+  let response;
+  for (let attempt = 0; ; attempt++) {
+    try { response = await fetch('/api/'+path, options); break; }
+    catch (error) {
+      // fetch only throws when no answer arrived. Retry keyed writes twice, then let the person retry by hand.
+      if (!key || attempt === 2) throw Object.assign(new Error('The connection dropped. Check your signal and tap the button again; it will not be saved twice.'), { network:true });
+      await new Promise(done => setTimeout(done, 1500 * (attempt + 1)));
+    }
+  }
   const result = await response.json();
   if (!response.ok) throw new Error(result.error || 'Please try again.');
   return result;
+}
+// One key per form submission. It survives a dropped connection (so tapping again replays rather than repeats)
+// and is replaced when the form's content changes or the server has answered.
+const pendingKeys = new WeakMap();
+function requestKey(form, body) {
+  const pending = pendingKeys.get(form);
+  if (pending?.body === body) return pending.key;
+  const key = [...crypto.getRandomValues(new Uint8Array(16))].map(byte => byte.toString(16).padStart(2,'0')).join('');
+  pendingKeys.set(form, { key, body });
+  return key;
 }
 function auth() {
   const staffEntry = new URLSearchParams(location.search).get('staff') === '1';
@@ -463,7 +484,10 @@ app.addEventListener('submit',async event => {
       payload.photo = await readPhoto(fields.get('camera')?.size ? fields.get('camera') : fields.get('photo'));
       delete payload.camera;
     }
-    await api(action,payload);
+    const key = requestKey(form, action+'\n'+JSON.stringify(payload));
+    try { await api(action,payload,key); }
+    catch (error) { if (!error.network) pendingKeys.delete(form); throw error; }
+    pendingKeys.delete(form);
     const resumeBooking = action === 'pets' && !form.dataset.id && location.hash === bookingIntake;
     if (resumeBooking) history.replaceState(null,'','#book');
     if (action === 'bookings') {

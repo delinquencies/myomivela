@@ -223,7 +223,11 @@ Not addressed (email verification, recovery, password change, sign-out-everywher
 ### D2 — Visit lifecycle loose ends · Medium · OPEN
 Unchanged. Needs policy decisions (no-show, early-start window, cancellation cutoffs, what rescheduling a Confirmed booking should do).
 
-### D3 — No idempotency on writes · Low–Medium · OPEN (suspected)
+### D3 — No idempotency on writes · Low–Medium · RESOLVED (also P2-2)
+- **Files:** `lib/idempotency.mjs` (new), `lib/api.mjs`, `lib/db.mjs` (migration 5: `idempotency` table), `lib/backup.mjs` (restore clears it), `lib/routes/admin.mjs` (restore routes opt out), `assets/portal.js`, `tests/idempotency.test.mjs` (new), `tests/browser/portal-smoke.mjs`, schema-version expectations in `tests/operations.test.mjs` and `tests/backup.test.mjs`
+- **Fix:** every signed-in POST honours an `Idempotency-Key` header. The key is claimed before the handler runs. A repeat with the same body gets the stored response with `Idempotent-Replay: true`, a repeat while the first is still running gets 409, and the same key with a different body gets 422. Only successful responses are stored (per user, for 24 hours), so a refused request can be corrected and resent. The portal creates one key per form submission, retries twice by itself when no answer arrives, keeps the key for a manual retap, and makes a new key if the form's content changes. A retried approval now replays its success instead of reporting "This booking cannot make that change".
+- **Verification:** 6 new tests run on both runtimes. They cover a repeated booking (one booking, identical answer), two identical photo updates sent at once (one published), a replayed approval, a changed body (422, nothing added), a refused request corrected under the same key, per-user keys and malformed keys. With the protection disabled, 5 of the 6 fail; the sixth, which checks that refusals are not stored, passes either way. In the browser test, the first diary publish reaches the server but its answer is cut off, and on both runtimes the portal retries by itself and the update appears once.
+- **Remaining limitations:** if the process dies after a write commits but before its response is stored (a crash or a Durable Object restart, a window of microseconds), a retry more than a minute later runs again. Photos over 2.5 MB are re-encoded in the browser before upload; if a manual retap re-encodes to different bytes, it counts as a new request. Sign-in, registration and sign-out are not covered (no account to scope the key to).
 
 ### D4 — Ad hoc schema management · Medium · RESOLVED
 - **Files:** `server.mjs`, `tests/operations.test.mjs`
@@ -294,7 +298,7 @@ Background checked against Cloudflare documentation on 2026-11-17: the original 
 | S5 | Account lifecycle (verification, recovery, rotation) | Medium | OPEN |
 | D1 | One booking per window | High | RESOLVED (Chromium, phone viewport); Safari/devices UNVERIFIED |
 | D2 | Visit lifecycle loose ends | Medium | OPEN (policy needed) |
-| D3 | No write idempotency | Low–Med | OPEN |
+| D3 | No write idempotency | Low–Med | RESOLVED (also P2-2) |
 | D4 | Ad hoc schema management | Medium | RESOLVED |
 | D5 | Unbounded portal payload | Medium | RESOLVED |
 | O1 | Static hosting mismatch | Medium | IN PROGRESS: site and API served together by the Worker; sitemap/robots await the domain |
