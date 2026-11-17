@@ -160,3 +160,28 @@ if (serviceRail) {
   serviceRail.addEventListener('pointercancel', finishGesture);
   serviceRail.addEventListener('lostpointercapture', finishGesture);
 }
+
+const reviewRail = document.querySelector('.review-rail');
+const reviewControls = document.querySelector('.review-controls');
+if (reviewRail && reviewControls) {
+  const cards = [...reviewRail.querySelectorAll('.review-card')];
+  const [previous, next] = reviewControls.querySelectorAll('button');
+  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+
+  function updateReviewControls() {
+    const remaining = reviewRail.scrollWidth - reviewRail.clientWidth;
+    reviewControls.hidden = cards.length < 2 || remaining <= 1;
+    previous.setAttribute('aria-disabled', String(reviewRail.scrollLeft <= 1));
+    next.setAttribute('aria-disabled', String(remaining - reviewRail.scrollLeft <= 1));
+  }
+
+  reviewControls.addEventListener('click', (event) => {
+    const button = event.target.closest('button');
+    if (cards.length < 2 || !button || button.getAttribute('aria-disabled') === 'true') return;
+    const step = cards[1].offsetLeft - cards[0].offsetLeft;
+    reviewRail.scrollBy({ left: step * Number(button.dataset.reviewStep), behavior: reducedMotion.matches ? 'instant' : 'smooth' });
+  });
+  reviewRail.addEventListener('scroll', updateReviewControls, { passive: true });
+  window.addEventListener('resize', updateReviewControls);
+  updateReviewControls();
+}

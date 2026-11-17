@@ -81,8 +81,7 @@
             <li><a href="#drop-in"><span aria-hidden="true">⌂</span><span data-es="Visitas a domicilio">Drop-In Visits</span></a></li>
           </ul>
           <div class="hero-actions">
-            <a class="button" href="portal/index.html#book"><span data-es="Reserva una visita">Book a Visit</span><span aria-hidden="true">→</span></a>
-            <a class="button button-secondary" href="#how"><span data-es="Cómo funciona">See How It Works</span></a>
+                <a class="button button-secondary" href="#how"><span data-es="Cómo funciona">See How It Works</span></a>
           </div>
         </div>
         <figure class="hero-art">
@@ -196,15 +195,27 @@
         <a class="button" href="portal/index.html#book"><span data-es="Reserva una visita">Book a Visit</span><span aria-hidden="true">→</span></a>
         <section class="reviews" aria-labelledby="reviews-title">
           <h3 id="reviews-title" data-es="Lo que dicen las familias">Kind words from pet parents</h3>
-          <div class="review-rail" role="region" aria-label="Testimonials" data-es-label="Testimonios" tabindex="0">
-            <!-- Add one figure per approved testimonial.
-            <figure class="review-card">
-              <blockquote><p>Testimonial text.</p></blockquote>
-              <figcaption>Pet parent attribution</figcaption>
-            </figure>
-            -->
+          <p class="review-preview" data-es="Espacios reservados para testimonios aprobados.">Placeholder cards for approved testimonials.</p>
+          <div class="review-rail" id="review-cards" role="region" aria-labelledby="reviews-title" tabindex="0">
+            <article class="review-card">
+              <span class="review-mark" aria-hidden="true">✦</span>
+              <h4 data-es="Paseos de perros">Dog walking</h4>
+            </article>
+            <article class="review-card">
+              <span class="review-mark" aria-hidden="true">✦</span>
+              <h4 data-es="Visitas a domicilio">Drop-in visits</h4>
+            </article>
+            <article class="review-card">
+              <span class="review-mark" aria-hidden="true">✦</span>
+              <h4 data-es="Cuidado nocturno">Overnight sitting</h4>
+            </article>
+          </div>
+          <div class="review-controls" hidden>
+            <button type="button" data-review-step="-1" aria-controls="review-cards" aria-label="Previous testimonial card" data-es-label="Tarjeta de testimonio anterior">←</button>
+            <button type="button" data-review-step="1" aria-controls="review-cards" aria-label="Next testimonial card" data-es-label="Siguiente tarjeta de testimonio">→</button>
           </div>
         </section>
+        <a class="button" href="portal/index.html#book"><span data-es="Reserva una visita">Book a Visit</span><span aria-hidden="true">→</span></a>
       </div>
     </section>
   </main>

@@ -314,12 +314,24 @@ h3 { font-size: clamp(2.1rem, 4.2vw, 4.5rem); }
 .closing-star { fill: currentColor; }
 .closing-action-lines { stroke: currentColor; stroke-width: 3; stroke-linecap: round; }
 .closing > .section-wrap > .button { font-size: clamp(1rem, 1.55vw, 1.3rem); }
-.reviews { margin-top: clamp(1.5rem, 4vw, 3rem); }
-.reviews:not(:has(.review-card)) { display: none; }
+.reviews { max-width: 53rem; margin: clamp(1.5rem, 4vw, 3rem) auto 1rem; }
+.review-preview { margin-block: .4rem .25rem; color: #f2c7ad; }
+.review-controls { display: flex; justify-content: center; gap: .65rem; margin-top: .25rem; }
+.review-controls[hidden] { display: none; }
+.review-controls button {
+  width: 48px;
+  height: 48px;
+  border: 1px solid var(--ink);
+  border-radius: 50%;
+  background: var(--cream);
+  color: var(--ink);
+  font-size: 1.4rem;
+  cursor: pointer;
+}
+.review-controls button[aria-disabled="true"] { opacity: .5; cursor: default; }
 .reviews h3 { font-size: clamp(1.55rem, 3vw, 2.6rem); }
 .review-rail {
   display: flex;
-  justify-content: safe center;
   gap: 1rem;
   overflow-x: auto;
   padding: 1rem .85rem;
@@ -327,7 +339,7 @@ h3 { font-size: clamp(2.1rem, 4.2vw, 4.5rem); }
   scroll-snap-type: x mandatory;
 }
 .review-card {
-  flex: 0 0 min(85%, 19rem);
+  flex: 0 0 min(83%, 19rem);
   position: relative;
   padding: 1.2rem 1rem 1.45rem;
   border-radius: .45rem;
@@ -348,6 +360,8 @@ h3 { font-size: clamp(2.1rem, 4.2vw, 4.5rem); }
   background: #edaf8bd9;
   transform: translateX(-50%) rotate(-5deg);
 }
+.review-mark { display: block; color: #9f3018; font-size: 1.9rem; line-height: 1; }
+.review-card h4 { margin: .35rem 0 0; font: 900 clamp(1.2rem, 2.35vw, 1.65rem)/1.15 var(--display); }
 .review-card blockquote { margin: 0; }
 .review-card figcaption { margin-top: .75rem; color: #9f3018; font-weight: 700; }
 .footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem 1.5rem; padding-block: 1.2rem; }
