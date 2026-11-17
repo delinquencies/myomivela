@@ -4,27 +4,47 @@
 .portal h3 { font-size: 1.45rem; margin-bottom: .5rem; }
 .portal section { margin-top: 2.2rem; max-width: 65rem; scroll-margin-top: 1rem; }
 .portal section > h2 { margin-bottom: .7rem; }
-.portal nav { display: flex; gap: 1rem; flex-wrap: wrap; margin-block: 1.4rem; }
-.portal nav a { text-decoration: underline; text-underline-offset: .25em; padding: .4rem 0; }
-.portal nav a[aria-current="page"] { color: #a13013; font-weight: 700; text-decoration-thickness: 3px; }
+.portal nav { display: flex; flex-wrap: wrap; gap: .5rem; margin-block: 1.4rem; }
+.portal nav a, .tap-link, .portal summary {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  min-height: 48px;
+  padding: .45rem .8rem;
+  border: 1px solid #b89079;
+  border-radius: .75rem;
+  background: var(--cream);
+  color: #562a1d;
+  font-weight: 700;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+.portal nav a[aria-current="page"], .portal details[open] > summary { background: var(--peach); color: #842b16; }
+.portal .tap-link { margin-block: .35rem; }
+.portal summary { display: flex; width: fit-content; max-width: 100%; list-style: none; }
+.portal summary::-webkit-details-marker { display: none; }
+.portal summary::after { content: ''; flex: 0 0 .45rem; width: .45rem; height: .45rem; margin-inline-start: .25rem; border: solid currentColor; border-width: 0 2px 2px 0; transform: rotate(45deg); }
+.portal details[open] > summary::after { transform: rotate(225deg); }
+.portal details > .tap-choices { margin-top: .75rem; }
+.portal .reschedule-options { margin-block: .45rem; }
 .portal-header-links { display: flex; align-items: center; justify-content: end; gap: .5rem 1rem; flex-wrap: wrap; }
 .portal [hidden] { display: none; }
 .portal form, .portal article { background: var(--cream); border: 1px solid #e6c7b8; border-radius: 1rem; padding: clamp(1rem, 2vw, 1.5rem); margin: .75rem 0; }
 .portal article form { padding: .7rem; background: var(--paper); }
 .portal label { display: block; margin: .55rem 0; font-weight: 600; }
-.portal input:not([type="checkbox"]), .portal textarea, .portal select {
-  width: 100%; display: block; margin-top: .2rem; padding: .55rem; min-height: 44px;
+.portal input:not([type="hidden"]), .portal textarea {
+  width: 100%; display: block; margin-top: .2rem; padding: .65rem; min-height: 48px;
   font: inherit; color: var(--ink); border: 1px solid #9c7561; background: white; border-radius: .5rem;
 }
 .portal textarea { min-height: 5rem; }
 .portal fieldset { margin: .6rem 0; border: 1px solid #c59a83; border-radius: .5rem; }
 .portal fieldset label { margin: .3rem 0; }
-.portal :is(button, summary), #logout { cursor: pointer; min-height: 44px; }
+.portal :is(button, summary), #logout { cursor: pointer; min-height: 48px; }
 .portal button, #logout {
-  margin: .3rem .4rem .3rem 0; padding: .45rem .9rem; border: 0; border-radius: 99px;
+  margin: .3rem .4rem .3rem 0; padding: .55rem .9rem; border: 0; border-radius: 99px;
   background: #a13013; color: white; font-weight: 700;
 }
-.portal button:disabled { opacity: .65; cursor: wait; }
+.portal button:disabled { opacity: .65; cursor: default; }
 .portal button.secondary { background: #eed5c5; color: #562a1d; }
 .portal small { display: block; margin-top: .4rem; }
 .portal .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr)); gap: 1rem; }
@@ -38,13 +58,45 @@
 .tap-choices legend { font-weight: 700; margin-bottom: .35rem; }
 .tap-choices > div { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 8rem), 1fr)); gap: .45rem; }
 .portal .tap-choices label { position: relative; margin: 0; }
-.portal .tap-choices input { position: absolute; width: 1px; height: 1px; min-height: 0; padding: 0; margin: 0; clip-path: inset(50%); }
-.tap-choices label > span { display: flex; align-items: center; gap: .4rem; min-height: 50px; height: 100%; padding: .4rem .55rem; border: 1px solid #b89079; border-radius: .65rem; background: var(--cream); cursor: pointer; line-height: 1.2; }
+.portal .tap-choices input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  opacity: 0;
+  cursor: pointer;
+  font-size: 1rem;
+}
+.tap-choices label > span { display: flex; align-items: center; gap: .4rem; min-height: 52px; height: 100%; padding: .55rem .65rem; border: 1px solid #b89079; border-radius: .65rem; background: var(--cream); cursor: pointer; line-height: 1.2; overflow-wrap: anywhere; }
 .tap-choices input:checked + span { background: #f6c8af; border-color: #a13013; box-shadow: inset 0 0 0 1px #a13013; }
 .tap-choices input:focus-visible + span { outline: 2px solid #a13013; outline-offset: 2px; }
-.choice-icon { flex-shrink: 0; font-size: 1.25rem; }
-.photo-choices { min-inline-size: 0; }
-.portal .photo-choices input { max-width: 100%; min-width: 0; }
+.choice-icon, .control-icon { flex-shrink: 0; font-size: 1.15em; line-height: 1; }
+.photo-choices label > span { background: var(--peach); color: #562a1d; }
+[data-photo-status] { overflow-wrap: anywhere; }
+[data-photo-status]:not(:empty) { margin-top: .55rem; }
+.filter-selection { font-weight: 500; }
+.booking-confirmation {
+  width: min(28rem,calc(100% - 2rem));
+  max-height: calc(100% - 2rem);
+  padding: 1.15rem;
+  border: 1px solid #b89079;
+  border-radius: 1rem;
+  background: var(--cream);
+  color: var(--ink);
+}
+.booking-confirmation::backdrop { background: #231b1880; }
+.portal .booking-confirmation form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  margin: .6rem 0 0;
+  padding: 0;
+  border: 0;
+}
+.portal .booking-confirmation button { margin: 0; }
 .diary-toolbar { margin-bottom: .8rem; }
 .diary-filters { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .55rem; }
 .diary-visit header { padding-bottom: .8rem; border-bottom: 1px solid #e6c7b8; }
@@ -74,10 +126,13 @@
     border-top: 1px solid #d9af99;
     box-shadow: 0 -4px 18px #6b3d2c15;
   }
-  .portal nav a { display: grid; place-items: center; min-height: 48px; text-align: center; text-decoration: none; font-size: .82rem; line-height: 1.15; border-radius: .6rem; padding: .3rem; }
+  .portal nav a { display: flex; flex-direction: column; justify-content: center; gap: .2rem; min-height: 52px; text-align: center; font-size: .78rem; padding: .25rem .15rem; }
   .portal nav a[aria-current="page"] { background: var(--peach); }
-  .portal :is(input, textarea, select) { font-size: 1rem; }
+  .portal :is(input, textarea) { font-size: 1rem; }
   .portal [data-action="events"] { padding: .75rem; }
-  .portal [data-action="events"] > button { width: 100%; min-height: 48px; margin-inline: 0; }
+  .portal form > button[type="submit"] { width: 100%; min-height: 52px; margin-inline: 0; }
+  .portal .photo-choices > div { grid-template-columns: 1fr; }
+  #logout { margin-inline-end: 0; }
+  .diary-filters { grid-template-columns: 1fr; }
   .portal .tap-choices > div { grid-template-columns: repeat(2,minmax(0,1fr)); }
 }

@@ -109,8 +109,8 @@ h3 { font-size: clamp(2.1rem, 4.2vw, 4.5rem); }
 }
 
 .language button {
-  min-width: 44px;
-  min-height: 44px;
+  min-width: 48px;
+  min-height: 48px;
   border-radius: inherit;
   border: 0;
   background: transparent;
@@ -169,13 +169,12 @@ h3 { font-size: clamp(2.1rem, 4.2vw, 4.5rem); }
 @keyframes heart-in { from { opacity: 0; transform: scale(.72) rotate(2deg); } to { opacity: 1; transform: scale(1) rotate(14deg); } }
 .hero-description { max-width: 26ch; margin-top: .8em; font-size: clamp(1.2rem, 2.16vw, 2.15rem); line-height: 1.23; }
 .service-pills { display: flex; flex-wrap: wrap; padding: 0; gap: .6em; list-style: none; margin-top: 2.45em; font-size: clamp(.92rem, 1.35vw, 1.35rem); }
-.service-pills a { display: inline-flex; gap: .64em; align-items: center; min-height: 44px; padding: .56em 1.2em; background: var(--peach); border-radius: 99px; transition: background .2s; }
+.service-pills a { display: inline-flex; gap: .64em; align-items: center; min-height: 48px; padding: .56em 1.2em; background: var(--peach); border-radius: 99px; transition: background .2s; }
 .service-pills a:hover { background: #f6c7b1; }
 .service-pills [aria-hidden] { color: var(--tomato); font-size: 1.45em; font-weight: 700; line-height: 1; }
 [lang="es"] .service-pills { max-width: 44vw; }
 .hero-actions { margin-top: clamp(1.55rem, 2.9vw, 3rem); gap: clamp(1rem, 2.25vw, 2.3rem); flex-wrap: wrap; font-size: clamp(1rem, 1.48vw, 1.5rem); }
 .hero-actions .button { padding-inline: 1.5em; font-weight: 600; }
-.hero-actions .text-link { padding-block: .7rem; }
 .hero-art { position: absolute; right: 0; bottom: 0; width: 54%; }
 .hero-art img { width: 100%; mask-image: linear-gradient(to right, transparent, black 4%); }
 .hero-art figcaption { position: absolute; left: 64%; top: 91.4%; width: 23%; transform: rotate(7deg); transform-origin: left; font: italic 600 clamp(.85rem, 1.7vw, 1.8rem)/1.1 "DM Sans", sans-serif; letter-spacing: -.04em; white-space: nowrap; }
@@ -187,7 +186,7 @@ h3 { font-size: clamp(2.1rem, 4.2vw, 4.5rem); }
 .care h2 { margin-bottom: 1rem; }
 .service-controls { display: flex; justify-content: end; gap: .65rem; }
 .service-controls[hidden] { display: none; }
-.service-controls button { width: 46px; height: 46px; border: 1px solid var(--ink); border-radius: 50%; background: var(--cream); color: var(--ink); font-size: 1.4rem; cursor: pointer; }
+.service-controls button { width: 48px; height: 48px; border: 1px solid var(--ink); border-radius: 50%; background: var(--cream); color: var(--ink); font-size: 1.4rem; cursor: pointer; }
 .service-controls button[aria-disabled="true"] { opacity: .5; cursor: default; }
 .service-rail {
   display: flex;
@@ -378,15 +377,27 @@ a.social-icon:hover { background: #9f3018; color: white; }
 .faq-intro img { width: 100%; aspect-ratio: 1.1; object-fit: cover; border-radius: 46% 48% 24% 34%; }
 .faq-answers { background: var(--peach); }
 .faq-answers h2 { margin: 0 0 .65em; }
-.faq-answers details { border-top: 1px solid #a8614460; }
-.faq-answers details:last-child { border-bottom: 1px solid #a8614460; }
-.faq-answers summary {
-  cursor: pointer;
-  padding: 1rem .25rem;
-  font: 900 clamp(1.25rem, 3vw, 2.2rem)/1.2 var(--display);
+.faq-answers details {
+  margin-block: .55rem;
+  border: 1px solid #a8614460;
+  border-radius: .9rem;
+  background: var(--cream);
 }
-.faq-answers summary::marker { color: var(--tomato); }
-.faq-answers details p { margin: 0 0 1.3rem; max-width: 60ch; }
+.faq-answers summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: .65rem;
+  min-height: 52px;
+  padding: .75rem 1rem;
+  cursor: pointer;
+  list-style: none;
+  font: 900 clamp(1.15rem, 2.6vw, 1.85rem)/1.2 var(--display);
+}
+.faq-answers summary::-webkit-details-marker { display: none; }
+.faq-answers summary::after { content: ''; width: .55rem; height: .55rem; border: solid #a63116; border-width: 0 2px 2px 0; transform: rotate(45deg); }
+.faq-answers details[open] summary::after { transform: rotate(225deg); }
+.faq-answers details p { margin: 0 1rem 1rem; max-width: 60ch; }
 
 .preview-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding-block: 1.5rem; }
 .preview-header .wordmark { font-size: clamp(3.5rem, 7vw, 6rem); }
@@ -421,7 +432,7 @@ a.social-icon:hover { background: #9f3018; color: white; }
 
 @media (max-width: 580px) {
   .wordmark { font-size: 3.25rem; }
-  .button-small { padding-inline: .8em; min-height: 44px; }
+  .button-small { padding-inline: .8em; min-height: 48px; }
   .header-actions { gap: .45rem; }
   .service-pills { font-size: .88rem; gap: .42rem; }
   .service-pills a { padding-inline: .75em; }

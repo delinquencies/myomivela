@@ -3,15 +3,17 @@ import { activityIcons, escapeHtml as text, formatVisitDate as date, renderDiary
 const app = document.querySelector('#app');
 const feedback = document.querySelector('#feedback');
 const logout = document.querySelector('#logout');
+const cancelDialog = document.querySelector('#cancel-booking');
 const find = (rows,id) => rows.find(row => row.id === id);
 const money = cents => new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(cents / 100);
 const day = value => new Intl.DateTimeFormat('en-CA',{dateStyle:'short',timeZone:'America/New_York'}).format(value);
-const option = (value,label,selected = false) => '<option value="'+text(value)+'"'+(selected ? ' selected' : '')+'>'+text(label)+'</option>';
-const button = (label, style = '') => '<button class="'+style+'" type="submit">'+label+'</button>';
+const emoji = icon => icon ? '<span class="control-icon" aria-hidden="true">'+icon+'</span> ' : '';
+const button = (label, style = '', icon = '') => '<button class="'+style+'" type="submit">'+emoji(icon)+text(label)+'</button>';
 const form = (action, contents, id = '') => '<form data-action="'+action+'" data-id="'+id+'">'+contents+'</form>';
 const input = (label,name,attributes = '') => '<label>'+label+'<input name="'+name+'" '+attributes+'></label>';
 const area = (label,name,value = '',max = 3000) => '<label>'+label+'<textarea maxlength="'+max+'" name="'+name+'">'+text(value)+'</textarea></label>';
-const select = (label,name,options,attributes = '') => '<label>'+label+'<select name="'+name+'" '+attributes+'>'+options+'</select></label>';
+const serviceIcons = { 'Dog walking':'🦮', 'Drop-in visit':'🏠', 'Overnight pet sitting':'🌙' };
+const tapLink = (href,label,icon) => '<a class="tap-link" href="'+text(href)+'">'+emoji(icon)+text(label)+'</a>';
 const serviceNames = new Map([
   ['pet-sitting', 'Overnight pet sitting'],
   ['dog-walking', 'Dog walking'],
@@ -38,8 +40,8 @@ function auth() {
     app.innerHTML = '<p>Sign in to start visits and publish Pet Diary updates.</p>'+
       form('login',input('Email','email','required type="email" maxlength="254" autocomplete="username"')+
         input('Password','password','required type="password" maxlength="128" autocomplete="current-password"')+
-        button('Sign in'))+
-      '<p><a class="text-link" href="./index.html">Go to the Client Portal</a></p>';
+        button('Sign in','','🔑'))+
+      tapLink('./index.html','Go to the Client Portal','🐾');
     return;
   }
   document.querySelector('.portal h1').textContent = 'Client portal.';
@@ -49,9 +51,9 @@ function auth() {
   const bookingPrompt = service ? 'Sign in or create an account to request '+text(service.toLowerCase())+'.'
     : 'Sign in or create an account to request a visit.';
   app.innerHTML = (['#book', bookingIntake].includes(location.hash) ? '<p>'+bookingPrompt+'</p>' : '<p>Sign in to manage bookings, pet profiles, and your Pet Diary.</p>') + '<div class="grid">'+
-    form('login','<h2>Sign in</h2>'+fields+button('Sign in'))+
+    form('login','<h2>Sign in</h2>'+fields+button('Sign in','','🔑'))+
     form('register','<h2>Create an account</h2>'+input('Name','name','required maxlength="100" autocomplete="name"')+
-      fields+'<small>Use at least 12 characters for your password.</small>'+button('Create account'))+'</div>';
+      fields+'<small>Use at least 12 characters for your password.</small>'+button('Create account','','👋'))+'</div>';
 }
 const profileGroups = [
   ['About your pet', [['breed','Breed'],['sex','Sex'],['age','Age or birthday'],['weight','Weight (lb)']]],
@@ -88,61 +90,78 @@ function petForm(pet) {
         ? area(label,key,saved[key],key === 'notes' ? 3000 : 280)
         : input(label,key,'maxlength="120" value="'+text(saved[key])+'"'+(key.endsWith('Phone') ? ' type="tel"' : ''))
     ).join('')+'</div></fieldset>').join('');
-  return form('pets',groups+button(pet ? 'Save changes' : 'Add pet'),pet?.id);
+  return form('pets',groups+button(pet ? 'Save changes' : 'Add pet','','🐾'),pet?.id);
 }
 function availableSlots(minutes, exclude, serviceId) {
   return data.slots.filter(slot => slot.ends-slot.starts >= minutes*60_000 &&
     (!serviceId || slot.service_ids.includes(serviceId)) &&
     !data.bookings.some(b => b.id !== exclude && ['Confirmed','In Progress'].includes(b.status) && slot.starts < b.ends && slot.starts + minutes*60_000 > b.starts));
 }
-function slotOptions(slots) {
-  return slots.map(slot => option(slot.id,date(slot.starts))).join('');
+const appointmentTime = new Intl.DateTimeFormat('en-US',{timeStyle:'short',timeZone:'America/New_York'});
+const appointmentDay = new Intl.DateTimeFormat('en-US',{weekday:'short',month:'short',day:'numeric',timeZone:'America/New_York'});
+function slotChoices(slots, labelFor = slot => date(slot.starts), { selected } = {}) {
+  return slots.map(slot => choice('slot',slot.id,labelFor(slot),{ checked:slot.id === selected, required:true })).join('');
 }
 function bookingForm() {
-  if (!data.pets.length) return '<p><a class="text-link" href="'+bookingIntake+'">Add a pet profile</a> to request care.</p>';
+  if (!data.pets.length) return '<p>Add a pet profile to request care.</p>'+tapLink(bookingIntake,'Add a pet profile','🐾');
   if (!data.services.length) return '<p>There are no services available to book right now. Check back for availability.</p>';
   const serviceName = requestedService();
   const preferred = data.services.find(service => service.name === serviceName);
   const unavailable = serviceName && !preferred;
+  const initial = preferred ?? (unavailable ? null : data.services[0]);
   const serviceOptions = data.services.map(service =>
-    option(service.id,service.name+' · '+service.minutes+' min · '+money(service.cents),service.id === preferred?.id)
+    choice('service',service.id,service.name+' · '+service.minutes+' min · '+money(service.cents),{
+      checked:service.id === initial?.id, required:true, icon:serviceIcons[service.name],
+    })
   ).join('');
   return '<p>Appointment times are shown in Massachusetts time. Myomi reviews each request before confirming.</p>' +
-    form('bookings',select('Service','service',(unavailable ? option('',serviceName+' (unavailable)',true) : '')+serviceOptions,'required')+
-    '<fieldset><legend>Pets attending</legend>'+ data.pets.map(p => '<label><input type="checkbox" name="pets" value="'+p.id+'"> '+text(p.name)+'</label>').join('')+'</fieldset>'+
-    select('Available day','day','')+select('Appointment','slot','','required')+area('Care instructions for this visit','notes','',1500)+
-    '<p data-availability role="status" hidden></p><p data-quote></p>'+button('Submit booking request'));
+    form('bookings',choiceGroup('Service',serviceOptions)+
+    choiceGroup('Pets attending',data.pets.map(pet => choice('pets',pet.id,pet.name,{ type:'checkbox', icon:'🐾' })).join(''))+
+    '<div data-booking-days></div><div data-booking-times></div><p data-availability role="status" hidden></p>'+
+    area('Care instructions for this visit','notes','',1500)+
+    '<p data-quote></p>'+button('Submit booking request','','📅'));
 }
 function statusForm(booking,status,label) {
   const summary = status === 'Completed' ? '<label>Visit summary<textarea required maxlength="3000" name="summary"></textarea></label>' : '';
-  return form('status','<input type="hidden" name="status" value="'+text(status)+'">'+summary+button(label,'secondary'),booking.id);
+  return form('status','<input type="hidden" name="status" value="'+text(status)+'">'+summary+button(label,status === 'Cancelled' ? 'secondary' : '',{ Confirmed:'✓', 'In Progress':'🐾', Completed:'🏁', Cancelled:'✕' }[status]),booking.id);
 }
-function choice(name, value, label, icon = '') {
-  return '<label><input type="radio" name="'+name+'" value="'+text(value)+'" required>'+
-    '<span>'+(icon ? '<span aria-hidden="true" class="choice-icon">'+icon+'</span>' : '')+text(label)+'</span></label>';
+function choice(name, value, label, { icon = '', checked = false, required = false, type = 'radio' } = {}) {
+  return '<label><input type="'+type+'" name="'+name+'" value="'+text(value)+'"'+
+    (checked ? ' checked' : '')+(required ? ' required' : '')+'>'+
+    '<span>'+emoji(icon)+text(label)+'</span></label>';
+}
+function choiceGroup(label, choices) {
+  return '<fieldset class="tap-choices"><legend>'+text(label)+'</legend><div>'+choices+'</div></fieldset>';
+}
+function photoChoice(name, label, icon, capture = '') {
+  return '<label><input type="file" name="'+name+'" accept="image/*"'+capture+
+    '><span>'+emoji(icon)+text(label)+'</span></label>';
 }
 function eventForm(booking) {
   const pets = booking.pet_ids.map(id => find(data.pets,id)).filter(Boolean);
   const petChoice = pets.length === 1
     ? '<input type="hidden" name="pet" value="'+pets[0].id+'"><p>Update for <strong>'+text(pets[0].name)+'</strong></p>'
-    : '<fieldset class="tap-choices"><legend>Pet</legend><div>'+pets.map(pet => choice('pet',pet.id,pet.name)).join('')+'</div></fieldset>';
+    : choiceGroup('Pet',pets.map(pet => choice('pet',pet.id,pet.name,{ icon:'🐾', required:true })).join(''));
   return form('events',petChoice+
-    '<fieldset class="tap-choices"><legend>Activity</legend><div>'+
-    data.activityTypes.map(kind => choice('kind',kind,kind,activityIcons[kind])).join('')+'</div></fieldset>'+
+    choiceGroup('Activity',data.activityTypes.map(kind =>
+      choice('kind',kind,kind,{ icon:activityIcons[kind], required:true })
+    ).join(''))+
     area('Details (include amounts, duration, dose or observations as appropriate)','notes')+
-    '<fieldset class="photo-choices"><legend>Optional photo</legend>'+
-    input('Take a photo','camera','type="file" accept="image/*" capture="environment"')+
-    input('Choose from library','photo','type="file" accept="image/*"')+'</fieldset>'+
-    button('Publish diary update'),booking.id);
+    '<fieldset class="tap-choices photo-choices"><legend>Optional photo</legend><div>'+
+    photoChoice('camera','Take a photo','📸',' capture="environment"')+
+    photoChoice('photo','Choose from library','🖼️')+'</div>'+
+    '<p data-photo-status role="status"></p><button type="button" class="secondary" data-clear-photo hidden>'+
+    emoji('↩️')+'Remove photo</button></fieldset>'+
+    button('Publish diary update','','🐾'),booking.id);
 }
 function publishingDesk() {
   const visits = data.bookings.filter(booking => booking.status === 'In Progress');
   if (!visits.length) {
-    return '<p><a class="text-link" href="#upcoming">Start a confirmed visit</a> to publish diary updates.</p>';
+    return '<p>Start a confirmed visit to publish diary updates.</p>'+tapLink('#upcoming','Go to today’s visits','📅');
   }
   return visits.map(booking => '<article><h3>'+text(booking.service_name)+' for '+text(booking.customer)+'</h3>'+
     '<p>'+date(booking.starts)+'</p>'+eventForm(booking)+
-    '<p><a class="text-link" href="#upcoming">Go to Today to complete the visit</a></p></article>').join('');
+    tapLink('#upcoming','Go to Today to complete the visit','🏁')+'</article>').join('');
 }
 function bookingCard(booking) {
   const pets = booking.pet_ids.map(id => find(data.pets,id)).filter(Boolean);
@@ -151,13 +170,14 @@ function bookingCard(booking) {
   if (data.user.admin) {
     if (booking.status === 'Requested') actions += statusForm(booking,'Confirmed','Approve request') + statusForm(booking,'Cancelled','Decline request');
     if (booking.status === 'Confirmed') actions += statusForm(booking,'In Progress','Start visit') + statusForm(booking,'Cancelled','Cancel booking');
-    if (active) actions += '<p><a class="text-link" href="#diary">Publish a diary update</a></p>'+statusForm(booking,'Completed','Complete visit');
+    if (active) actions += tapLink('#diary','Publish a diary update','🐾')+statusForm(booking,'Completed','Complete visit');
   } else if (booking.starts > Date.now() && ['Requested','Confirmed'].includes(booking.status)) {
     actions += statusForm(booking,'Cancelled','Cancel booking');
   }
   if (['Requested','Confirmed'].includes(booking.status) && (data.user.admin || booking.starts > Date.now())) {
-    const slots = slotOptions(availableSlots((booking.ends-booking.starts)/60000,booking.id));
-    if (slots) actions += form('reschedule',select('New time','slot',slots,'required')+button('Reschedule','secondary'),booking.id);
+    const slots = availableSlots((booking.ends-booking.starts)/60000,booking.id);
+    if (slots.length) actions += '<details class="reschedule-options"><summary>'+emoji('📅')+'Reschedule</summary>'+
+      form('reschedule',choiceGroup('New time',slotChoices(slots))+button('Confirm new time','secondary','✓'),booking.id)+'</details>';
   }
   return '<article><h3>'+text(booking.service_name)+' · '+text(booking.status)+'</h3><p>'+date(booking.starts)+' – '+date(booking.ends)+' · '+money(booking.cents)+'</p>'+
     (data.user.admin ? '<p>'+text(booking.customer)+' · '+text(booking.email)+'</p>' : '')+
@@ -178,28 +198,38 @@ function diary() {
     (!filterPet || booking.pet_ids.some(id => String(id) === filterPet)) &&
     (eventsByVisit.has(booking.id) || ['In Progress','Completed'].includes(booking.status))
   ).sort((a,b) => b.starts-a.starts);
-  const options = (rows, current, labelFor) => rows.map(row => '<option value="'+row.id+'"'+(String(row.id) === current ? ' selected' : '')+'>'+text(labelFor(row))+'</option>').join('');
   if (!visits.some(visit => String(visit.id) === filterVisit)) filterVisit = '';
   const visible = visits.filter(visit => !filterVisit || String(visit.id) === filterVisit);
   return '<div class="diary-toolbar"><div class="diary-filters">'+
-    select('Filter by pet','filter-pet',option('','All pets')+options(data.pets,filterPet,p=>p.name),'id="filter-pet"')+
-    select('Filter by visit','filter-visit',option('','All visits')+options(visits,filterVisit,b=>b.service_name+' · '+date(b.starts)),'id="filter-visit"')+
-    '</div><button type="button" class="secondary" id="refresh-diary">Refresh updates</button></div>'+
+    diaryFilter('filter-pet','🐾','Filter by pet','All pets',filterPet,data.pets,pet => pet.name)+
+    diaryFilter('filter-visit','📅','Filter by visit','All visits',filterVisit,visits,visit => visit.service_name+' · '+date(visit.starts))+
+    '</div><button type="button" class="secondary" id="refresh-diary">'+emoji('🔄')+'Refresh updates</button></div>'+
     renderDiaryVisits(visible, eventsByVisit, id => find(data.pets,id)?.name, event => {
       if (!event.has_photo) return null;
       const url = '/api/photos/'+event.id;
       return { src:url, href:url, alt:'Open full photo from the care visit' };
     });
 }
+function diaryFilter(name, icon, label, allLabel, current, rows, labelFor) {
+  if (!rows.length) return '';
+  const selected = rows.find(row => String(row.id) === current);
+  const choices = choice(name,'',allLabel,{ checked:!selected })+
+    rows.map(row => choice(name,row.id,labelFor(row),{ checked:row === selected })).join('');
+  return '<details data-diary-filter="'+name+'"><summary>'+emoji(icon)+text(label)+
+    '<span class="filter-selection">'+text(selected ? labelFor(selected) : allLabel)+'</span></summary>'+
+    choiceGroup(label,choices)+'</details>';
+}
 function adminSettings() {
   return '<div class="grid">'+form('services','<h3>Set a service price</h3>'+
-    select('Service','name',['Dog walking','Drop-in visit','Overnight pet sitting'].map(s=>option(s,s)).join(''))+
+    choiceGroup('Service',Object.entries(serviceIcons).map(([service,icon],index) =>
+      choice('name',service,service,{ icon, checked:index === 0, required:true })
+    ).join(''))+
     input('Duration in minutes','minutes','type="number" min="1" max="1440" required')+
-    input('Price in USD','price','type="number" min="0" max="10000" step="0.01" required')+button('Save service'))+
+    input('Price in USD','price','type="number" min="0" max="10000" step="0.01" required')+button('Save service','','✓'))+
     form('slots','<h3>Publish an appointment window</h3><p>Enter the window in your device’s local time. The portal displays Massachusetts time.</p>'+
-    input('Starts','starts','type="datetime-local" required')+input('Ends','ends','type="datetime-local" required')+button('Publish window'))+'</div>'+
+    input('Starts','starts','type="datetime-local" required')+input('Ends','ends','type="datetime-local" required')+button('Publish window','','📅'))+'</div>'+
     '<p>'+data.services.map(s=>text(s.name)+' · '+s.minutes+' min · '+money(s.cents)).join('<br>')+'</p>'+
-    data.slots.map(s=>form('slots','<p>'+date(s.starts)+' – '+date(s.ends)+'</p>'+button('Remove window','secondary'),s.id)).join('');
+    data.slots.map(s=>form('slots','<p>'+date(s.starts)+' – '+date(s.ends)+'</p>'+button('Remove window','secondary','✕'),s.id)).join('');
 }
 const section = (id,title,contents) => '<section id="'+id+'"><h2>'+title+'</h2>'+contents+'</section>';
 function render() {
@@ -214,12 +244,12 @@ function render() {
   const title = admin ? 'Myomi’s dashboard' : 'My account';
   document.querySelector('.portal h1').textContent = title;
   const links = admin
-    ? [['upcoming','Today'],['diary','Publish updates'],['history','Booking history'],['settings','Services & availability']]
-    : [['upcoming','My bookings'],['book','Book a visit'],['pets','My pets'],['diary','Pet Diary']];
+    ? [['upcoming','Today','📅'],['diary','Publish updates','🐾'],['history','Booking history','🗂️'],['settings','Services & availability','⚙️']]
+    : [['upcoming','My bookings','📅'],['book','Book a visit','➕'],['pets','My pets','🐾'],['diary','Pet Diary','📖']];
   const staffNotice = !admin && new URLSearchParams(location.search).get('staff') === '1'
     ? '<p>You’re signed in as a client. Sign out to switch to your staff account.</p>' : '';
   app.innerHTML = '<p>Welcome, '+text(data.user.name)+'.</p>'+staffNotice+'<nav aria-label="'+title+'">'+
-    links.map(([id,label]) => '<a href="#'+id+'">'+label+'</a>').join('')+'</nav>'+
+    links.map(([id,label,icon]) => '<a href="#'+id+'">'+emoji(icon)+'<span>'+label+'</span></a>').join('')+'</nav>'+
     section('upcoming',main,admin ? cards(bookings.filter(b=>b.status === 'In Progress' || day(b.starts) === today)) +
       '<h3>Other upcoming bookings</h3>'+cards(bookings.filter(b=>b.status !== 'In Progress' && day(b.starts) !== today))
       : '<h3>Upcoming visits</h3>'+cards(bookings)+'<h3>Past visits</h3>'+cards(history.slice().reverse()))+
@@ -252,23 +282,27 @@ window.addEventListener('hashchange', () => showSection(true));
 function updateQuote(event) {
   const booking = app.querySelector('[data-action="bookings"]');
   if (!booking) return;
-  const service = find(data.services,Number(booking.elements.service.value));
+  const service = find(data.services,Number(booking.querySelector('[name="service"]:checked')?.value));
   const slots = service ? availableSlots(service.minutes,undefined,service.id) : [];
-  const picker = booking.elements.day;
-  const appointment = booking.elements.slot;
+  const days = new Map(slots.map(slot => [day(slot.starts),appointmentDay.format(slot.starts)]));
+  const chosenDay = event?.target.name === 'day' ? event.target.value : days.keys().next().value;
   if (event?.target.name !== 'day') {
-    picker.innerHTML = [...new Set(slots.map(slot => day(slot.starts)))].map(value => option(value,value)).join('');
+    booking.querySelector('[data-booking-days]').innerHTML = days.size
+      ? choiceGroup('Available day',[...days].map(([key,label]) => choice('day',key,label,{ checked:key === chosenDay, required:true })).join(''))
+      : '';
   }
-  appointment.innerHTML = slotOptions(slots.filter(slot => day(slot.starts) === picker.value));
-  picker.disabled = slots.length === 0;
-  appointment.disabled = appointment.options.length === 0;
+  const appointments = slots.filter(slot => day(slot.starts) === chosenDay);
+  booking.querySelector('[data-booking-times]').innerHTML = appointments.length
+    ? choiceGroup('Appointment',slotChoices(appointments,slot => appointmentTime.format(slot.starts),{ selected:appointments[0].id }))
+    : '';
   const availability = booking.querySelector('[data-availability]');
   availability.hidden = slots.length > 0;
+  const name = requestedService();
   availability.textContent = service
     ? 'No times are available for this service right now. Try another service or check back later.'
-    : 'This service is unavailable right now. Choose another service or check back later.';
+    : (name || 'This service')+' is unavailable right now. Choose another service or check back later.';
   booking.querySelector('[data-quote]').textContent = service ? 'Request total: '+money(service.cents)+' · '+service.minutes+' minutes.' : '';
-  booking.querySelector('button').disabled = appointment.disabled;
+  booking.querySelector('button[type="submit"]').disabled = appointments.length === 0;
 }
 async function refresh() {
   const user = await api('session');
@@ -302,19 +336,42 @@ async function readPhoto(file) {
     reader.readAsDataURL(photo);
   });
 }
+function showPhotoSelection(form, file) {
+  form.querySelector('[data-photo-status]').textContent = file ? 'Photo ready to publish: '+file.name : '';
+  form.querySelector('[data-clear-photo]').hidden = !file;
+}
+
 app.addEventListener('change', event => {
-  if (['camera','photo'].includes(event.target.name) && event.target.files?.length) {
-    event.target.form.elements[event.target.name === 'camera' ? 'photo' : 'camera'].value = '';
+  const { name, value, form } = event.target;
+  if (['camera','photo'].includes(name) && form && event.target.type === 'file') {
+    const other = form.elements[name === 'camera' ? 'photo' : 'camera'];
+    const file = event.target.files[0];
+    if (file) other.value = '';
+    showPhotoSelection(form,file || other.files[0]);
   }
-  if (['service','day'].includes(event.target.name)) updateQuote(event);
-  if (event.target.id === 'filter-pet' || event.target.id === 'filter-visit') {
-    if (event.target.id === 'filter-pet') filterPet = event.target.value;
-    else filterVisit = event.target.value;
-    document.querySelector('#diary-feed').innerHTML = diary();
-    document.getElementById(event.target.id).focus();
+  if (form?.dataset.action === 'bookings' && ['service','day'].includes(name)) updateQuote(event);
+  if (name === 'filter-pet' || name === 'filter-visit') {
+    if (name === 'filter-pet') filterPet = value;
+    else filterVisit = value;
+    const feed = document.querySelector('#diary-feed');
+    feed.innerHTML = diary();
+    const filter = feed.querySelector('[data-diary-filter="'+name+'"]');
+    if (filter) {
+      filter.open = true;
+      filter.querySelector(':checked')?.focus({ preventScroll:true });
+    }
   }
 });
 app.addEventListener('click', async event => {
+  const clearPhoto = event.target.closest('[data-clear-photo]');
+  if (clearPhoto) {
+    const { form } = clearPhoto;
+    form.elements.camera.value = '';
+    form.elements.photo.value = '';
+    showPhotoSelection(form);
+    form.elements.camera.focus({ preventScroll:true });
+    return;
+  }
   const control = event.target.closest('#refresh-diary');
   if (!control) return;
   const before = data;
@@ -332,6 +389,13 @@ app.addEventListener('click', async event => {
     control.disabled = false;
   }
 });
+function confirmCancellation() {
+  cancelDialog.returnValue = '';
+  cancelDialog.showModal();
+  return new Promise(resolve => {
+    cancelDialog.addEventListener('close',() => resolve(cancelDialog.returnValue === 'confirm'),{ once:true });
+  });
+}
 app.addEventListener('submit',async event => {
   event.preventDefault();
   const form = event.target;
@@ -339,8 +403,8 @@ app.addEventListener('submit',async event => {
   const fields = new FormData(form);
   const payload = Object.fromEntries(fields);
   if (form.dataset.id) payload.id = Number(form.dataset.id);
-  if (payload.status === 'Cancelled' && !window.confirm('Cancel or decline this booking?')) return;
-  const control = event.submitter || form.querySelector('button');
+  if (payload.status === 'Cancelled' && !await confirmCancellation()) return;
+  const control = event.submitter || form.querySelector('button[type="submit"]');
   control.disabled = true;
   feedback.textContent = 'Saving…';
   try {
