@@ -37,7 +37,7 @@
 <body id="top">
   <a class="skip" href="#main" data-es="Saltar al contenido">Skip to content</a>
   <header class="site-header site-header--sticky">
-    <a class="wordmark" href="#top" aria-label="myo.">myo<span class="wordmark-dot" aria-hidden="true">.</span><svg class="wordmark-heart" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 21C9 18 2 13.4 2 8.6 2 3.4 8.4 1.6 12 6.4c3.6-4.8 10-3 10 2.2C22 13.4 15 18 12 21Z"/></svg></a>
+    <a class="wordmark" href="#top" aria-label="myo.">myo<span class="wordmark-mark" aria-hidden="true"><svg class="wordmark-shape" viewBox="0 0 24 24"><path fill="currentColor" d="M 12 8 C 14.2 8 16 9.8 16 12 16 14.2 14.2 16 12 16 9.8 16 8 14.2 8 12 8 9.8 9.8 8 12 8 Z"/></svg><span class="wordmark-burst"><span>♥</span><span>♥</span><span>♥</span><span>♥</span></span></span></a>
     <div class="header-actions">
       <a class="button button-small header-booking" href="portal/index.html#book" aria-label="Book a Visit" data-es-label="Reservar visita"><span class="booking-label" data-es="Reservar visita">Book a Visit</span><svg class="booking-paw" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><ellipse cx="4.8" cy="10.5" rx="2" ry="2.8" transform="rotate(-25 4.8 10.5)"/><ellipse cx="9.2" cy="6.6" rx="2" ry="2.8" transform="rotate(-10 9.2 6.6)"/><ellipse cx="14.8" cy="6.6" rx="2" ry="2.8" transform="rotate(10 14.8 6.6)"/><ellipse cx="19.2" cy="10.5" rx="2" ry="2.8" transform="rotate(25 19.2 10.5)"/><path d="M12 11c2.4 0 3.6 2.2 5.5 4.3 2.6 3 .9 5.7-1.7 5.7-1.5 0-2.5-.9-3.8-.9s-2.3.9-3.8.9c-2.6 0-4.3-2.7-1.7-5.7C8.4 13.2 9.6 11 12 11Z"/></svg></a>
       <details class="site-menu">
@@ -182,17 +182,16 @@
     <section class="closing" id="booking" aria-labelledby="closing-title">
       <div class="section-wrap">
         <div class="closing-heading">
-          <svg class="closing-flourish" viewBox="0 0 90 100" fill="none" aria-hidden="true">
-            <path class="closing-star" d="M54 3c1 15 5 20 19 23-14 3-18 8-19 23-3-15-7-20-21-23 14-3 18-8 21-23ZM20 47c1 8 4 11 12 13-8 2-11 5-12 13-2-8-5-11-13-13 8-2 11-5 13-13Z"/>
-            <path class="closing-action-lines" d="m50 69 18 9m-26 8 22 4m13-22 7 10"/>
-          </svg>
           <h2 id="closing-title" data-es="Lo que dicen las familias">Kind words from pet parents</h2>
-          <svg class="closing-flourish" viewBox="0 0 90 100" fill="none" aria-hidden="true">
-            <path class="closing-star" d="M40 29c2 15 6 20 20 23-14 3-18 8-20 23-2-15-6-20-20-23 14-3 18-8 20-23ZM71 64c1 8 4 11 12 13-8 2-11 5-12 13-2-8-5-11-13-13 8-2 11-5 13-13Z"/>
-            <path class="closing-action-lines" d="m26 26 12-16m8 14 9-12m4 20 17-9"/>
-          </svg>
+          <p class="closing-subheading" data-es="¡Tu mascota tiene una nueva (segunda) persona favorita!">Your pet has a new (second) favorite person!</p>
         </div>
         <div class="reviews">
+          <svg class="review-decoration-defs" aria-hidden="true">
+            <symbol id="review-decoration" viewBox="0 0 64 72">
+              <path class="review-sparkle" d="M40 4c2 10 5 14 15 16-10 2-13 6-15 16-2-10-6-14-16-16 10-2 14-6 16-16ZM16 35c1 5 3 7 8 8-5 1-7 3-8 8-1-5-3-7-8-8 5-1 7-3 8-8Z"/>
+              <path class="review-action-lines" d="m36 49 12 8m-19 0 13 8m8-17 6 6"/>
+            </symbol>
+          </svg>
           <p class="review-preview" data-es="Citas y calificaciones de ejemplo">Sample quotes and ratings</p>
           <div class="review-controls deck-controls" hidden>
             <button type="button" data-deck-step="-1" aria-controls="review-cards" aria-label="Previous testimonial" data-es-label="Testimonio anterior">←</button>
@@ -200,26 +199,31 @@
           </div>
           <div class="review-rail" id="review-cards" role="region" aria-label="Testimonial cards" data-es-label="Tarjetas de testimonios" tabindex="0">
             <figure class="review-card">
+              <svg class="review-decoration" viewBox="0 0 64 72" aria-hidden="true"><use href="#review-decoration"/></svg>
               <img src="assets/home/testimonial-beagle.jpg" width="640" height="640" alt="A beagle wearing a burnt-orange bandana" data-es-alt="Un beagle con un pañuelo naranja quemado" loading="lazy" decoding="async">
               <span class="review-stars" role="img" aria-label="Demo rating: 5 out of 5 stars" data-es-label="Calificación de ejemplo: 5 de 5 estrellas">★★★★★</span>
               <blockquote><p data-es="«Volvimos a casa y encontramos a nuestro perro feliz y cansado. Las fotos del paseo nos alegraron el día.»">“We came home to a happily tired pup, and the walk photos made our day.”</p></blockquote>
             </figure>
             <figure class="review-card">
+              <svg class="review-decoration" viewBox="0 0 64 72" aria-hidden="true"><use href="#review-decoration"/></svg>
               <img src="assets/home/testimonial-tabby.jpg" width="640" height="640" alt="An orange tabby peeking out from an apricot blanket" data-es-alt="Un gato atigrado naranja asomado entre una manta color albaricoque" loading="lazy" decoding="async">
               <span class="review-stars" role="img" aria-label="Demo rating: 5 out of 5 stars" data-es-label="Calificación de ejemplo: 5 de 5 estrellas">★★★★★</span>
               <blockquote><p data-es="«Hasta nuestro gato tímido salió a saludar. Las novedades nos ayudaron a relajarnos mientras estábamos fuera.»">“Even our shy cat came out to say hello. The little updates made it so much easier to relax while we were away.”</p></blockquote>
             </figure>
             <figure class="review-card">
+              <svg class="review-decoration" viewBox="0 0 64 72" aria-hidden="true"><use href="#review-decoration"/></svg>
               <img src="assets/home/testimonial-lab.jpg" width="640" height="640" alt="A black Labrador wearing a rust-orange collar" data-es-alt="Un labrador negro con un collar naranja quemado" loading="lazy" decoding="async">
               <span class="review-stars" role="img" aria-label="Demo rating: 5 out of 5 stars" data-es-label="Calificación de ejemplo: 5 de 5 estrellas">★★★★★</span>
               <blockquote><p data-es="«Myomi se acordó de la rutina de dormir y del juguete favorito de nuestro perro. Sentimos que lo dejábamos con una amiga.»">“Myomi remembered the bedtime routine and our dog’s favorite toy. It felt like leaving him with a friend.”</p></blockquote>
             </figure>
             <figure class="review-card">
+              <svg class="review-decoration" viewBox="0 0 64 72" aria-hidden="true"><use href="#review-decoration"/></svg>
               <img src="assets/home/testimonial-terrier.jpg" width="640" height="640" alt="A white terrier in an orange harness" data-es-alt="Un terrier blanco con un arnés naranja" loading="lazy" decoding="async">
               <span class="review-stars" role="img" aria-label="Demo rating: 5 out of 5 stars" data-es-label="Calificación de ejemplo: 5 de 5 estrellas">★★★★★</span>
               <blockquote><p data-es="«Myomi hizo que la primera visita fuera muy fácil. En la siguiente, nuestro perro ya la esperaba junto a la puerta.»">“Myomi made the first visit feel easy. Our pup was already waiting by the door for the next one.”</p></blockquote>
             </figure>
             <figure class="review-card">
+              <svg class="review-decoration" viewBox="0 0 64 72" aria-hidden="true"><use href="#review-decoration"/></svg>
               <img src="assets/home/testimonial-gray-cat.jpg" width="640" height="640" alt="A gray cat next to an orange knitted cushion" data-es-alt="Un gato gris junto a un cojín tejido naranja" loading="lazy" decoding="async">
               <span class="review-stars" role="img" aria-label="Demo rating: 5 out of 5 stars" data-es-label="Calificación de ejemplo: 5 de 5 estrellas">★★★★★</span>
               <blockquote><p data-es="«Las notas tenían mucho detalle. Supimos que nuestro gato había cenado y hasta en qué rincón había elegido dormir la siesta.»">“The notes were so thoughtful. We knew dinner was served and exactly where our cat had decided to nap.”</p></blockquote>

@@ -62,33 +62,39 @@ h3 { font-size: clamp(2.1rem, 4.2vw, 4.5rem); }
   position: sticky;
   top: 0;
   z-index: 10;
+  width: 100%;
+  max-width: none;
   min-height: 4.75rem;
   padding-block: .55rem;
+  padding-inline: max(var(--gutter), calc((100% - 1640px) / 2 + var(--gutter)));
   background: var(--paper);
 }
 html:has(.site-header--sticky) { scroll-padding-top: 5.5rem; }
 .site-header--sticky .wordmark { font-size: clamp(2.65rem, 6vw, 3.85rem); }
-.site-header--sticky.is-past-intro { box-shadow: 0 3px 14px #6d301815; }
-.wordmark-heart { display: none; width: .36em; height: .36em; margin-inline-start: .07em; vertical-align: -.03em; }
-.is-past-intro .wordmark-dot { display: none; }
-.is-past-intro .wordmark-heart { display: inline-block; }
-.header-booking .booking-paw { width: 1.12em; height: 1.12em; flex: 0 0 auto; }
-.is-past-intro .header-booking {
+.site-header--sticky.is-scrolled { box-shadow: 0 3px 14px #6d301815; }
+.wordmark-mark { display: inline-block; position: relative; width: .46em; height: .46em; margin-inline-start: .025em; vertical-align: -.07em; }
+.wordmark-shape { display: block; overflow: visible; width: 100%; height: 100%; }
+.wordmark-burst { position: absolute; inset: 50%; pointer-events: none; }
+.wordmark-burst span { position: absolute; color: var(--tomato); font-size: .18em; opacity: 0; }
+.header-booking { position: relative; contain: paint; }
+.header-booking:hover, .header-booking:active { transform: none; }
+.booking-label { min-width: 0; overflow: hidden; transition: opacity .16s ease; }
+.header-booking .booking-paw { width: 1.12em; height: 1.12em; flex: 0 0 auto; transition: width .24s, height .24s; }
+.is-scrolled .header-booking {
   position: fixed;
   inset-inline-end: calc(1rem + env(safe-area-inset-right));
   inset-block-end: calc(1rem + env(safe-area-inset-bottom));
   z-index: 6;
   width: 56px;
   height: 56px;
-  padding: 0;
+  justify-content: flex-end;
+  padding: 0 12.5px;
   border: 2px solid var(--cream);
   box-shadow: 0 4px 16px #6d301847;
-  animation: booking-paw-in .2s ease-out both;
 }
-.is-past-intro .booking-label { display: none; }
-.is-past-intro .header-booking .booking-paw { width: 27px; height: 27px; }
+.is-scrolled .booking-label { position: absolute; inset-inline-start: .85rem; opacity: 0; pointer-events: none; }
+.is-scrolled .header-booking .booking-paw { width: 27px; height: 27px; }
 .site-header--sticky ~ .footer { padding-bottom: calc(5rem + env(safe-area-inset-bottom)); }
-@keyframes booking-paw-in { from { opacity: 0; translate: 0 .5rem; } to { opacity: 1; translate: 0 0; } }
 
 .header-actions, .hero-actions { display: flex; align-items: center; }
 .header-actions { justify-content: end; gap: clamp(.5rem, 1.85vw, 1.8rem); }
@@ -331,19 +337,14 @@ html:has(.site-header--sticky) { scroll-padding-top: 5.5rem; }
   padding-block: clamp(1.8rem, 4.5vw, 3.75rem);
   text-align: center;
 }
-.closing-heading {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: clamp(.25rem, 2vw, 1.5rem);
-  width: fit-content;
-  max-width: 100%;
-  margin: 0 auto .9rem;
-}
-.closing h2 { max-width: 22ch; font-size: clamp(1.85rem, 4.8vw, 4.5rem); }
-.closing-flourish { width: clamp(1.75rem, 6vw, 5rem); color: #ffb284; }
-.closing-star { fill: currentColor; }
-.closing-action-lines { stroke: currentColor; stroke-width: 3; stroke-linecap: round; }
+.closing-heading { margin: 0 auto .9rem; }
+.closing h2 { margin-inline: auto; max-width: 22ch; font-size: clamp(1.85rem, 4.8vw, 4.5rem); }
+.closing-subheading { margin-top: .55rem; color: #ffb284; font-size: clamp(1rem, 2vw, 1.4rem); font-weight: 700; }
+.review-decoration-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
+.review-decoration { position: absolute; z-index: 1; inset-block-start: .2rem; inset-inline-start: -1.45rem; width: 3.25rem; color: #ed9b61; pointer-events: none; transform: rotate(-9deg); }
+.review-card:nth-child(even) .review-decoration { inset-inline: auto -1.45rem; transform: scaleX(-1) rotate(-9deg); }
+.review-sparkle { fill: currentColor; }
+.review-action-lines { fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; }
 .reviews { max-width: 53rem; margin: 0 auto; }
 .review-preview { margin: 0 0 .45rem; color: #f2c7ad; font-size: .9rem; }
 .review-controls { display: flex; justify-content: center; gap: .65rem; margin-top: .65rem; }

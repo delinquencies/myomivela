@@ -78,23 +78,81 @@ if (portrait && 'IntersectionObserver' in window) {
 }
 
 const stickyHeader = document.querySelector('.site-header--sticky');
-const intro = document.querySelector('.hero, .faq-intro');
-if (stickyHeader && intro) {
-  let pending = false;
-  function updateHeader() {
-    pending = false;
-    stickyHeader.classList.toggle('is-past-intro', intro.getBoundingClientRect().bottom <= stickyHeader.getBoundingClientRect().bottom);
+if (stickyHeader) {
+  const booking = stickyHeader.querySelector('.header-booking');
+  const shape = stickyHeader.querySelector('.wordmark-shape');
+  const path = shape.querySelector('path');
+  const particles = [...stickyHeader.querySelectorAll('.wordmark-burst > span')];
+  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+  const dot = [12,8,14.2,8,16,9.8,16,12,16,14.2,14.2,16,12,16,9.8,16,8,14.2,8,12,8,9.8,9.8,8,12,8];
+  const heart = [12,6.4,15.6,1.6,22,3.4,22,8.6,22,13.4,15,18,12,21,9,18,2,13.4,2,8.6,2,3.4,8.4,1.6,12,6.4];
+  let mark = dot;
+  let scrolled = false;
+  let bookingAnimation;
+  let markAnimation;
+  let morphFrame;
+  let scrollFrame;
+
+  function drawMark(points) {
+    mark = points;
+    path.setAttribute('d', 'M ' + points.slice(0, 2).join(' ') + ' C ' + points.slice(2).join(' ') + ' Z');
   }
-  function scheduleHeaderUpdate() {
-    if (pending) return;
-    pending = true;
-    requestAnimationFrame(updateHeader);
+
+  function animateMark(target) {
+    const start = mark;
+    const started = performance.now();
+    function step(now) {
+      const progress = Math.min(1, (now - started) / 320);
+      const eased = 1 - (1 - progress) ** 3;
+      drawMark(start.map((value, i) => value + (target[i] - value) * eased));
+      if (progress < 1) morphFrame = requestAnimationFrame(step);
+    }
+    morphFrame = requestAnimationFrame(step);
+    markAnimation = shape.animate(
+      [{ transform: 'scale(1)' }, { transform: 'scale(1.55)', offset: .44 }, { transform: 'scale(1)' }],
+      { duration: 430, easing: 'ease-in-out' },
+    );
+    if (scrolled) {
+      const offsets = [[-14,-14],[0,-24],[15,-18],[23,0]];
+      particles.forEach((particle, i) => {
+        const [x,y] = offsets[i];
+        particle.animate([
+          { opacity: 0, transform: 'translate(-50%, -50%) scale(.5)' },
+          { opacity: 1, offset: .26 },
+          { opacity: 0, transform: 'translate(calc(-50% + '+x+'px), calc(-50% + '+y+'px)) scale(1)' },
+        ], { duration: 510, delay: 145 + i * 22, easing: 'ease-out' });
+      });
+    }
   }
-  window.addEventListener('scroll', scheduleHeaderUpdate, { passive: true });
-  window.addEventListener('resize', scheduleHeaderUpdate);
-  window.addEventListener('pageshow', scheduleHeaderUpdate);
-  if ('ResizeObserver' in window) new ResizeObserver(scheduleHeaderUpdate).observe(intro);
-  updateHeader();
+
+  function updateHeader(animate = true) {
+    scrollFrame = undefined;
+    const next = window.scrollY > 0;
+    if (next === scrolled) return;
+    const moving = animate && !reducedMotion.matches && typeof booking.animate === 'function';
+    const from = moving ? booking.getBoundingClientRect() : null;
+    bookingAnimation?.cancel();
+    markAnimation?.cancel();
+    cancelAnimationFrame(morphFrame);
+    scrolled = next;
+    stickyHeader.classList.toggle('is-scrolled', scrolled);
+    if (!moving) {
+      drawMark(scrolled ? heart : dot);
+      return;
+    }
+    const to = booking.getBoundingClientRect();
+    bookingAnimation = booking.animate([
+      { transform: 'translate('+(from.left-to.left)+'px, '+(from.top-to.top)+'px)', width: from.width+'px', height: from.height+'px' },
+      { transform: 'translate(0, 0)', width: to.width+'px', height: to.height+'px' },
+    ], { duration: 520, easing: 'cubic-bezier(.22,.76,.25,1)' });
+    animateMark(scrolled ? heart : dot);
+  }
+
+  window.addEventListener('scroll', () => {
+    if (scrollFrame === undefined) scrollFrame = requestAnimationFrame(() => updateHeader());
+  }, { passive: true });
+  window.addEventListener('pageshow', () => updateHeader(false));
+  updateHeader(false);
 }
 
 function setupDeck(rail, controls, cardSelector, { linkServices = false, status = null } = {}) {
