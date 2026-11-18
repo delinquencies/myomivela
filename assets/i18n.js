@@ -72,6 +72,7 @@ export const catalogs = {
     'error.refund_too_large': 'Solo puedes reembolsar lo que se pagó.',
     'error.tip_too_large': 'Las propinas de una visita tienen un límite.',
     'error.tip_not_open': 'Puedes dejar propina cuando la visita haya comenzado.',
+    'error.cancel_fee_changed': 'Cancelar ahora tiene un cargo. Revísalo antes de cancelar.',
   },
 };
 export const hasKey = (key, language = locale()) => key in (catalogs[language] || {});
