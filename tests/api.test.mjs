@@ -41,7 +41,7 @@ test('request → approve → start → diary update → complete is visible to 
   const pet = (await portal('ann')).pets[0].id;
   assert.equal((await call('staff','POST','/api/events',{ id, pet, kind:'Feeding', notes:'Lunch served' })).status, 200);
   assert.equal((await call('staff','POST','/api/status',{ id, status:'Completed' })).status, 400, 'completion needs a summary');
-  assert.equal((await call('staff','POST','/api/status',{ id, status:'Completed', summary:'All good' })).status, 200);
+  assert.equal((await call('staff','POST','/api/status',{ id, status:'Completed', summary:'All good', secured:true })).status, 200);
   assert.equal((await call('staff','POST','/api/events',{ id, pet, kind:'Feeding', notes:'late' })).status, 409);
   const mine = (await call('ann','GET','/api/diary?visit='+id)).json;
   assert.equal(mine.events.filter(e => e.booking === id).length, 1);

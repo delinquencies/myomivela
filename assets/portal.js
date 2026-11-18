@@ -299,8 +299,20 @@ function bookingForm() {
     '<p data-quote></p>'+button('Review booking','','📅')+'</div><div data-booking-review hidden></div>');
 }
 function statusForm(booking,status,label) {
-  const summary = status === 'Completed' ? '<label>Visit summary<textarea required maxlength="3000" name="summary"></textarea></label>' : '';
-  return form('status','<input type="hidden" name="status" value="'+text(status)+'">'+summary+button(label,status === 'Cancelled' ? 'secondary' : '',{ Confirmed:'✓', 'In Progress':'🐾', Completed:'🏁', Cancelled:'✕' }[status]),booking.id);
+  // Completing records the departure check (C1.3): secured, or a note saying what wasn't and what was done.
+  const summary = status === 'Completed' ? '<label>Visit summary<textarea required maxlength="3000" name="summary"></textarea></label>'+
+    '<fieldset class="departure-check"><legend>Before you leave</legend>'+
+    '<label class="departure-secured"><input type="checkbox" name="secured" value="1"> Doors locked and home secured</label>'+
+    '<label>If not, what wasn’t secured and what did you do?<textarea name="secure_note" maxlength="500"></textarea></label></fieldset>' : '';
+  const control = button(label,status === 'Cancelled' ? 'secondary' : '',{ Confirmed:'✓', 'In Progress':'🐾', Completed:'🏁', Cancelled:'✕' }[status]);
+  return form('status','<input type="hidden" name="status" value="'+text(status)+'">'+summary+
+    (status === 'Completed' ? control.replace('<button ','<button disabled data-needs-departure ') : control),booking.id);
+}
+// "Complete visit" stays disabled until the home is confirmed secured or a note of at least 3 characters explains why not.
+function updateDepartureCheck(form) {
+  const control = form.querySelector('[data-needs-departure]');
+  if (!control) return;
+  control.disabled = !(form.elements.secured.checked || form.elements.secure_note.value.trim().length >= 3);
 }
 function choice(name, value, label, { icon = '', checked = false, required = false, type = 'radio' } = {}) {
   return '<label><input type="'+type+'" name="'+name+'" value="'+text(value)+'"'+
@@ -693,6 +705,7 @@ function render() {
     onFile:(form, input, file) => showPhotoSelection(form, file),
     onStep:(form, step) => showPetCard(form, step),
   });
+  for (const form of app.querySelectorAll('form[data-action="status"]')) updateDepartureCheck(form); // after drafts are restored
   showSection();
 }
 function showSection(focus = false) {
@@ -817,6 +830,7 @@ app.addEventListener('change', event => {
     showPhotoSelection(form,file || other.files[0]);
   }
   if (form?.dataset.action === 'bookings' && ['service','day'].includes(name)) updateQuote(event);
+  if (name === 'secured' && form) updateDepartureCheck(form);
   if (form?.dataset.action === 'bookings' && name === 'pets') { form.querySelector('[data-booking-pet-error]').textContent = ''; updateTotal(form); }
   if (name === 'diary-filter') updateDiaryFilter(event.target);
 });
@@ -842,6 +856,7 @@ async function updateDiaryFilter(select) {
 // Save drafts shortly after typing stops, and when the tab is hidden, so a reload or a discarded tab keeps them.
 let draftTimer;
 app.addEventListener('input', event => {
+  if (event.target.name === 'secure_note' && event.target.form) updateDepartureCheck(event.target.form);
   if (event.target.matches('.pet-field [aria-invalid]')) petFieldError(event.target,'');
   const card = event.target.closest('[data-pet-card]');
   if (card) updatePetStepButton(card.form,card);
@@ -1036,6 +1051,7 @@ app.addEventListener('submit',async event => {
       payload.hold = Number(review.dataset.expires);
     }
     if (action === 'services') payload.cents = Math.round(Number(payload.price)*100);
+    if (action === 'status' && payload.status === 'Completed') payload.secured = fields.has('secured');
     if (action === 'schedule') {
       payload.days = fields.getAll('days').map(Number);
       payload.buffer = Number(payload.buffer);

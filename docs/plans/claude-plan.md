@@ -121,6 +121,8 @@ Phase 3  C3.1 Ledger + payments (provider decision) ──▶ X3.1
 ```
 
 ### C1.3: Departure check (door locked) · Phase 1
+**Status: done** (migration 11, `tests/departure.test.mjs`, completion paths in `tests/browser/portal-smoke.mjs`). Minimal UI shipped, because the server now requires the check: a checkbox and note on the completion form, with **Complete visit** gated, and one line in the customer's diary. Codex X1.8 refines copy and layout.
+
 **Why Claude:** a schema change plus server validation, a completion-rule change in the state machine, and new diary payload fields that the customer renderer depends on.
 
 **Design**

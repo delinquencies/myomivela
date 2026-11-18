@@ -123,7 +123,7 @@ test('diary paging and the pet filter work end to end through the API', async ()
     const id = booking.json.id;
     for (const status of ['Confirmed','In Progress']) assert.equal((await call('staff','POST','/api/status',{ id, status })).status, 200);
     assert.equal((await call('staff','POST','/api/events',{ id, pet, kind:'Playtime', notes:'visit ' + i })).status, 200);
-    assert.equal((await call('staff','POST','/api/status',{ id, status:'Completed', summary:'done' })).status, 200);
+    assert.equal((await call('staff','POST','/api/status',{ id, status:'Completed', summary:'done', secured:true })).status, 200);
     made.push(id);
   }
   const first = await get('ann','/api/diary');

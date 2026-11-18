@@ -61,6 +61,12 @@ lib/stores/    durable.mjs (ctx.storage.sql + transactionSync, R2)   node.mjs (n
 - **Automatic endings:** cancelling a visit withdraws its pending change; starting the visit declines it.
 - **Portal data:** bookings carry `pending_change` and `last_change`.
 
+**Departure check (C1.3).**
+- **Completing a visit:** `POST /api/status` with `Completed` requires `secured:boolean` (400 `departure_check_required`). When `secured:false`, it also needs `secure_note` of 3–500 characters (400 `secure_note_required`).
+- **Stored and returned:** as `bookings.departure_check` `{ secured, note, at }`, returned on bookings and diary visits; `null` before completion.
+- **Staff form:** the checkbox `secured` and the note `secure_note`. **Complete visit** stays disabled until one of them is answered.
+- **Customer diary:** shows "🔒 Home secured at …" or "⚠️ Not fully secured: …".
+
 **Booking holds and weekly hours.** `POST /api/checkout-hold` creates a short hold and `POST /api/checkout-release` releases it. The request flow checks the hold and current availability when submitting. Staff set recurring hours with `POST /api/schedule` and individual-date changes with `POST /api/schedule-exception`.
 
 **Configuration.** Cloudflare needs only the `MYO_ADMIN_EMAIL` and `MYO_ADMIN_PASSWORD` secrets. The Node-only variables (`MYO_DB`, `NODE_ENV`, `MYO_ORIGIN`, `MYO_SECURE_COOKIES`, `MYO_TRUST_PROXY`) are listed in the README.
