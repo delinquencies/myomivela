@@ -65,6 +65,13 @@ export const catalogs = {
     'error.invalid_subject': 'Elige sobre quién es la nota.',
     'error.fee_rule_invalid': 'Revisa los datos del cargo.',
     'error.fee_rule_exists': 'Ya existe un cargo con ese código.',
+    'error.payments_unavailable': 'El pago en línea no está disponible. Myomi puede cobrar de otra forma.',
+    'error.payment_provider_error': 'El proveedor de pagos rechazó la solicitud. Inténtalo más tarde.',
+    'error.invalid_signature': 'Firma no válida.',
+    'error.nothing_due': 'No hay nada pendiente de pago en esta reserva.',
+    'error.refund_too_large': 'Solo puedes reembolsar lo que se pagó.',
+    'error.tip_too_large': 'Las propinas de una visita tienen un límite.',
+    'error.tip_not_open': 'Puedes dejar propina cuando la visita haya comenzado.',
   },
 };
 export const hasKey = (key, language = locale()) => key in (catalogs[language] || {});
