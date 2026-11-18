@@ -89,7 +89,7 @@ test('a backup restores into a new installation with accounts, visits, diary and
 
     const result = restore(target.base, archive);
     assert.equal(result.status, 0, result.stderr);
-    assert.match(result.stdout, /2 users, 1 services, 1 slots, 1 pets, 1 bookings, 1 booking_pets, 2 events/);
+    assert.match(result.stdout, /2 users, 1 services, 1 slots, 1 pets, 0 recurring_series, 0 series_skips, 1 bookings, 1 booking_pets, 2 events/);
 
     assert.equal((await call('staff','GET','/api/portal')).status, 401, 'restore signs everyone out');
     assert.equal((await call('ann','POST','/api/login',{ email:'ann@example.test', password })).status, 200, 'customer password still works');
