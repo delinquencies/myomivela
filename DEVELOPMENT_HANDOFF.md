@@ -65,7 +65,7 @@ lib/stores/    durable.mjs (ctx.storage.sql + transactionSync, R2)   node.mjs (n
 
 ## 5. Open findings and blockers
 
-Open release work includes visit-start and cancellation rules, required care information, email verification and recovery, outbound confirmations, payment, Spanish in the portal, and production domain and sitemap updates. Visits can start from the visit buffer (default 30 minutes) before their booked time, enforced by `POST /api/status` and shown in the staff portal; `MYO_EARLY_START_MINUTES` overrides it (tests lift it). Payments depend on the provider and payment policy decisions.
+Open release work includes cancellation and rescheduling rules, required care information, email verification and recovery, outbound confirmations, payment, Spanish in the portal, and production domain and sitemap updates. Visits can start from the visit buffer (default 30 minutes) before their booked time, enforced by `POST /api/status` and shown in the staff portal; `MYO_EARLY_START_MINUTES` overrides it (tests lift it). Payments depend on the provider and payment policy decisions.
 
 - **First deploy needs a human check:** R2 bucket creation, secrets, the `workers.dev` URL, then a custom domain. See README.
 - **Plan:** password hashing (scrypt, about 40 ms CPU per sign-in) exceeds the Workers Free plan's 10 ms CPU limit. Use Workers Paid.
