@@ -22,11 +22,15 @@ function freePort() {
 export const target = process.env.MYO_TARGET === 'worker' ? 'worker' : 'node';
 export const nodeOnly = target === 'worker' ? 'needs the Node runtime (direct database or process access)' : false;
 
-function spawnTarget(dir, port, env, dbPath) {
+// Most suites start visits booked days ahead, so they lift the early-start limit. Pass
+// { MYO_EARLY_START_MINUTES:'' } to test the real rule (the visit buffer).
+const testDefaults = { MYO_EARLY_START_MINUTES:'1000000' };
+
+function spawnTarget(dir, port, env, dbPath, inspectorPort) {
   if (target === 'worker') {
-    const vars = { MYO_ADMIN_EMAIL:adminLogin.email, MYO_ADMIN_PASSWORD:adminLogin.password, ...env };
-    const args = ['dev', '--port', String(port), '--ip', '127.0.0.1', '--persist-to', join(dir, 'state'), '--inspector-port', String(port + 1),
-      '--show-interactive-dev-session=false', ...Object.entries(vars).filter(([name]) => name.startsWith('MYO_')).flatMap(([name, value]) => ['--var', name + ':' + value])];
+    const vars = { MYO_ADMIN_EMAIL:adminLogin.email, MYO_ADMIN_PASSWORD:adminLogin.password, ...testDefaults, ...env };
+    const args = ['dev', '--port', String(port), '--ip', '127.0.0.1', '--persist-to', join(dir, 'state'), '--inspector-port', String(inspectorPort),
+      '--show-interactive-dev-session=false', ...Object.entries(vars).filter(([name, value]) => name.startsWith('MYO_') && value !== '').flatMap(([name, value]) => ['--var', name + ':' + value])];
     // detached: wrangler starts workerd as a child, and stop() kills the whole process group.
     return spawn(join(root, 'node_modules', '.bin', 'wrangler'), args, {
       cwd:root, detached:true, stdio:['ignore','pipe','pipe'], env:{ ...process.env, WRANGLER_SEND_METRICS:'false' },
@@ -35,7 +39,7 @@ function spawnTarget(dir, port, env, dbPath) {
   return spawn(process.execPath, ['--no-warnings', join(root, 'server.mjs')], {
     cwd: dir,
     env: { ...process.env, PORT:String(port), MYO_DB:dbPath || join(dir, 'test.sqlite'), MYO_ADMIN_EMAIL:adminLogin.email,
-      MYO_ADMIN_PASSWORD:adminLogin.password, NODE_ENV:'test', ...env },
+      MYO_ADMIN_PASSWORD:adminLogin.password, NODE_ENV:'test', ...testDefaults, ...env },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
 }
@@ -45,7 +49,8 @@ function spawnTarget(dir, port, env, dbPath) {
 export async function startServer(env = {}, { dbPath } = {}) {
   const dir = await mkdtemp(join(tmpdir(), 'myo-test-'));
   const port = await freePort();
-  const child = spawnTarget(dir, port, env, dbPath);
+  // wrangler also needs a debugger port; ask for a free one rather than assuming port + 1 is unused.
+  const child = spawnTarget(dir, port, env, dbPath, target === 'worker' ? await freePort() : 0);
   let output = '';
   await new Promise((done, fail) => {
     // The Worker is ready when it answers (waitForWorker below); its "Ready on" line can come before that.

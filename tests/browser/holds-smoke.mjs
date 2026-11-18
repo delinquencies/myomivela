@@ -13,7 +13,7 @@ async function loadPlaywright() {
 }
 const { chromium } = await loadPlaywright();
 console.log('Target: ' + target);
-const server = await startServer();
+const server = await startServer({ MYO_EARLY_START_MINUTES:'' }); // the real early-start rule (visit buffer)
 const browser = await chromium.launch();
 const problems = [];
 const failures = [];
@@ -165,6 +165,42 @@ try {
     await ana.page.waitForFunction(() => /Saved/.test(document.querySelector('#feedback').textContent));
     await ben.page.waitForTimeout(300);
     check((await serverTimes(ben.page)).includes(held), 'a redraw that discards the review gives the time back');
+  });
+  // 5. Staff can't start a visit until 30 minutes (the visit buffer) before it; the button opens on its own.
+  await scenario('early start', async () => {
+    // Ana books the last offered time (days ahead); staff confirm it.
+    const id = await ana.page.evaluate(async () => {
+      const data = await fetch('/api/portal').then(r => r.json());
+      const slot = data.slots.at(-1);
+      const response = await fetch('/api/bookings', { method:'POST', headers:{ 'Content-Type':'application/json' },
+        body:JSON.stringify({ service:data.services[0].id, cents:data.services[0].cents, pets:[data.pets[0].id], slot:slot.id, start:slot.starts, notes:'' }) });
+      return (await response.json()).id;
+    });
+    await staff.evaluate(id => fetch('/api/status', { method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify({ id, status:'Confirmed' }) }), id);
+    const ctx = await phone();
+    const page = await ctx.newPage();
+    watch(page, 'staff-clock', [/status of 409/]);
+    await page.clock.install();
+    await page.goto(server.base + '/portal/index.html?staff=1');
+    await page.locator('[data-action=login] [name=email]').fill(adminLogin.email);
+    await page.locator('[data-action=login] [name=password]').fill(adminLogin.password);
+    await page.locator('[data-action=login] button').tap();
+    await page.locator('#staff-home').waitFor();
+    await page.evaluate(() => { location.hash = 'upcoming'; });
+    const card = page.locator('#upcoming article').filter({ has:page.locator(`form[data-id="${id}"]`) }).first();
+    const button = card.getByRole('button', { name:'Start visit' });
+    check(await button.isDisabled(), 'Start visit is disabled for a visit that is days away');
+    check(/You can start this visit from .+ ET/.test(await card.locator('.start-note').textContent()), 'the card says when the visit can start');
+    const opensAt = Number(await button.getAttribute('data-start-after'));
+    // Jump the page clock just past the opening time (fastForward refuses jumps of weeks), then let the 15-second check run.
+    await page.clock.setSystemTime(opensAt + 1_000);
+    await page.clock.runFor(16_000);
+    check(await button.isEnabled() && /now/.test(await card.locator('.start-note').textContent()), 'the button enables itself when that time comes');
+    // The page clock was moved, the server's was not: the server still refuses, so the rule doesn't depend on the device.
+    await button.tap();
+    await page.waitForFunction(() => /can start from/.test(document.querySelector('#feedback').textContent));
+    check(true, 'the server refuses an early start even when the device clock is ahead');
+    await ctx.close();
   });
 } catch (error) {
   failures.push('unexpected: ' + error.message.split('\n')[0]);

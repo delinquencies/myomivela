@@ -14,7 +14,7 @@ Customer and staff usability pass requested in [DEVELOPMENT_HANDOFF.md §7](../.
 
 **All results are from emulation.** No physical iPhone or Android device, Safari/WebKit, Firefox, screen reader or real camera was available. See [Not tested](#not-tested).
 
-> **Update, same day:** H2 (hold expiry) and M1 (abandoned holds) are **fixed** on `audit-remediation`; see [Fixes after this report](#fixes-after-this-report). The other findings are unchanged.
+> **Update, same day:** H1 (early start), H2 (hold expiry) and M1 (abandoned holds) are **fixed**; see [Fixes after this report](#fixes-after-this-report). The other findings are unchanged.
 
 ## Summary
 
@@ -221,3 +221,11 @@ Choosing **ES** on the homepage translates the public page completely; no Englis
   - The expiry scenario fast-forwards the browser clock past the hold.
   - A real server-side expiry is covered by the same 409 path, exercised through the two-tab case.
 - **Not covered:** the back/forward-cache path, which headless Chromium doesn't exercise, and real phones.
+
+**H1, fixed with the owner's rule: a visit can start from the visit buffer (default 30 minutes) before its booked time.**
+- **Server:** `POST /api/status` refuses an earlier start with "This visit can start from 8:30 AM ET (30 minutes before it is booked)." Starting late is still allowed. The limit follows the **Buffer before and after a visit** setting, whose help text now says so.
+- **Override:** `MYO_EARLY_START_MINUTES` can override the limit. The test helper sets it so suites can start visits booked days ahead.
+- **Staff portal:** until the visit can start, **Start visit** is disabled with "You can start this visit from …". A 15-second check enables it when the time comes.
+- **Verification:**
+  - `tests/early-start.test.mjs` runs on both runtimes and fails against the previous `lib/routes/bookings.mjs`. It covers 3 hours early refused, 10 minutes early allowed, a buffer of 0 refusing a 12-minute-early start, and a buffer of 15 allowing it.
+  - The browser test (`holds-smoke.mjs`, scenario 5) checks the disabled button and its note, the button enabling itself when the page clock reaches the time, and the server still refusing because its clock hasn't moved.

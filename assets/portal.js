@@ -338,6 +338,26 @@ function publishingDesk() {
     '<p class="appointment-details">'+date(booking.starts)+'</p>'+eventForm(booking)+
     tapLink('#upcoming','Go to Today to complete the visit','🏁')+'</article>').join('');
 }
+// "Start visit" opens a set number of minutes before the booked time (the visit buffer); until then it is
+// disabled with the time it opens, and a timer enables it when that time comes.
+function startVisitForm(booking) {
+  const from = booking.starts - (data.schedule?.earlyStart ?? 30) * 60_000;
+  if (Date.now() >= from) return statusForm(booking,'In Progress','Start visit');
+  const note = 'start-note-'+booking.id;
+  const when = day(from) === day(Date.now()) ? appointmentTime.format(from) : date(from);
+  return form('status','<input type="hidden" name="status" value="In Progress">'+
+    '<button type="submit" disabled data-start-after="'+from+'" aria-describedby="'+note+'">'+emoji('🐾')+'Start visit</button>'+
+    '<p class="start-note" id="'+note+'">You can start this visit from '+text(when)+' ET.</p>',booking.id);
+}
+setInterval(() => {
+  for (const control of app.querySelectorAll('[data-start-after]')) {
+    if (Date.now() < Number(control.dataset.startAfter)) continue;
+    control.disabled = false;
+    control.removeAttribute('data-start-after');
+    const note = document.getElementById(control.getAttribute('aria-describedby'));
+    if (note) note.textContent = 'You can start this visit now.';
+  }
+}, 15_000);
 const canReviewCheckout = booking => !data.user.admin && booking.status === 'Confirmed' && booking.starts > Date.now();
 function bookingCard(booking) {
   const pets = booking.pet_ids.map(id => find(data.pets,id)).filter(Boolean);
@@ -345,7 +365,7 @@ function bookingCard(booking) {
   let actions = '';
   if (data.user.admin) {
     if (booking.status === 'Requested') actions += statusForm(booking,'Confirmed','Approve request') + statusForm(booking,'Cancelled','Decline request');
-    if (booking.status === 'Confirmed') actions += statusForm(booking,'In Progress','Start visit') + statusForm(booking,'Cancelled','Cancel booking');
+    if (booking.status === 'Confirmed') actions += startVisitForm(booking) + statusForm(booking,'Cancelled','Cancel booking');
     if (active) actions += tapLink('#diary','Publish a diary update','🐾')+statusForm(booking,'Completed','Complete visit');
   } else if (booking.starts > Date.now() && ['Requested','Confirmed'].includes(booking.status)) {
     if (canReviewCheckout(booking)) {
@@ -472,7 +492,8 @@ function adminSettings() {
     (exception.opens === null ? 'Closed' : clock(exception.opens)+'–'+clock(exception.closes))+'</li>').join('');
   return '<div class="grid">'+form('schedule','<h3>Regular hours</h3><p>These hours repeat each week in Massachusetts time.</p>'+
     choiceGroup('Working days',weekdays.map((label,index)=>choice('days',index,label,{type:'checkbox',checked:Boolean(schedule.days & (1<<index))})).join(''))+
-    timeFields+input('Buffer before and after a visit (minutes)','buffer','type="number" min="0" max="180" required value="'+schedule.buffer+'"')+
+    timeFields+input('Buffer before and after a visit (minutes)','buffer','type="number" min="0" max="180" required aria-describedby="buffer-tip" value="'+schedule.buffer+'"')+
+    '<small id="buffer-tip">Visits can also start this many minutes before their booked time.</small>'+
     button('Save weekly hours','','✓'))+
     form('schedule-exception','<h3>Adjust a date</h3><p>Close a date, change its regular hours, or go back to the weekly schedule.</p>'+
       input('Date','day','type="date" required')+
