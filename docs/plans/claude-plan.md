@@ -260,6 +260,8 @@ Phase 3  C3.1 Ledger + payments (provider decision) ──▶ X3.1
 ```
 
 ### C2.3: Home-access vault and key custody · Phase 2
+**Status: done** (migration 15, `lib/vault.mjs`, `lib/routes/access.mjs`, `tests/home-access.test.mjs`). Deviation: rotation uses `MYO_VAULT_KEY_PREVIOUS`, with lazy re-encryption on read, instead of a script, so it works on both runtimes. Ciphertext is bound to its owner (AES-GCM additional data). No UI yet: Codex X2.3.
+
 **Why Claude:** encryption at rest that works the same on both runtimes, a time-boxed reveal rule tied to booking state, an audit log, backup handling of ciphertext, and keeping secrets out of the idempotency store.
 
 **Design**

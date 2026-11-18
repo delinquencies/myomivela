@@ -13,11 +13,12 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 
 test('production mode refuses to start without an https origin and secure cookies', { skip:nodeOnly }, () => {
   const result = spawnSync(process.execPath, ['--no-warnings', join(root, 'server.mjs')], {
-    env: { ...process.env, NODE_ENV:'production', MYO_ORIGIN:'', MYO_SECURE_COOKIES:'', MYO_DB:join(tmpdir(), 'never-created.sqlite') }, encoding:'utf8', timeout:10_000,
+    env: { ...process.env, NODE_ENV:'production', MYO_ORIGIN:'', MYO_SECURE_COOKIES:'', MYO_VAULT_KEY:'', MYO_DB:join(tmpdir(), 'never-created.sqlite') }, encoding:'utf8', timeout:10_000,
   });
   assert.equal(result.status, 1);
   assert.match(result.stderr, /MYO_ORIGIN/);
   assert.match(result.stderr, /MYO_SECURE_COOKIES/);
+  assert.match(result.stderr, /MYO_VAULT_KEY/);
 });
 
 test('production mode with https config sends HSTS and Secure cookies, and accepts the https origin', async () => {

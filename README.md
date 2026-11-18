@@ -60,7 +60,7 @@ Open <http://127.0.0.1:45838/>. Use separate browser profiles or a private windo
 
 ### Environment variables
 
-Names only; set them in the shell (Node), as `--var` flags or a git-ignored `.dev.vars` file (`npm run dev`), or as Cloudflare secrets (production). Never commit values. On Cloudflare only `MYO_ADMIN_EMAIL` and `MYO_ADMIN_PASSWORD` are needed: the Worker sees the real https URL and Cloudflare's `CF-Connecting-IP`, so the origin, cookie and proxy settings are automatic.
+Names only; set them in the shell (Node), as `--var` flags or a git-ignored `.dev.vars` file (`npm run dev`), or as Cloudflare secrets (production). Never commit values. On Cloudflare only `MYO_ADMIN_EMAIL`, `MYO_ADMIN_PASSWORD` and `MYO_VAULT_KEY` are needed: the Worker sees the real https URL and Cloudflare's `CF-Connecting-IP`, so the origin, cookie and proxy settings are automatic.
 
 | Variable | Purpose |
 | --- | --- |
@@ -70,6 +70,7 @@ Names only; set them in the shell (Node), as `--var` flags or a git-ignored `.de
 | `NODE_ENV` | Node only. `production` makes the server refuse to start unless `MYO_ORIGIN` is an `https://` origin and `MYO_SECURE_COOKIES=1`. |
 | `MYO_ORIGIN` | Exact public origin (for example `https://example.com`). Browser POSTs with a different `Origin` are rejected. Without it the server expects `http://<host>`. |
 | `MYO_SECURE_COOKIES` | `1` adds `Secure` to the session cookie and sends HSTS. Required in production. |
+| `MYO_VAULT_KEY` | Required in production (Node refuses to start without it). Base64 of 32 random bytes, for example `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`. Encrypts customers' entry instructions. Keep it with your backups: a restored database needs the same key. To rotate, move the old value to `MYO_VAULT_KEY_PREVIOUS` and set a new one; records are re-encrypted as they're read. |
 | `MYO_EARLY_START_MINUTES` | Optional. Minutes before its booked time that staff may start a visit. Unset: the visit buffer from **Services & availability** (default 30). The tests set a large value. |
 | `MYO_TRUST_PROXY` | Node only (the Worker always uses `CF-Connecting-IP`). `1` takes the client address from the last `X-Forwarded-For` entry; `cloudflare` uses `CF-Connecting-IP`. Set only when exactly one trusted proxy sits in front, otherwise leave unset. Used for rate limiting. |
 
@@ -102,6 +103,10 @@ npx wrangler login
 npx wrangler r2 bucket create myo-photos
 npx wrangler secret put MYO_ADMIN_EMAIL
 npx wrangler secret put MYO_ADMIN_PASSWORD
+```
+
+```sh
+npx wrangler secret put MYO_VAULT_KEY
 npm run deploy
 ```
 
