@@ -83,6 +83,8 @@ Open release work includes visit-start and cancellation rules, required care inf
 
 ## 7. Usability and UX test for Claude
 
+**Done 2026-11-18:** see [docs/audits/2026-11-18-usability-test.md](docs/audits/2026-11-18-usability-test.md). Physical devices, Safari, Firefox and screen readers were not available and remain to be tested.
+
 Claude, run a fresh customer and staff usability pass against the latest `main` with fictional data and separate authenticated sessions. Use [the previous friction log](docs/audits/myo-live-ux-friction-log.md) as a retest list, then compare notes with the current build.
 
 1. **First-time customer journey.** Start on the homepage in English and Spanish. Open a service, find the price and available times, register, add a pet, review the hold, edit and resume, submit the request, and find its status. Exercise no availability, a missing pet, expiry, rescheduling, and cancellation. Verify that the UI distinguishes a hold, a request, a confirmed visit, and payment availability.
