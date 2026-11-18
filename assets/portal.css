@@ -107,6 +107,7 @@
 }
 .portal details[open] > summary { background: var(--peach); color: #842b16; }
 .portal .tap-link { margin-block: .35rem; }
+.portal .text-link { display: inline-flex; align-items: center; min-height: 44px; }
 .portal summary { display: flex; width: fit-content; max-width: 100%; list-style: none; }
 .portal summary::-webkit-details-marker { display: none; }
 .portal summary::after { content: ''; flex: 0 0 .45rem; width: .45rem; height: .45rem; margin-inline-start: .25rem; border: solid currentColor; border-width: 0 2px 2px 0; transform: rotate(45deg); }

@@ -291,7 +291,13 @@ if (!(await staff.locator('.financial-breakdown').innerText()).includes('$25.00'
     return (await response.json()).id;
   });
   for (const status of ['Confirmed','In Progress']) {
-    await staff.evaluate(({ id, status }) => fetch('/api/status', { method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify({ id, status }) }), { id, status });
+    await staff.evaluate(async ({ id, status }) => {
+      const response = await fetch('/api/status', {
+        method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify({ id, status }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Could not set the fixture visit status');
+    }, { id, status });
   }
   await staff.reload();
   await section(staff,'upcoming');
