@@ -1,5 +1,8 @@
+import { formatDate } from './i18n.js';
+
 export const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
-export const formatVisitDate = value => new Intl.DateTimeFormat('en-US',{dateStyle:'medium',timeStyle:'short',timeZone:'America/New_York'}).format(value);
+// English until the diary's strings are translated (Codex X2.6).
+export const formatVisitDate = value => formatDate(value, 'visit', 'en');
 
 export const activityIcons = {
   Feeding:'🍽️', Water:'💧', 'Walk started':'🐾', 'Walk completed':'🦮', Potty:'💩',

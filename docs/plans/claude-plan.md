@@ -353,6 +353,8 @@ Phase 3  C3.1 Ledger + payments (provider decision) ──▶ X3.1
 ```
 
 ### C2.6: Internationalisation plumbing · Phase 2 · needs the C1.1 error codes
+**Status: done** (migration 18, `assets/i18n.js`, `tests/i18n.test.mjs`). The portal keeps rendering English through `uiLocale()` until its strings are translated, so it never mixes Spanish formatting into English sentences. English errors keep the server's message. The catalog test enforces a Spanish message for every server error code.
+
 **Why Claude:** a language contract shared by the public site, portal, server errors, dates and money, plus storing the choice per user.
 
 **Design**

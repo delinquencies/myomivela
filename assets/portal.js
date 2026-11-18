@@ -2,6 +2,10 @@ import { activityIcons, escapeHtml as text, formatVisitDate as date, renderDiary
 import { createDrafts } from './drafts.js';
 import { googleReviewLinks } from './review-links.js';
 import { showPriceSheet } from './price-sheet.js';
+import { locale, t, hasKey, formatDate, formatMoney } from './i18n.js';
+// The portal's language. Its strings are still English, so it stays English for now; Codex X2.6 translates the
+// strings and switches this to locale(). Dates, money and error messages already follow it.
+const uiLocale = () => 'en';
 
 const app = document.querySelector('#app');
 const feedback = document.querySelector('#feedback');
@@ -18,7 +22,7 @@ const portalMenu = document.querySelector('.portal-menu');
 const portalLinks = document.querySelector('#portal-links');
 const cancelDialog = document.querySelector('#cancel-booking');
 const find = (rows,id) => rows.find(row => row.id === id);
-const money = cents => new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(cents / 100);
+const money = cents => formatMoney(cents, uiLocale());
 // Mirrors quote() in lib/pricing.mjs; the server re-prices every hold and request and refuses a stale total.
 const bookingTotal = (service, petCount, nights = 1) => {
   const units = service.kind === 'overnight' ? nights : 1;
@@ -74,7 +78,11 @@ async function api(path, payload, key) {
     }
   }
   const result = await response.json();
-  if (!response.ok) throw Object.assign(new Error(result.error || 'Please try again.'), { status:response.status });
+  if (!response.ok) {
+    // In Spanish, show the catalog's message for the error code; in English the server's message is the most specific.
+    const message = uiLocale() !== 'en' && result?.code && hasKey('error.'+result.code, uiLocale()) ? t('error.'+result.code, {}, uiLocale()) : result?.error;
+    throw Object.assign(new Error(message || 'Please try again.'), { status:response.status, code:result?.code });
+  }
   return result;
 }
 // One key per form submission. It survives a dropped connection (so tapping again replays rather than repeats)
@@ -282,8 +290,8 @@ async function loadDiary({ more = false, filter = diaryFilterValue } = {}) {
   for (const visit of page.visits) diaryVisitOptions.set(visit.id,visit);
   data.diary = more ? { visits:[...data.diary.visits,...page.visits], events:[...data.diary.events,...page.events], next:page.next } : page;
 }
-const appointmentTime = new Intl.DateTimeFormat('en-US',{timeStyle:'short',timeZone:'America/New_York'});
-const appointmentDay = new Intl.DateTimeFormat('en-US',{weekday:'short',month:'short',day:'numeric',timeZone:'America/New_York'});
+const appointmentTime = { format:ms => formatDate(ms, 'time', uiLocale()) };
+const appointmentDay = { format:ms => formatDate(ms, 'day', uiLocale()) };
 // A bookable time is a published window id plus a start time inside it.
 const slotKey = slot => slot.id+':'+slot.starts;
 function slotChoices(slots, labelFor = slot => date(slot.starts), { selected } = {}) {
@@ -826,6 +834,8 @@ function updateQuote(event) {
 }
 async function refresh() {
   const user = await api('session');
+  // Keep the account's language in step with the reader's choice, for messages sent outside the portal.
+  if (user && user.locale !== locale()) api('locale', { locale:locale() }).catch(() => {});
   if (user?.id !== data?.user?.id) {
     diaryFilterValue = '';
     diaryVisitOptions.clear();
