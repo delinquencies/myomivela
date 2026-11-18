@@ -20,6 +20,9 @@ const { serveStatic } = await import('./lib/static.mjs');
 const database = resolve(process.env.MYO_DB || '.myo/data.sqlite');
 useStorage(nodeStore(database), fileBlobs(join(dirname(database), 'photos')));
 await ensureAdmin();
+// Sends due messages from the outbox every minute (C3.6). The Worker does the same with a Durable Object alarm.
+const { drainOutbox } = await import('./lib/outbox.mjs');
+setInterval(() => drainOutbox().catch(error => console.error('Outbox:', error.message)), 60_000).unref();
 
 const root = dirname(fileURLToPath(import.meta.url));
 async function handle(request, socketAddress) {

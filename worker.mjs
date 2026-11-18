@@ -6,6 +6,7 @@ import { useStorage } from './lib/db.mjs';
 import { durableStore, r2Blobs } from './lib/stores/durable.mjs';
 import { ensureAdmin } from './lib/auth.mjs';
 import { handleApi } from './lib/api.mjs';
+import { drainOutbox } from './lib/outbox.mjs';
 import { withSecurityHeaders, errorResponse, decodedPath } from './lib/headers.mjs';
 import { isPublicPath } from './lib/site.mjs';
 
@@ -17,7 +18,13 @@ export class MyoApi extends DurableObject {
     state.blockConcurrencyWhile(async () => {
       useStorage(durableStore(state.storage), r2Blobs(env.PHOTOS));
       await ensureAdmin();
+      // The outbox is drained on an alarm (C3.6): every five minutes while the object exists.
+      if (!(await state.storage.getAlarm())) await state.storage.setAlarm(Date.now() + 60_000);
     });
+  }
+  async alarm() {
+    try { await drainOutbox(); } catch (error) { console.error('Outbox:', error.message); }
+    await this.ctx.storage.setAlarm(Date.now() + 5 * 60_000);
   }
   fetch(request) {
     return handleApi(request, { clientAddress:request.headers.get('cf-connecting-ip') || 'unknown' });
