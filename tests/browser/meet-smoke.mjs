@@ -35,19 +35,19 @@ try {
   await page.getByLabel('Menu',{exact:true}).tap();
   await page.locator('[data-language="es"]').tap();
   await page.getByLabel('Menú',{exact:true}).tap();
-  const link = page.getByRole('link',{name:'Reserva un encuentro gratis'});
+  const link = page.getByRole('link',{name:'Reservar una Visita de Presentación Gratuita (Meet & Greet)'});
   assert.equal(await link.getAttribute('href'),href);
   await link.tap();
 
   const booking = page.locator('[data-action="bookings"]');
   await booking.waitFor();
-  assert.match(await booking.locator('[name=service]:checked').locator('xpath=..').innerText(),/Meet & Greet.*Free/);
+  assert.match(await booking.locator('[name=service]:checked').locator('xpath=..').innerText(),/Meet & Greet.*Gratis/);
   await booking.locator('[name=pets]').locator('xpath=..').tap();
-  await booking.getByRole('button',{name:'Review booking'}).tap();
-  await booking.getByText('No charge',{exact:true}).waitFor();
-  assert.doesNotMatch(await booking.locator('[data-booking-review]').innerText(),/Online payment/);
-  await booking.getByRole('button',{name:'Send booking request'}).tap();
-  await page.locator('#feedback').filter({hasText:'Request sent.'}).waitFor();
+  await booking.getByRole('button',{name:'Revisar reserva'}).tap();
+  await booking.getByText('Sin costo',{exact:true}).waitFor();
+  assert.doesNotMatch(await booking.locator('[data-booking-review]').innerText(),/pago en línea/);
+  await booking.getByRole('button',{name:'Enviar solicitud de reserva'}).tap();
+  await page.locator('#feedback').filter({hasText:'Solicitud enviada.'}).waitFor();
 
   const { json:{ bookings } } = await server.call('customer','GET','/api/portal');
   const visit = bookings.find(row => row.service_name === 'Meet & Greet');
@@ -57,8 +57,8 @@ try {
   await post('staff','status',{ id:visit.id,status:'Completed',summary:'We met Cooper.',secured:true });
   await page.goto(server.base+'/portal/index.html#client-home');
   await page.reload();
-  await page.getByRole('heading',{name:'Client home'}).waitFor();
-  assert.equal(await page.getByRole('link',{name:'Book a free Meet & Greet'}).count(),0);
+  await page.getByRole('heading',{name:'Inicio de clientes'}).waitFor();
+  assert.equal(await page.getByRole('link',{name:'Reservar una Visita de Presentación Gratuita (Meet & Greet)'}).count(),0);
   console.log('Free Meet & Greet passed through booking and completion');
 } finally {
   await browser.close();

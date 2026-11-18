@@ -320,3 +320,10 @@
   #logout { margin-inline-end: 0; }
   .portal .tap-choices > div { grid-template-columns: repeat(2,minmax(0,1fr)); }
 }
+.portal :is(button, .tap-link, .tap-choices span, .dashboard-action) {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  min-width: 0;
+  height: auto;
+}
+.portal .checkout-card :is(dt, dd) { min-width: 0; overflow-wrap: anywhere; }

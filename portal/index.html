@@ -5,48 +5,53 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#faeee3">
   <meta name="robots" content="noindex">
-  <title>Care Portal | myo.</title>
+  <title data-i18n="Care Portal | myo.">Care Portal | myo.</title>
   <link rel="stylesheet" href="../assets/home.css?v=outfit-12">
   <link rel="stylesheet" href="../assets/portal.css?v=phase-one-booking">
   <script src="../assets/portal.js?v=phase-one-booking" type="module"></script>
+  <script type="module" src="../assets/public-i18n.js"></script>
 </head>
 <body>
   <header class="section-wrap preview-header">
     <a class="wordmark" href="../">myo.</a>
+    <div class="language" role="group" aria-label="Language" data-i18n-aria-label="Language">
+      <button type="button" data-language="en" lang="en" aria-label="EN, English" aria-pressed="true">EN</button>
+      <button type="button" data-language="es" lang="es" aria-label="ES, Español" aria-pressed="false">ES</button>
+    </div>
     <details class="site-menu portal-menu">
-      <summary class="menu-toggle" aria-label="Portal menu">
+      <summary class="menu-toggle" aria-label="Portal menu" data-i18n-aria-label="Portal menu">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
           <path class="menu-bars" d="M4 6h16M4 12h16M4 18h16"/>
           <path class="menu-close" d="m6 6 12 12M18 6 6 18"/>
         </svg>
       </summary>
       <div class="menu-panel">
-        <nav class="site-nav" aria-label="Care portal">
+        <nav class="site-nav" aria-label="Care portal" data-i18n-aria-label="Care portal">
           <div id="portal-links"></div>
-          <a id="account-link" href="#account" hidden>Account</a>
-          <a href="../myo/launch/index.html#intake">Care intake preview</a>
-          <a href="../index.html">Back to website</a>
+          <a id="account-link" href="#account" hidden data-i18n="Account">Account</a>
+          <a href="../myo/launch/index.html#intake" data-i18n="Care intake preview">Care intake preview</a>
+          <a href="../index.html" data-i18n="Back to website">Back to website</a>
         </nav>
-        <button id="logout" type="button" hidden>Sign out</button>
+        <button id="logout" type="button" hidden data-i18n="Sign out">Sign out</button>
       </div>
     </details>
   </header>
   <main class="section-wrap portal">
-    <h1>Care portal.</h1>
+    <h1 data-i18n="Care portal.">Care portal.</h1>
     <div class="portal-feedback">
       <p id="feedback" role="status" aria-live="polite" aria-atomic="true"></p>
-      <button class="secondary" type="button" id="dismiss-feedback" aria-label="Dismiss notification" hidden>×</button>
+      <button class="secondary" type="button" id="dismiss-feedback" aria-label="Dismiss notification" data-i18n-aria-label="Dismiss notification" hidden>×</button>
     </div>
-    <div id="app" aria-busy="true"><p>Loading…</p></div>
+    <div id="app" aria-busy="true"><p data-i18n="Loading…">Loading…</p></div>
     <dialog class="booking-confirmation" id="cancel-booking" aria-labelledby="cancel-booking-title">
       <h3 id="cancel-booking-title">Cancel this visit?</h3>
       <p data-cancel-terms role="status"></p>
       <form method="dialog">
-        <button type="submit" value="keep" class="secondary" autofocus>Keep visit</button>
+        <button type="submit" value="keep" class="secondary" autofocus data-i18n="Keep visit">Keep visit</button>
         <button type="submit" value="confirm"><span class="control-icon" aria-hidden="true">✕</span> <span data-cancel-label>Cancel visit</span></button>
       </form>
     </dialog>
-    <noscript>Enable JavaScript to use the care portal.</noscript>
+    <noscript data-i18n="Enable JavaScript to use the care portal.">Enable JavaScript to use the care portal.</noscript>
   </main>
 </body>
 </html>

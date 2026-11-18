@@ -1,25 +1,75 @@
+import { en as uiEnglish, es as uiSpanish } from './ui-copy.js';
+import { en as launchEnglish, es as launchSpanish } from './myo-copy.js';
+
 // Language support shared by the portal and the diary (C2.6).
 // - locale(): the reader's choice ('en' or 'es'), from the same storage key the public site uses.
 // - t(key, params): a catalog string; {name} placeholders; { one, other } entries pluralise on params.count.
 // - formatDate / formatMoney: Massachusetts time and US dollars, in the given language.
 // Every error code the server sends has a Spanish entry under error.<code> (checked by tests/i18n.test.mjs).
-// English errors use the server's own message, which is more specific than a catalog entry.
+// Error codes have matching English and Spanish entries. Unknown errors use a translated generic message.
 
+let currentLanguage = 'en';
 export const languages = ['en', 'es'];
 export function locale() {
   let stored = '';
   try { stored = globalThis.localStorage?.getItem('myo-language') || ''; } catch { /* storage blocked */ }
   if (languages.includes(stored)) return stored;
-  const page = globalThis.document?.documentElement?.lang;
-  return languages.includes(page) ? page : 'en';
+  return currentLanguage;
 }
 export function setLocale(language) {
   if (!languages.includes(language)) return;
+  currentLanguage = language;
   try { globalThis.localStorage?.setItem('myo-language', language); } catch { /* storage blocked */ }
+  if (globalThis.document) document.documentElement.lang = language;
 }
 
 export const catalogs = {
   en: {
+    ...uiEnglish,
+    "error.time_unavailable": "That time is no longer available. Choose another.",
+    "error.window_too_short": "This service does not fit in that window. Choose an earlier time.",
+    "error.time_reserved": "That time is reserved. Choose another.",
+    "error.hold_expired": "Your temporary hold expired or the visit changed. Review your booking again.",
+    "error.price_changed": "The price changed. Review the new total.",
+    "error.change_not_pending": "This change request is no longer pending.",
+    "error.departure_check_required": "Confirm whether the doors are locked and the home is secured.",
+    "error.secure_note_required": "Explain what was not secured and what you did.",
+    "error.meet_is_free": "A Meet & Greet is complimentary. Its price must be zero.",
+    "error.night_unavailable": "Myomi is unavailable for one of those nights. Choose different dates.",
+    "error.stay_length": "Choose a stay of 1 to 28 nights.",
+    "error.stay_reschedule_unsupported": "To change an overnight stay, cancel and request new dates.",
+    "error.blocked": "Complete the outstanding requirements before booking.",
+    "error.invalid_date": "Check the date.",
+    "error.agreement_changed": "An updated agreement is available. Read it before continuing.",
+    "error.vault_unconfigured": "Home access details are temporarily unavailable.",
+    "error.vault_decrypt_failed": "Could not open home access details.",
+    "error.access_not_yet": "Home access details unlock shortly before the visit.",
+    "error.not_set": "This client has not saved home access details.",
+    "error.invalid_method": "Choose how Myomi will enter.",
+    "error.invalid_key_status": "Choose where the key is.",
+    "error.unknown_field": "This field is not part of the report.",
+    "error.invalid_field": "Check the report answer.",
+    "error.invalid_score": "Choose how the visit went.",
+    "error.feedback_closed": "Feedback for this visit can no longer be changed.",
+    "error.invalid_locale": "Choose English or Spanish.",
+    "error.invalid_subject": "Choose who this note is about.",
+    "error.fee_rule_invalid": "Check the fee rule details.",
+    "error.fee_rule_exists": "A fee rule with this code already exists.",
+    "error.payments_unavailable": "Online payment isn’t available. Myomi can take payment another way.",
+    "error.payment_provider_error": "The payment provider refused the request. Try again later.",
+    "error.invalid_signature": "Invalid signature.",
+    "error.nothing_due": "Nothing is due on this booking.",
+    "error.refund_too_large": "You can refund at most what was paid.",
+    "error.tip_too_large": "Tips on one visit are limited.",
+    "error.tip_not_open": "You can tip once the visit has started.",
+    "error.cancel_fee_changed": "Cancelling now has a fee. Review it before cancelling.",
+    "error.series_visits_only": "Recurring visits are for walks and drop-in visits.",
+    "error.invalid_time": "Choose a time on the hour or half hour.",
+    "error.series_limit": "You have the most recurring visits allowed. End one first.",
+    "error.series_ended": "This recurring visit has ended.",
+    "error.no_package_credit": "You have no package credit for this service that is valid on that date.",
+    "error.package_visits_only": "Packages are for walks and drop-in visits.",
+    ...Object.fromEntries(Object.entries(launchEnglish).map(([key, value]) => ['launch.'+key, value])),
     'status.Requested': 'Waiting for Myomi',
     'status.Confirmed': 'Confirmed',
     'status.In Progress': 'In progress',
@@ -27,8 +77,11 @@ export const catalogs = {
     'status.Cancelled': 'Cancelled',
     'booking.nights': { one:'{count} night', other:'{count} nights' },
     'booking.pets': { one:'{count} pet', other:'{count} pets' },
+    'booking.visits': { one:'{count} visit', other:'{count} visits' },
   },
   es: {
+    ...uiSpanish,
+    ...Object.fromEntries(Object.entries(launchSpanish).map(([key, value]) => ['launch.'+key, value])),
     'status.Requested': 'Esperando a Myomi',
     'status.Confirmed': 'Confirmada',
     'status.In Progress': 'En curso',
@@ -36,6 +89,7 @@ export const catalogs = {
     'status.Cancelled': 'Cancelada',
     'booking.nights': { one:'{count} noche', other:'{count} noches' },
     'booking.pets': { one:'{count} mascota', other:'{count} mascotas' },
+    'booking.visits': { one:'{count} visita', other:'{count} visitas' },
     'error.time_unavailable': 'Este horario ya no está disponible. Elige otro.',
     'error.window_too_short': 'Este servicio no cabe en ese horario. Elige una hora más temprana.',
     'error.time_reserved': 'Este horario ya está reservado. Elige otro.',
@@ -107,4 +161,9 @@ export function formatDate(ms, style = 'visit', language = locale()) {
 }
 export function formatMoney(cents, language = locale()) {
   return new Intl.NumberFormat(tags[language] || 'en-US', { style:'currency', currency:'USD' }).format(cents / 100);
+}
+
+// Only catalog-controlled labels are translated. Pet names, care notes and other client content stay verbatim.
+export function translateLabel(value) {
+  return hasKey(value) ? t(value) : value;
 }
