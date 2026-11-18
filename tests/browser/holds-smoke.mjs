@@ -202,6 +202,28 @@ try {
     check(true, 'the server refuses an early start even when the device clock is ahead');
     await ctx.close();
   });
+  // 6. Two pets: the total includes the extra-pet price, ticking a pet keeps the chosen time, and the request goes through.
+  await scenario('extra pet', async () => {
+    await staff.evaluate(() => fetch('/api/services', { method:'POST', headers:{ 'Content-Type':'application/json' },
+      body:JSON.stringify({ name:'Dog walking', minutes:30, cents:3000, extra_pet_cents:1500 }) }));
+    await ben.page.evaluate(() => fetch('/api/pets', { method:'POST', headers:{ 'Content-Type':'application/json' },
+      body:JSON.stringify({ name:'Bean', species:'Dog', details:'' }) }));
+    await ben.page.goto(server.base + '/portal/index.html?fresh=' + Date.now() + '#book');
+    const form = ben.page.locator('[data-action=bookings]');
+    await form.waitFor();
+    await tapLabel(form.locator('input[name=pets]').nth(0));
+    await tapLabel(form.locator('input[name=slot]').nth(2));
+    const chosen = await form.locator('input[name=slot]:checked').getAttribute('value');
+    await tapLabel(form.locator('input[name=pets]').nth(1));
+    check(await form.locator('input[name=slot]:checked').getAttribute('value') === chosen, 'ticking a second pet keeps the chosen time');
+    check(/\$45\.00/.test(await form.locator('[data-quote]').textContent()), 'the total shows $45.00 for two pets');
+    await form.locator('[data-booking-inputs] button[type=submit]').tap();
+    await form.locator('[data-booking-review] .checkout-card').waitFor();
+    check(/\$45\.00/.test(await form.locator('.checkout-total').textContent()), 'the review shows the server’s $45.00 total');
+    await ben.page.getByRole('button', { name:/Send booking request/ }).tap();
+    const sent = await ben.page.waitForFunction(() => /Request sent/.test(document.querySelector('#feedback').textContent), null, { timeout:10_000 }).then(() => true, () => false);
+    check(sent, 'the two-pet request is accepted at that price');
+  });
 } catch (error) {
   failures.push('unexpected: ' + error.message.split('\n')[0]);
   console.error(error);

@@ -41,6 +41,8 @@ Phase 3  C3.1 Ledger + payments (provider decision) ──▶ X3.1
 ## Phase 1
 
 ### C1.1: Itemised quotes and machine-readable errors · Phase 1
+**Status: done** (migration 9, `lib/pricing.mjs`, `tests/pricing.test.mjs`, browser scenario 6 in `tests/browser/holds-smoke.mjs`). The portal sends the same total, computed by `bookingTotal()`, and shows the server's total on review; the itemised display is Codex X1.6.
+
 **Why Claude:** this changes the pricing contract shared by `/api/checkout-hold`, `/api/bookings`, `/api/portal`, financials, backup and every later pricing feature (extra pets, late pickup, fee rules, ledger). It also changes the error shape every client consumes.
 
 **Design**

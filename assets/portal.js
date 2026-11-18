@@ -19,6 +19,8 @@ const portalLinks = document.querySelector('#portal-links');
 const cancelDialog = document.querySelector('#cancel-booking');
 const find = (rows,id) => rows.find(row => row.id === id);
 const money = cents => new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(cents / 100);
+// Mirrors quote() in lib/pricing.mjs; the server re-prices every hold and request and refuses a stale total.
+const bookingTotal = (service, petCount) => service.cents + Math.max(0, petCount - 1) * (service.extra_pet_cents || 0);
 const day = value => new Intl.DateTimeFormat('en-CA',{dateStyle:'short',timeZone:'America/New_York'}).format(value);
 const emoji = icon => icon ? '<span class="control-icon" aria-hidden="true">'+icon+'</span> ' : '';
 const button = (label, style = '', icon = '') => '<button class="'+style+'" type="submit">'+emoji(icon)+text(label)+'</button>';
@@ -719,6 +721,12 @@ document.addEventListener('keydown', event => {
     portalMenu.querySelector('summary').focus();
   }
 });
+// Only the total text: changing pets must not rebuild the day and time choices.
+function updateTotal(booking) {
+  const service = find(data.services,Number(booking.querySelector('[name="service"]:checked')?.value));
+  const petCount = Math.max(1, booking.querySelectorAll('[name="pets"]:checked').length);
+  booking.querySelector('[data-quote]').textContent = service ? 'Request total: '+money(bookingTotal(service, petCount))+' · '+service.minutes+' minutes.' : '';
+}
 function updateQuote(event) {
   const booking = app.querySelector('[data-action="bookings"]');
   if (!booking) return;
@@ -741,7 +749,7 @@ function updateQuote(event) {
   availability.textContent = service
     ? 'No times are available for this service right now. Try another service or check back later.'
     : (name || 'This service')+' is unavailable right now. Choose another service or check back later.';
-  booking.querySelector('[data-quote]').textContent = service ? 'Request total: '+money(service.cents)+' · '+service.minutes+' minutes.' : '';
+  updateTotal(booking);
   booking.querySelector('button[type="submit"]').disabled = appointments.length === 0;
 }
 async function refresh() {
@@ -795,7 +803,7 @@ app.addEventListener('change', event => {
     showPhotoSelection(form,file || other.files[0]);
   }
   if (form?.dataset.action === 'bookings' && ['service','day'].includes(name)) updateQuote(event);
-  if (form?.dataset.action === 'bookings' && name === 'pets') form.querySelector('[data-booking-pet-error]').textContent = '';
+  if (form?.dataset.action === 'bookings' && name === 'pets') { form.querySelector('[data-booking-pet-error]').textContent = ''; updateTotal(form); }
   if (name === 'diary-filter') updateDiaryFilter(event.target);
 });
 async function updateDiaryFilter(select) {
@@ -992,14 +1000,14 @@ app.addEventListener('submit',async event => {
       const service = find(data.services,payload.service);
       if (!service || !payload.slot) throw new Error('Choose a service and an available appointment.');
       payload.pets = fields.getAll('pets').map(Number);
-      payload.cents = service.cents;
+      payload.cents = bookingTotal(service, payload.pets.length);
       const review = form.querySelector('[data-booking-review]');
       if (!review.dataset.expires) {
         const hold = await api('checkout-hold',payload,requestKey(form,'checkout-hold\n'+JSON.stringify(payload)));
         pendingKeys.delete(form);
         review.dataset.expires = hold.expires;
         review.innerHTML = checkoutSummary({
-          service_name:service.name, pet_ids:payload.pets, starts:hold.starts, ends:hold.ends, cents:service.cents,
+          service_name:service.name, pet_ids:payload.pets, starts:hold.starts, ends:hold.ends, cents:hold.total_cents,
         },hold.expires);
         form.querySelector('[data-booking-inputs]').hidden = true;
         form.querySelector('[data-booking-error]').textContent = '';

@@ -45,6 +45,14 @@ lib/stores/    durable.mjs (ctx.storage.sql + transactionSync, R2)   node.mjs (n
 - `GET /api/photos/<id>` streams from R2 (or the local photos folder) with `Cache-Control: private, max-age=3600`.
 - Sign-in/register: 429 after 30 requests per minute per address; sign-in 429 after 8 failures per account in 15 minutes. Malformed URLs return 404. Uploaded photos are re-written without metadata; a corrupt image returns 400.
 
+**Itemised prices and error codes (C1.1).**
+- **Pricing:** `lib/pricing.mjs` `quote()` prices every hold and request on the server: a `base` line plus `extra_pet` (`services.extra_pet_cents` × extra pets).
+- **Quote endpoint:** `POST /api/quote` `{ service, pets, slot, start }` → `{ starts, ends, lines, total_cents }`.
+- **Holds:** `POST /api/checkout-hold` also returns `lines` and `total_cents`.
+- **Price check:** `cents` on holds and requests must equal `total_cents`, otherwise 409 `{ code:'price_changed', total_cents }`.
+- **Storage:** bookings store their lines in `booking_lines`, and `bookings.cents` is the total. `GET /api/portal` bookings carry `lines`; older bookings show one `base` line.
+- **Error shape:** errors are `{ error, code?, ...details }`. Codes so far: `time_unavailable`, `window_too_short`, `time_reserved`, `hold_expired`, `price_changed`.
+
 **Booking holds and weekly hours.** `POST /api/checkout-hold` creates a short hold and `POST /api/checkout-release` releases it. The request flow checks the hold and current availability when submitting. Staff set recurring hours with `POST /api/schedule` and individual-date changes with `POST /api/schedule-exception`.
 
 **Configuration.** Cloudflare needs only the `MYO_ADMIN_EMAIL` and `MYO_ADMIN_PASSWORD` secrets. The Node-only variables (`MYO_DB`, `NODE_ENV`, `MYO_ORIGIN`, `MYO_SECURE_COOKIES`, `MYO_TRUST_PROXY`) are listed in the README.
