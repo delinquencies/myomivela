@@ -1,6 +1,6 @@
 # Development handoff for Codex
 
-Updated 2026-11-17 on branch `audit-remediation` (based on `6aad46d`). Finding IDs refer to [MYO_AUDIT.md](MYO_AUDIT.md); the status of each is in its §8 index and the detail in §7. Everything below is committed and pushed. **Nothing has been deployed to Cloudflare yet.**
+Updated November 18, 2026 against [`0681457`](https://github.com/delinquencies/myomivela/commit/068145742abb91708e8ac797015fe0a3c49d4bbd) on `main`. Finding IDs in the older remediation notes refer to [MYO_AUDIT.md](MYO_AUDIT.md). Cloudflare has been exercised locally. No live deployment has been verified.
 
 ## 1. Where things stand
 
@@ -8,6 +8,12 @@ Updated 2026-11-17 on branch `audit-remediation` (based on `6aad46d`). Finding I
 - Security hardening, migrations, the 30-minute booking grid, paged history and diary, and the module split are done and tested on both runtimes.
 - The portal passes an end-to-end browser run in Chromium on both runtimes. Safari and real phones are untested.
 - **Backup and restore** exist: staff download one file with everything (`GET /api/backup`, button in the portal); `scripts/restore.mjs` restores it into a new, empty installation. Downloads are manual.
+
+### Current booking and UX baseline
+
+- Customers can preview upcoming times and published prices before signing in. Booking review holds a time for up to 10 minutes, shortened if the appointment starts sooner. Sending the request releases the hold and the visit shows **Waiting for Myomi**. Staff approval checks availability again. Checkout payment and outbound confirmation remain open.
+- Staff can set repeating weekly hours in Massachusetts time, visit buffers, date exceptions, and extra windows. The portal has staff and customer dashboard updates, a refresh-on-entry diary, and shared Google review link settings. Both review URLs are still blank.
+- The [sitewide audit](docs/audits/myo-sitewide-audit-and-next-steps.md) and [UX friction log](docs/audits/myo-live-ux-friction-log.md) document earlier local runs. The current code already addresses some of that friction, including the service card scroll, the registration shortcut, optional intake skips, and clearer booking status. Retest these before filing them as defects.
 
 ## 2. Architecture in one page
 
@@ -23,10 +29,10 @@ lib/stores/    durable.mjs (ctx.storage.sql + transactionSync, R2)   node.mjs (n
 - **Requests and responses are Fetch-style** (`Request`/`Response`) everywhere in `lib/`. Handlers get `ctx` (`user`, `data`, `url`, `request`, `match`, `clientAddress`, `cookies`) and return data (sent as JSON) or a `Response`.
 - **Adding an endpoint:** add `{ method, path, access, handler }` to a file in `lib/routes/`. `access` is `public`, `user` or `staff`, enforced before the handler runs. `tests/routes.test.mjs` checks every route's access rule automatically.
 - **Race-freedom rule:** `transaction(fn)` must be synchronous (it throws on an async callback). Both runtimes process one request's transaction without interleaving: Node is a single process, and on Cloudflare all API traffic goes to one Durable Object instance (`idFromName('myo')`). Do any `await` (R2 upload, password hash) **before** the transaction, then re-check state inside it. `POST /api/events` shows the pattern.
-- **Schema version** is stored in the `meta` table (`schema_version`, now 6; migration 5 adds `idempotency`, migration 6 adds `trusted_devices`), because Durable Objects forbid `PRAGMA user_version`. Migrations must be safe to re-run. Migration 4 adds `events.photo_key`; the old `photo` BLOB column is no longer read (it only ever held test data).
+- **Schema version** is stored in the `meta` table (`schema_version`, now 8; migrations 5–8 add idempotency, trusted devices, checkout holds, then weekly hours and date exceptions), because Durable Objects forbid `PRAGMA user_version`. Migrations must be safe to re-run. Migration 4 adds `events.photo_key`; the old `photo` BLOB column is no longer read (it only ever held test data).
 - **Rate limits** are in memory. On Cloudflare they live in the single Durable Object, keyed by `CF-Connecting-IP`.
 
-## 3. API reference (changes since `6aad46d`)
+## 3. API reference
 
 - `POST /api/bookings` and `POST /api/reschedule` accept an optional `start` (epoch ms) alongside `slot` (window id): inside the window, on a 30-minute step, in the future, conflict-free. Without `start` the window start is used.
 - `GET /api/portal` returns `slots` as bookable start times (`{ id: windowId, starts, ends: windowEnd, service_ids }`) and `windows` (raw published windows). It no longer returns `events`. `bookings` holds upcoming and in-progress bookings plus the newest 20 past ones; `history_next` is the cursor for the rest. For staff, `pets` holds only the pets those bookings reference.
@@ -39,11 +45,13 @@ lib/stores/    durable.mjs (ctx.storage.sql + transactionSync, R2)   node.mjs (n
 - `GET /api/photos/<id>` streams from R2 (or the local photos folder) with `Cache-Control: private, max-age=3600`.
 - Sign-in/register: 429 after 30 requests per minute per address; sign-in 429 after 8 failures per account in 15 minutes. Malformed URLs return 404. Uploaded photos are re-written without metadata; a corrupt image returns 400.
 
+**Booking holds and weekly hours.** `POST /api/checkout-hold` creates a short hold and `POST /api/checkout-release` releases it. The request flow checks the hold and current availability when submitting. Staff set recurring hours with `POST /api/schedule` and individual-date changes with `POST /api/schedule-exception`.
+
 **Configuration.** Cloudflare needs only the `MYO_ADMIN_EMAIL` and `MYO_ADMIN_PASSWORD` secrets. The Node-only variables (`MYO_DB`, `NODE_ENV`, `MYO_ORIGIN`, `MYO_SECURE_COOKIES`, `MYO_TRUST_PROXY`) are listed in the README.
 
-## 4. Tests
+## 4. Verification
 
-| Command | Runs | Result (Node v22.23.4, wrangler 4.164.0) |
+| Command | Runs | Earlier remediation baseline (Node v22.23.4, Wrangler 4.164.0) |
 |---|---|---|
 | `npm test` | all suites on Node | 49 passed |
 | `npm run test:worker` | the same suites under `wrangler dev` (Durable Object SQLite, local R2, static assets) | 41 passed, 8 skipped (Node-only: direct database seeding, backup script, legacy upgrade, Node production checks) |
@@ -51,13 +59,13 @@ lib/stores/    durable.mjs (ctx.storage.sql + transactionSync, R2)   node.mjs (n
 | `MYO_TARGET=worker npm run test:browser` | the same on the Worker | clean (the database-seeded paging step is skipped) |
 | `npx wrangler deploy --dry-run` | production bundle | 40 KB, no Node-only modules |
 
-CI runs `npm test` on Node 22 and 24 and `npm run test:worker`. The workflow has not been observed running on GitHub yet.
+[GitHub CI for `0681457`](https://github.com/delinquencies/myomivela/actions/runs/44227268734) passed on Node 22 and 24 and in the Worker job. The latest local Chromium audit includes the 390 px booking and diary smoke test. The README records a separate Windows run with 48 of 50 tests passing and two restore CLI exit-code failures also seen on the baseline. This workflow does not run the browser or Windows checks.
 
 **Not run:** a real Cloudflare deployment, Safari/WebKit, Firefox, real phones and their camera and HEIC photos.
 
 ## 5. Open findings and blockers
 
-OPEN: S5, D2, O1, P1-4, P1-5, P1-6, P2 items. RESOLVED: S1–S3, D1, D3, D4, D5, O2, N1, P2-6 (password change; S5 partly), P0-1, P0-6, P1-3, P2-4; N2 is moot (photos are no longer stored in the database). BLOCKED: P1-7 (Stripe, needs payment decisions). See MYO_AUDIT.md §8.
+Open release work includes visit-start and cancellation rules, required care information, email verification and recovery, outbound confirmations, payment, Spanish in the portal, and production domain and sitemap updates. The staff API still allows a confirmed visit to start ahead of the scheduled date. Agree on the early-start window before enforcing it. Payments depend on the provider and payment policy decisions.
 
 - **First deploy needs a human check:** R2 bucket creation, secrets, the `workers.dev` URL, then a custom domain. See README.
 - **Plan:** password hashing (scrypt, about 40 ms CPU per sign-in) exceeds the Workers Free plan's 10 ms CPU limit. Use Workers Paid.
@@ -71,3 +79,15 @@ OPEN: S5, D2, O1, P1-4, P1-5, P1-6, P2 items. RESOLVED: S1–S3, D1, D3, D4, D5,
 3. **Scheduled off-account backups.** Backup download and restore exist. Still to do: a schedule (a Cron Trigger writing the same archive to a second bucket or an off-Cloudflare store, once one is chosen) and a restore rehearsal on the real deployment.
 4. **Lifecycle rules (D2, P1-4)** once the owner decides the policy.
 5. **Accounts, email and payments (S5, N1, P1-6, P1-7).** Email provider, verification and recovery; then Stripe Checkout with signed webhooks (a new `public` route that verifies the signature), a payments table and idempotent handling.
+
+
+## 7. Usability and UX test for Claude
+
+Claude, run a fresh customer and staff usability pass against the latest `main` with fictional data and separate authenticated sessions. Use [the previous friction log](docs/audits/myo-live-ux-friction-log.md) as a retest list, then compare notes with the current build.
+
+1. **First-time customer journey.** Start on the homepage in English and Spanish. Open a service, find the price and available times, register, add a pet, review the hold, edit and resume, submit the request, and find its status. Exercise no availability, a missing pet, expiry, rescheduling, and cancellation. Verify that the UI distinguishes a hold, a request, a confirmed visit, and payment availability.
+2. **One-handed staff journey.** Set weekly hours, a buffer, and a date exception. Find the request, approve it, start the visit, take or choose a photo, publish it, and complete the visit. Check whether actions and feedback stay within thumb reach, the software keyboard or floating controls obscure anything, and returning to the diary preserves an unsent draft. Retest the known future-visit start behavior and report its impact.
+3. **Customer diary and accessibility.** Confirm that the customer can find the completed visit and refresh, filter, and open the photo. Verify another customer cannot open it. Check keyboard focus, accessible names and announcements, text zoom, reduced motion, swipe versus vertical scroll, and the sticky menu in a short landscape viewport.
+4. **Device coverage.** Use Chromium for a reproducible pass at 320 and 390 CSS pixels, plus desktop. If available, use real iPhone Safari and Android Chrome for one-handed navigation, the camera and photo library, rotation, and HEIC behavior. Record emulated and physical-device results separately.
+
+Leave a dated report under `docs/audits/` with the commit, runtime, browsers and devices, what passed, and findings ranked by severity. For each finding include the user impact, steps to reproduce, expected and actual behavior, and a screenshot or recording when useful. Separate confirmed bugs from policy decisions and items you could not test.

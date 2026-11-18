@@ -1,5 +1,7 @@
 # MYO_AUDIT.md — independent audit of `delinquencies/myomivela`
 
+> November 18, 2026 status: use the [current development handoff](DEVELOPMENT_HANDOFF.md) for the architecture, verification, and open work. The [sitewide audit](docs/audits/myo-sitewide-audit-and-next-steps.md) and [UX friction log](docs/audits/myo-live-ux-friction-log.md) cover the later booking experience. The original assessment and remediation log below reflect the dates of those reviews.
+
 - **Commit audited:** `6aad46d` ("Resolve Outfit and Fraunces in inlined HTML previews"), shallow clone, 2026-11-17
 - **Method:** read every runtime source file (`server.mjs`, `assets/portal.js`, `assets/diary.js`, `assets/diary-sample.js`, `assets/home.js`, `portal/index.html`, `index.html`, `package.json`, `sitemap.xml`, `robots.txt`) plus README, handoff and the four prior audits in `docs/audits/`.
 - **Runtime checks:** I started `server.mjs` on Node v22.23.4 against a throwaway SQLite file in `/tmp` and drove the HTTP API with a script. The repo was not modified (`git status` clean afterwards). The browser UI was **not** executed, and nothing was tested on a phone.

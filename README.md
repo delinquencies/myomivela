@@ -10,7 +10,7 @@ myo. is Myomi’s pet-care website and portal. Customers request visits and read
 
 ## Technology and structure
 
-**Production runs on Cloudflare**: one Worker serves the public site and portal as static assets and forwards `/api/` to a single Durable Object, which holds the SQLite database. Photos are stored in R2. The same app code also runs on Node.js (22.13 or newer) for local development and the fast test suite, with `node:sqlite` and photos on disk. Both runtimes share everything in `lib/`; only `worker.mjs` and `server.mjs` differ. There are **no runtime dependencies** (Wrangler is a dev dependency). The front end is plain HTML, CSS and ES modules.
+**Cloudflare is the production target.** One Worker serves the public site and portal as static assets and forwards `/api/` to a single Durable Object, which holds the SQLite database. Photos are stored in R2. The same app code also runs on Node.js (22.13 or newer) for local development and the fast test suite, with `node:sqlite` and photos on disk. Both runtimes share everything in `lib/`; only `worker.mjs` and `server.mjs` differ. There are **no runtime dependencies** (Wrangler is a dev dependency). The front end is plain HTML, CSS and ES modules.
 
 ```
 worker.mjs            Cloudflare entry: static assets, security headers, and the MyoApi Durable Object
@@ -108,7 +108,7 @@ npm run deploy
 
 ## Database and migrations
 
-SQLite in both runtimes: the Durable Object's built-in SQLite on Cloudflare, `node:sqlite` locally. The schema is created and upgraded automatically on start by the ordered `migrations` list in `lib/db.mjs`. The applied count is stored in the `meta` table (`schema_version`, currently 6), because Durable Objects do not allow `PRAGMA user_version`. To change the schema, **append** a migration that is safe to re-run. Never edit an earlier one. Photos are not in the database: they are stored in R2 (Cloudflare) or files (Node) under the event's `photo_key`.
+SQLite in both runtimes: the Durable Object's built-in SQLite on Cloudflare, `node:sqlite` locally. The schema is created and upgraded automatically on start by the ordered `migrations` list in `lib/db.mjs`. The applied count is stored in the `meta` table (`schema_version`, currently 8), because Durable Objects do not allow `PRAGMA user_version`. To change the schema, **append** a migration that is safe to re-run. Never edit an earlier one. Photos are not in the database: they are stored in R2 (Cloudflare) or files (Node) under the event's `photo_key`.
 
 ### Backups and restore
 
@@ -130,13 +130,13 @@ Also available:
 ## Tests and builds
 
 ```sh
-npm test             # 49 tests against Node; starts the server on free ports with temporary databases
+npm test             # Node API and integration tests with temporary databases
 npm run test:worker  # the same suites against the Cloudflare runtime (wrangler dev); Node-only tests are skipped
 npm run test:browser # end-to-end portal run in Chromium (needs Playwright); MYO_TARGET=worker runs it on the Worker
 npm run build  # only rebuilds the archived design-preview stylesheet (needs `npm ci`); the live site has no build
 ```
 
-There is no linter or type checker configured. CI is defined in `.github/workflows/test.yml`.
+There is no linter or type checker configured. CI is defined in `.github/workflows/test.yml`. [GitHub CI for the booking and weekly availability update](https://github.com/delinquencies/myomivela/actions/runs/44227268734) passed on Node 22, Node 24, and the local Cloudflare runtime. The browser smoke test runs separately.
 
 ## What works today
 
@@ -161,7 +161,7 @@ None. There is no payment provider, email provider or analytics. Fonts fall back
 ## Known limitations
 
 - The Nov 17, 2026 local audit exercised the public pages and portal at 320, 390, 768 and 1280 CSS pixels in Chromium. The 390 px booking and diary browser suite passed. Safari, Firefox, real phones and the deployed Worker still need verification for the current changes.
-- The Node suite passed 48 of 50 tests on Windows after the weekly-hours migration and schema assertion updates. The two remaining restore CLI exit-code assertions also failed on the clean baseline. Recheck the restore CLI before release.
+- The Node suite passed 48 of 50 tests on Windows after the weekly-hours migration and schema assertion updates. The two remaining restore CLI exit-code assertions also failed on the clean baseline. The green GitHub run does not reproduce the Windows restore CLI issue. Recheck it and rehearse a restore on staging.
 - The app has **not been deployed to Cloudflare yet**; it has only run under `wrangler dev` locally. The first real deploy should be checked by hand.
 - Rate-limit counters live in memory (in the single Durable Object on Cloudflare), so they reset when it restarts.
 - Lockouts: 8 failed passwords per account and address per 15 minutes; 50 per account per hour from devices that have never signed in to it; a device that has signed in before (it holds a `myo_device` cookie) has its own 8-per-15-minutes allowance and ignores the other two. So a guesser locks out only themselves, and a large distributed attack can block new devices for an hour but never the owner's known phone or computer.
@@ -186,7 +186,7 @@ Set the public Google Business Profile URLs in `assets/review-links.js`. The `wr
 ## Documentation
 
 - [MYO_AUDIT.md](MYO_AUDIT.md): findings, statuses and the remediation log.
-- [DEVELOPMENT_HANDOFF.md](DEVELOPMENT_HANDOFF.md): what changed and the next tasks for Codex.
+- [DEVELOPMENT_HANDOFF.md](DEVELOPMENT_HANDOFF.md): current engineering status and the [usability test brief for Claude](DEVELOPMENT_HANDOFF.md#7-usability-and-ux-test-for-claude).
 - [docs/handoff.md](docs/handoff.md) and [docs/audits/](docs/audits/): earlier notes, kept for history.
 - [Sitewide audit and next steps](docs/audits/myo-sitewide-audit-and-next-steps.md) and [live UX friction log](docs/audits/myo-live-ux-friction-log.md): dated snapshots from the local audit and the first desktop and mobile walkthrough.
 - [docs/archive/design-previews/](docs/archive/design-previews/): retired mockups. They are not served. Rebuild their stylesheet with `npm ci` then `npm run build`.
