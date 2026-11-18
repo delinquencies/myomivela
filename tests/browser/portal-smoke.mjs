@@ -267,6 +267,13 @@ expected.push(/\/api\/events.*(ERR_CONNECTION_RESET|net::ERR_FAILED)|ERR_CONNECT
 const published = await staff.locator('#diary-feed li:has-text("Great walk")').count();
 log('dropped connection on publish → diary shows the update', published, 'time(s)');
 if (published !== 1) throw new Error('Expected the retried diary update once, found ' + published);
+// Report card (C2.4): an update with structured answers, published through the API (the form's fields are Codex X2.4).
+await staff.evaluate(async () => {
+  const data = await fetch('/api/portal').then(r => r.json());
+  const visit = data.bookings.find(b => b.status === 'In Progress');
+  await fetch('/api/events', { method:'POST', headers:{ 'Content-Type':'application/json' },
+    body:JSON.stringify({ id:visit.id, pet:visit.pet_ids[0], kind:'Walk completed', notes:'Report card walk', data:{ pee:true, poop:false, minutes:25 } }) });
+});
 const noteAfterPublish = await ev.locator('[name=notes]').inputValue();
 if (noteAfterPublish !== '') throw new Error('The diary form should be empty after publishing, found ' + JSON.stringify(noteAfterPublish));
 await section(staff,'upcoming');
@@ -312,6 +319,17 @@ const img = cust.locator('#diary-feed img').first();
 await img.waitFor();
 log('customer diary photo loaded:', await img.evaluate(i => i.complete && i.naturalWidth > 0));
 const diaryText = await cust.locator('#diary-feed').textContent();
+const card = cust.locator('#diary-feed li').filter({ hasText:'Report card walk' });
+const chips = await card.locator('.diary-fields li').allTextContents();
+log('report card chips for the customer:', chips);
+if (chips.join('|') !== '✓ Pee|Minutes walked: 25') throw new Error('The customer should see Pee and minutes, and not the hidden Poop answer');
+await staff.reload();
+await section(staff,'diary');
+const staffEntry = staff.locator('#diary-feed li').filter({ hasText:'Report card walk' });
+await staffEntry.waitFor(); // the portal loads its data after the page itself
+const staffHidden = await staffEntry.locator('.diary-field-hidden').allTextContents();
+log('report card answers hidden from the customer, as staff see them:', staffHidden);
+if (staffHidden.join('|') !== '✗ Poop') throw new Error('Staff should see the hidden Poop answer, greyed out');
 log('diary departure lines:', /Home secured at/.test(diaryText), /Not fully secured: Back gate latch broken/.test(diaryText));
 if (!/Home secured at/.test(diaryText) || !/Not fully secured: Back gate latch broken/.test(diaryText)) throw new Error('The diary should show both departure checks');
 const diaryPicker = cust.getByLabel('Filter diary');

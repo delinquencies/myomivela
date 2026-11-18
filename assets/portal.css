@@ -78,6 +78,9 @@
 .departure-secured { display: flex; gap: .5rem; align-items: center; min-height: 44px; }
 .diary-departure { margin: .5rem 0; font-weight: 600; }
 .diary-departure-warning { color: #a13013; }
+.diary-fields { display: flex; flex-wrap: wrap; gap: .35rem; list-style: none; padding: 0; margin: .4rem 0; }
+.diary-fields li { padding: .15rem .55rem; border-radius: 999px; background: #f6dfd1; font-size: .9rem; }
+.diary-fields .diary-field-hidden { opacity: .55; text-decoration: line-through; }
 .start-note { margin: .25rem 0 .5rem; font-size: .9rem; color: #6b3d2c; }
 .checkout-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
 .portal form:is([data-action="login"], [data-action="register"]) > button[type="submit"] {

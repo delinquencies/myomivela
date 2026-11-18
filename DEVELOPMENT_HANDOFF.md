@@ -29,7 +29,7 @@ lib/stores/    durable.mjs (ctx.storage.sql + transactionSync, R2)   node.mjs (n
 - **Requests and responses are Fetch-style** (`Request`/`Response`) everywhere in `lib/`. Handlers get `ctx` (`user`, `data`, `url`, `request`, `match`, `clientAddress`, `cookies`) and return data (sent as JSON) or a `Response`.
 - **Adding an endpoint:** add `{ method, path, access, handler }` to a file in `lib/routes/`. `access` is `public`, `user` or `staff`, enforced before the handler runs. `tests/routes.test.mjs` checks every route's access rule automatically.
 - **Race-freedom rule:** `transaction(fn)` must be synchronous (it throws on an async callback). Both runtimes process one request's transaction without interleaving: Node is a single process, and on Cloudflare all API traffic goes to one Durable Object instance (`idFromName('myo')`). Do any `await` (R2 upload, password hash) **before** the transaction, then re-check state inside it. `POST /api/events` shows the pattern.
-- **Schema version** is stored in the `meta` table (`schema_version`, now 15; migrations 5–8 add idempotency, trusted devices, checkout holds, then weekly hours and date exceptions; 9–13 add itemised booking lines, change requests, the departure check, service kinds and overnight settings; 14 adds vaccines and agreements; 15 the home-access vault), because Durable Objects forbid `PRAGMA user_version`. Migrations must be safe to re-run. Migration 4 adds `events.photo_key`; the old `photo` BLOB column is no longer read (it only ever held test data).
+- **Schema version** is stored in the `meta` table (`schema_version`, now 16; migrations 5–8 add idempotency, trusted devices, checkout holds, then weekly hours and date exceptions; 9–13 add itemised booking lines, change requests, the departure check, service kinds and overnight settings; 14 adds vaccines and agreements; 15 the home-access vault; 16 report-card answers), because Durable Objects forbid `PRAGMA user_version`. Migrations must be safe to re-run. Migration 4 adds `events.photo_key`; the old `photo` BLOB column is no longer read (it only ever held test data).
 - **Rate limits** are in memory. On Cloudflare they live in the single Durable Object, keyed by `CF-Connecting-IP`.
 
 ## 3. API reference
@@ -102,6 +102,12 @@ lib/stores/    durable.mjs (ctx.storage.sql + transactionSync, R2)   node.mjs (n
 - **Keys:** `POST /api/keys { owner, key_status:'with_client'|'with_myomi'|'returned' }`.
 - **Staff portal:** each booking carries `home_access: { method, key_status }` (never the instructions), plus `keys_to_return` for keys held with no booking ahead.
 - **Configuration and errors:** a missing key returns 503 `vault_unconfigured`; Node in production refuses to start without it. Rotate with `MYO_VAULT_KEY_PREVIOUS`; a key that can't open a record gives 500 `vault_decrypt_failed`.
+
+**Report cards (C2.4).**
+- **Templates:** `reportFields` in `lib/domain.mjs` defines structured answers per service kind and activity (`yesno`, `count` or `choice`), sent to the portal as `reportFields`.
+- **Publishing:** `POST /api/events` accepts `data: { [fieldId]: value }`, validated against the template (400 `unknown_field` or `invalid_field`). Answers are stored in `events.data` with their labels as published.
+- **Diary:** events carry `fields: [{ label, type, value }]`. Customers don't see answers whose template says `hideWhen` (a "no" or a zero); staff see them with `hidden:true`. Medication answers are never hidden.
+- **Display:** `renderDiaryVisits()` shows answers as chips. The publish form's inputs are Codex X2.4.
 
 **Booking holds and weekly hours.** `POST /api/checkout-hold` creates a short hold and `POST /api/checkout-release` releases it. The request flow checks the hold and current availability when submitting. Staff set recurring hours with `POST /api/schedule` and individual-date changes with `POST /api/schedule-exception`.
 

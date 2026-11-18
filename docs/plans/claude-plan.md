@@ -294,6 +294,8 @@ Phase 3  C3.1 Ledger + payments (provider decision) ──▶ X3.1
 ```
 
 ### C2.4: Structured report cards with conditional hiding · Phase 2 · needs C1.4
+**Status: done** (migration 16, `tests/report-cards.test.mjs`, chips checked in `portal-smoke.mjs`). Answers are stored as `[{ id, label, type, value, hideWhen? }]`, so later template edits don't change history. The renderer reads `event.fields` directly rather than taking a `fieldsFor` argument.
+
 **Why Claude:** a JSON schema on `events`, per-kind templates, validation in `POST /api/events`, filtering by role in `GET /api/diary`, backup compatibility, and a renderer contract.
 
 **Design**

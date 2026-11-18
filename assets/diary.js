@@ -18,6 +18,15 @@ function departureLine(check) {
 export function renderDiaryVisits(visits, eventsByVisit, petName, photoFor) {
   if (!visits.length) return '<p>No diary visits for this selection yet.</p>';
 
+  // Report-card answers as short chips; staff see answers hidden from the customer, greyed out.
+  function renderFields(fields = []) {
+    if (!fields.length) return '';
+    return '<ul class="diary-fields">'+fields.map(field => {
+      const text = field.type === 'yesno' ? (field.value ? '✓ ' : '✗ ')+field.label
+        : field.type === 'count' ? field.label+': '+field.value : field.label+': '+field.value;
+      return '<li'+(field.hidden ? ' class="diary-field-hidden" title="Hidden from the client"' : '')+'>'+escapeHtml(text)+'</li>';
+    }).join('')+'</ul>';
+  }
   function renderEntry(event) {
     const icon = Object.hasOwn(activityIcons,event.kind) ? activityIcons[event.kind] : '';
     const photo = photoFor(event);
@@ -27,7 +36,7 @@ export function renderDiaryVisits(visits, eventsByVisit, petName, photoFor) {
       (icon ? '<span class="choice-icon" aria-hidden="true">'+icon+'</span> ' : '')+
       escapeHtml(petName(event.pet))+' · '+escapeHtml(event.kind)+'</h4>'+
       '<time datetime="'+new Date(event.published).toISOString()+'">'+formatVisitDate(event.published)+'</time>'+
-      '<p class="preserve">'+escapeHtml(event.notes)+'</p>'+media+'</li>';
+      '<p class="preserve">'+escapeHtml(event.notes)+'</p>'+renderFields(event.fields)+media+'</li>';
   }
 
   return visits.map(visit => {
