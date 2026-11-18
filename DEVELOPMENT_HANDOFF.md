@@ -83,7 +83,7 @@ Open release work includes visit-start and cancellation rules, required care inf
 
 ## 7. Usability and UX test for Claude
 
-**Done 2026-11-18:** see [docs/audits/2026-11-18-usability-test.md](docs/audits/2026-11-18-usability-test.md). Physical devices, Safari, Firefox and screen readers were not available and remain to be tested.
+**Done 2026-11-18:** see [docs/audits/2026-11-18-usability-test.md](docs/audits/2026-11-18-usability-test.md). Its H2 (hold expiry) and M1 (abandoned holds) are fixed, with `tests/browser/holds-smoke.mjs`. Physical devices, Safari, Firefox and screen readers were not available and remain to be tested.
 
 Claude, run a fresh customer and staff usability pass against the latest `main` with fictional data and separate authenticated sessions. Use [the previous friction log](docs/audits/myo-live-ux-friction-log.md) as a retest list, then compare notes with the current build.
 

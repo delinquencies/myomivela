@@ -14,6 +14,8 @@ Customer and staff usability pass requested in [DEVELOPMENT_HANDOFF.md §7](../.
 
 **All results are from emulation.** No physical iPhone or Android device, Safari/WebKit, Firefox, screen reader or real camera was available. See [Not tested](#not-tested).
 
+> **Update, same day:** H2 (hold expiry) and M1 (abandoned holds) are **fixed** on `audit-remediation`; see [Fixes after this report](#fixes-after-this-report). The other findings are unchanged.
+
 ## Summary
 
 The core loop works and is much smoother than in the [previous friction log](myo-live-ux-friction-log.md). A first-time customer can go from the homepage card to a sent request without dead ends. Staff can set hours, approve, publish a photo and complete a visit on a phone. The customer sees the update without a manual refresh, and another customer cannot open the photo. 11 of the 17 earlier friction items are fixed or mostly fixed; the other 6 are partly fixed or still open.
@@ -208,3 +210,14 @@ Choosing **ES** on the homepage translates the public page completely; no Englis
 4. Fix the 200 % text collisions on the homepage (M4).
 5. Tidy the wording items: M3 warning, L1–L3.
 6. Run section 4 of the brief on real iPhone Safari and Android Chrome, especially camera, HEIC and the software keyboard.
+
+## Fixes after this report
+
+**H2 and M1, fixed in `assets/portal.js` and tested in `tests/browser/holds-smoke.mjs`** (part of `npm run test:browser`):
+- **Hold ending:** while the review is open, a timer runs to the hold's end. When it fires, the review says **Hold ended** with an explanation, which is announced through a live region. **Send** is disabled, and the edit button becomes **Choose another time**.
+- **Refused review or send:** **Choose another time**, or any refusal of the review or send (409: hold ended, replaced by another tab, time taken or price changed), reloads availability from the server. It reopens the form with current times and keeps the pet, service and notes. The reason appears at the top of the form, which receives focus.
+- **Abandoned review:** closing, reloading or leaving the page with a review open releases the hold with a `keepalive` request. Returning through the back/forward cache marks the review as ended. A redraw that discards an open review, such as saving a pet in another section, also releases its hold. Switching apps keeps the hold, on purpose.
+- **Verification:** 15 browser checks across 4 scenarios, on Node (twice) and on the Worker runtime. Against the previous `assets/portal.js`, each of the 4 scenarios fails, 7 checks in all.
+  - The expiry scenario fast-forwards the browser clock past the hold.
+  - A real server-side expiry is covered by the same 409 path, exercised through the two-tab case.
+- **Not covered:** the back/forward-cache path, which headless Chromium doesn't exercise, and real phones.

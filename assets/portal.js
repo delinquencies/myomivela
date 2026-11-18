@@ -56,7 +56,7 @@ async function api(path, payload, key) {
     }
   }
   const result = await response.json();
-  if (!response.ok) throw new Error(result.error || 'Please try again.');
+  if (!response.ok) throw Object.assign(new Error(result.error || 'Please try again.'), { status:response.status });
   return result;
 }
 // One key per form submission. It survives a dropped connection (so tapping again replays rather than repeats)
@@ -289,7 +289,7 @@ function bookingForm() {
     })
   ).join('');
   return '<p>Appointment times are shown in Massachusetts time. Myomi reviews each request before confirming.</p>' +
-    form('bookings','<div data-booking-inputs>'+choiceGroup('Service',serviceOptions)+
+    form('bookings','<div data-booking-inputs><p class="pet-field-error" data-booking-error role="alert" tabindex="-1"></p>'+choiceGroup('Service',serviceOptions)+
     choiceGroup('Pets attending',data.pets.map(pet => choice('pets',pet.id,pet.name,{ type:'checkbox', icon:'🐾' })).join(''))+
     '<p class="pet-field-error" data-booking-pet-error role="alert"></p>'+
     '<div data-booking-days></div><div data-booking-times></div><p data-availability role="status" hidden></p>'+
@@ -367,6 +367,55 @@ function bookingCard(booking) {
     (data.user.admin ? pets.map(p=>'<details><summary>'+text(p.name)+'’s care profile</summary>'+profileSummary(p)+'</details>').join('') : '')+
     actions+'</article>';
 }
+// Holds: a reviewed time is held for the customer until `expires` (server time, at most 10 minutes).
+// The review shows when the hold ends, and a hold the page can no longer use is released so others can book it.
+let holdTimer;
+const openReview = () => app.querySelector('[data-booking-review][data-expires]:not([hidden])');
+function releaseHold(expires, { keepalive = false } = {}) {
+  // keepalive lets the request finish while the page is closing.
+  return fetch('/api/checkout-release', { method:'POST', keepalive, headers:{ 'Content-Type':'application/json' }, body:JSON.stringify({ expires }) }).catch(() => {});
+}
+function startHoldTimer(form) {
+  clearTimeout(holdTimer);
+  const review = form.querySelector('[data-booking-review]');
+  holdTimer = setTimeout(() => expireHold(form), Math.max(0, Number(review.dataset.expires) - Date.now()));
+}
+function expireHold(form, message = 'Your hold on this time has ended, so someone else may book it. Choose a time again to continue.') {
+  const review = form.querySelector('[data-booking-review]');
+  if (!review?.isConnected || review.hidden || !review.dataset.expires || review.dataset.expired) return;
+  review.dataset.expired = '1';
+  review.querySelector('.checkout-status').textContent = 'Hold ended';
+  review.querySelector('[data-hold-note]').textContent = message;
+  review.querySelector('button[type="submit"]').disabled = true;
+  review.querySelector('[data-edit-booking]').textContent = 'Choose another time';
+}
+// Reloads availability and reopens the booking form, keeping the pet, service and notes, with `message` at the top.
+async function reopenBooking(message) {
+  clearTimeout(holdTimer);
+  const review = openReview();
+  if (review) delete review.dataset.expires; // the hold is gone; render() must not try to release it again
+  await refresh();
+  const form = app.querySelector('[data-action="bookings"]');
+  const notice = form?.querySelector('[data-booking-error]');
+  if (!notice) { feedback.textContent = message; return; }
+  feedback.textContent = '';
+  notice.textContent = message;
+  notice.focus();
+  notice.scrollIntoView({ block:'center', behavior:'instant' });
+}
+window.addEventListener('pagehide', () => {
+  const review = openReview();
+  if (!review || review.dataset.expired) return;
+  clearTimeout(holdTimer);
+  releaseHold(Number(review.dataset.expires), { keepalive:true });
+  review.dataset.released = '1';
+});
+// Coming back through the back/forward cache: the hold was released on the way out, so say so.
+window.addEventListener('pageshow', event => {
+  if (!event.persisted) return;
+  const review = openReview();
+  if (review?.dataset.released) expireHold(review.closest('form'), 'You left this page, so the time was released for others. Choose a time again to continue.');
+});
 function checkoutSummary(booking, expires) {
   const pets = booking.pet_ids.map(id => find(data.pets,id)?.name).filter(Boolean);
   const ends = day(booking.starts) === day(booking.ends) ? appointmentTime.format(booking.ends) : date(booking.ends);
@@ -379,7 +428,7 @@ function checkoutSummary(booking, expires) {
     '<div class="checkout-appointment"><dt>Appointment</dt><dd class="appointment-details">'+date(booking.starts)+' – '+ends+' ET</dd></div>'+
     '<div><dt>Duration</dt><dd>'+((booking.ends-booking.starts)/60_000)+' min</dd></div></dl>'+
     '<div class="checkout-total"><span>Visit total</span><strong>'+money(booking.cents)+'</strong></div>'+
-    (expires ? '<p class="checkout-payment-note">Time held until '+appointmentTime.format(expires)+' ET. Online payment is currently unavailable. Send a request for Myomi to confirm.</p>' :
+    (expires ? '<p class="checkout-payment-note" data-hold-note role="status">Time held until '+appointmentTime.format(expires)+' ET. Online payment is currently unavailable. Send a request for Myomi to confirm.</p>' :
       '<p class="checkout-payment-note">Your visit is confirmed. Online payment is currently unavailable.</p>')+'</article>'+
     (expires ? '<div class="checkout-actions"><button type="button" class="secondary" data-edit-booking>Edit booking</button>'+
       button('Send booking request','','📅')+'</div>' : tapLink('#upcoming','Back to my bookings',''));
@@ -567,6 +616,9 @@ function render() {
     auth();
     return;
   }
+  // Replacing the page discards an open booking review, so give its held time back.
+  const discarded = openReview();
+  if (discarded && !discarded.dataset.expired) { clearTimeout(holdTimer); releaseHold(Number(discarded.dataset.expires)); }
   // Keep anything typed into other forms: record it before replacing the page, put it back afterwards.
   drafts.use(data.user.id);
   drafts.capture(app);
@@ -788,6 +840,12 @@ app.addEventListener('click', async event => {
   if (editBooking) {
     const form = editBooking.form;
     const review = form.querySelector('[data-booking-review]');
+    if (review.dataset.expired) {
+      editBooking.disabled = true;
+      await reopenBooking('Times below are up to date. Choose one and review your visit again.');
+      return;
+    }
+    clearTimeout(holdTimer);
     editBooking.disabled = review.querySelector('button[type="submit"]').disabled = true;
     try { await api('checkout-release',{expires:Number(review.dataset.expires)}); }
     catch (error) { feedback.textContent = error.message; }
@@ -923,7 +981,9 @@ app.addEventListener('submit',async event => {
           service_name:service.name, pet_ids:payload.pets, starts:hold.starts, ends:hold.ends, cents:service.cents,
         },hold.expires);
         form.querySelector('[data-booking-inputs]').hidden = true;
+        form.querySelector('[data-booking-error]').textContent = '';
         review.hidden = false;
+        startHoldTimer(form);
         const heading = review.querySelector('h3');
         heading.tabIndex = -1;
         heading.focus();
@@ -956,6 +1016,8 @@ app.addEventListener('submit',async event => {
     const resumeBooking = action === 'pets' && !form.dataset.id && location.hash === bookingIntake;
     if (resumeBooking) history.replaceState(null,'','#book');
     if (action === 'bookings') {
+      clearTimeout(holdTimer);
+      delete form.querySelector('[data-booking-review]').dataset.expires; // the server already removed the hold
       const next = new URL(location.href);
       next.searchParams.delete('service');
       next.searchParams.delete('rate');
@@ -978,6 +1040,12 @@ app.addEventListener('submit',async event => {
       : signedIn ? ''
       : resumeBooking ? 'Pet added. You can continue booking.' : 'Saved.';
   } catch (error) {
+    // The time was taken, the hold ran out, or another tab replaced it: show current times, not the stale list.
+    if (action === 'bookings' && error.status === 409) {
+      showPublicationFeedback('');
+      await reopenBooking(error.message+' The times below are up to date.');
+      return;
+    }
     const registrationError = form.querySelector('[data-registration-error]');
     if (registrationError?.isConnected) {
       feedback.textContent = '';
