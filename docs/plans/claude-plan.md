@@ -148,6 +148,8 @@ Phase 3  C3.1 Ledger + payments (provider decision) ──▶ X3.1
 ```
 
 ### C1.4: Service kinds and a free meet & greet · Phase 1
+**Status: done** (migration 12, `tests/service-kinds.test.mjs`). Staff can set the Meet & Greet price in Settings (🤝). The customer-facing "Free" labels, the first-visit card and the homepage link are Codex X1.9.
+
 **Why Claude:** introduces `services.kind`, which overnight stays (C2.1), the compliance gates (C2.2) and the report cards (C2.4) all branch on. It also changes catalog validation and what "first visit" means.
 
 **Design**
