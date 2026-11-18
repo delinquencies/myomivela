@@ -332,6 +332,8 @@ function bookingForm() {
     area('Care instructions for this visit','notes','',1500)+'</div>'+
     '<div data-booking-summary hidden><p data-quote></p><div data-quote-lines></div>'+
     '<p data-quote-status role="status"></p><button type="button" class="secondary" data-retry-quote hidden>Retry price</button>'+
+    ((data.package_balances || []).some(balance => !balance.expired && balance.remaining > 0)
+      ? '<label class="check-row"><input type="checkbox" name="use_package"> Use a package credit (covers the base price)</label>' : '')+
     button('Review booking','','📅')+'</div></div><div data-booking-review hidden></div>');
 }
 function statusForm(booking,status,label) {
@@ -416,6 +418,36 @@ setInterval(() => {
   }
 }, 15_000);
 const canReviewCheckout = booking => !data.user.admin && booking.status === 'Confirmed' && booking.starts > Date.now();
+// Money on a booking card (C3.1): its payment status for both sides, Pay now and tips for customers, and
+// recording payments and refunds for staff. Refunds by card need online payment to be on.
+const paymentLabels = { none:'Not due yet', due:'Payment due', pending:'Checkout started', partial:'Partly paid', paid:'Paid', refund_due:'Refund due', refunded:'Refunded' };
+const dollarsInput = (label, name) => input(label,name,'type="number" min="1" max="10000" step="0.01" required');
+function paymentBlock(booking) {
+  const payment = booking.payment;
+  if (!payment || (payment.status === 'none' && !payment.paid_cents)) return '';
+  const balance = payment.balance_cents > 0 ? ' · Balance '+money(payment.balance_cents) : payment.balance_cents < 0 ? ' · '+money(-payment.balance_cents)+' to return' : '';
+  let html = '<p class="payment-status" data-payment-status>Payment: <strong>'+paymentLabels[payment.status]+'</strong>'+balance+'</p>';
+  if (data.user.admin) {
+    const methods = choiceGroup('Method',['cash','check','other'].map((method,index) => choice('method',method,method[0].toUpperCase()+method.slice(1),{ checked:index === 0, required:true })).join(''));
+    html += '<details><summary>'+emoji('💵')+'Record a payment</summary>'+form('payments/record',dollarsInput('Amount (USD)','dollars')+methods+
+      input('Note','note','maxlength="200"')+button('Record payment','secondary','✓'),booking.id)+'</details>';
+    if (payment.paid_cents > payment.refunded_cents) {
+      const refundMethods = choiceGroup('Refund to',(data.payments_enabled ? ['card','cash','check','other'] : ['cash','check','other'])
+        .map((method,index) => choice('method',method,method[0].toUpperCase()+method.slice(1),{ checked:index === 0, required:true })).join(''));
+      html += '<details><summary>'+emoji('↩️')+'Refund</summary>'+form('refunds',dollarsInput('Amount (USD)','dollars')+refundMethods+
+        input('Note','note','maxlength="200"')+button('Refund','secondary','↩️'),booking.id)+'</details>';
+    }
+    return html;
+  }
+  if (data.payments_enabled && payment.balance_cents > 0 && booking.status !== 'Requested') {
+    html += form('payments/start',button('Pay '+money(payment.balance_cents)+' now','','💳'),booking.id);
+  }
+  if (['In Progress','Completed'].includes(booking.status)) {
+    html += '<details><summary>'+emoji('💝')+'Add a tip</summary>'+form('tips',input('Tip (USD)','dollars','type="number" min="1" max="500" step="1" required')+
+      button('Add tip','secondary','✓'),booking.id)+'</details>';
+  }
+  return html;
+}
 function bookingCard(booking) {
   const pets = booking.pet_ids.map(id => find(data.pets,id)).filter(Boolean);
   const active = booking.status === 'In Progress';
@@ -459,7 +491,7 @@ function bookingCard(booking) {
     (data.user.admin ? '<p>'+text(booking.customer)+' · '+text(booking.email)+'</p>' : '')+
     '<p>Pets: '+pets.map(p=>text(p.name)).join(', ')+'</p><p class="preserve">'+text(booking.notes)+'</p>'+
     (booking.arrived ? '<p class="appointment-details">Arrived: '+date(booking.arrived)+'</p>' : '') + (booking.departed ? '<p class="appointment-details">Completed: '+date(booking.departed)+'</p>' : '')+
-    (booking.summary ? '<p class="preserve"><strong>Visit summary:</strong> '+text(booking.summary)+'</p>' : '')+changeNote+
+    (booking.summary ? '<p class="preserve"><strong>Visit summary:</strong> '+text(booking.summary)+'</p>' : '')+changeNote+paymentBlock(booking)+
     (data.user.admin ? pets.map(p=>'<details><summary>'+text(p.name)+'’s care profile</summary>'+profileSummary(p)+'</details>').join('') : '')+
     actions+'</article>';
 }
@@ -587,11 +619,14 @@ function adminSettings() {
     ).join(''))+
     input('Duration in minutes','minutes','type="number" min="1" max="1440" required')+
     input('Price in USD','price','type="number" min="0" max="10000" step="0.01" required')+
-    input('Extra pet (USD)','extra_pet','type="number" min="0" max="1000" step="0.01" value="0"')+button('Save service','','✓'))+
+    input('Extra pet (USD)','extra_pet','type="number" min="0" max="1000" step="0.01" value="0"')+
+    input('Free cancellation until (hours before)','cancel_cutoff_hours','type="number" min="0" max="336" value="24"')+
+    input('Cancellation fee after that (%)','cancel_fee_percent','type="number" min="0" max="100" value="0"')+button('Save service','','✓'))+
     form('slots','<h3>Add an extra appointment window</h3><p>Enter the window in your device’s local time. The portal displays Massachusetts time.</p>'+
     input('Starts','starts','type="datetime-local" required')+input('Ends','ends','type="datetime-local" required')+button('Publish window','','📅'))+'</div>'+
     '<p class="appointment-details">'+data.services.map(s=>text(s.name)+' · '+s.minutes+' min · '+money(s.cents)+
-      (s.extra_pet_cents ? ' + '+money(s.extra_pet_cents)+' per extra pet' : '')).join('<br>')+'</p>'+
+      (s.extra_pet_cents ? ' + '+money(s.extra_pet_cents)+' per extra pet' : '')+
+      (s.cancel_fee_percent ? ' · '+s.cancel_fee_percent+'% fee inside '+s.cancel_cutoff_hours+' h' : '')).join('<br>')+'</p>'+
     data.windows.map(s=>form('slots','<p class="appointment-details">'+date(s.starts)+' – '+date(s.ends)+'</p>'+button('Remove window','secondary','✕'),s.id)).join('')+
     '<h3>Backup</h3><p>Download everything (accounts, pets, bookings, diary updates and photos) as one file. '+
     'It includes password hashes, so store it somewhere private.</p>'+'<a class="tap-link" href="/api/backup" download>'+emoji('💾')+'Download backup</a>';
@@ -600,8 +635,15 @@ function accountSettings() {
   const sessions = data.account?.sessions ?? 1;
   const reviewLink = !data.user.admin && googleReviewLinks.write
     ? '<p>'+tapLink(googleReviewLinks.write,'Leave a Google review','⭐')+'</p>' : '';
+  const percent = data.user.auto_tip_percent || 0;
+  const tipping = data.user.admin ? '' : form('auto-tip','<h3>Automatic tip</h3><p>Added to each visit when Myomi completes it.</p>'+
+    choiceGroup('Tip',[0,10,15,20,25].map(value => choice('percent',value,value ? value+'%' : 'Off',{ checked:value === percent, required:true })).join(''))+
+    button('Save tip','secondary','✓'));
+  const balances = (data.package_balances || []).filter(balance => !balance.expired && balance.remaining > 0);
+  const packages = balances.length ? '<h3>Your packages</h3><ul>'+balances.map(balance => '<li>'+text(balance.name)+' · '+balance.remaining+' of '+balance.credits+
+    ' left · use by '+date(balance.expires).split(',').slice(0,2).join(',')+'</li>').join('')+'</ul>' : '';
   return '<p>Signed in as '+text(data.user.name)+' · '+text(data.user.email)+'</p>'+
-    reviewLink+
+    reviewLink+packages+tipping+
     form('password','<h3>Change password</h3>'+
       input('Current password','current','required type="password" maxlength="128" autocomplete="current-password"')+
       input('New password','password','required type="password" minlength="12" maxlength="128" autocomplete="new-password"')+
@@ -1215,15 +1257,29 @@ async function refreshDiaryView(control) {
     controls.forEach(item => { item.disabled = false; });
   }
 }
-function confirmCancellation(kind) {
+// Resolves to null when kept, or { fee } when confirmed. A customer sees any cancellation fee first (C3.2), and the
+// fee they saw is sent with the cancellation so a fee that changed meanwhile is never charged unseen.
+async function confirmCancellation(kind, bookingId) {
   const decline = kind === 'decline';
   cancelDialog.querySelector('h3').textContent = decline ? 'Decline this request?' : 'Cancel this visit?';
   cancelDialog.querySelector('[value="keep"]').textContent = decline ? 'Keep request' : 'Keep visit';
   cancelDialog.querySelector('[data-cancel-label]').textContent = decline ? 'Decline request' : 'Cancel visit';
+  const terms = cancelDialog.querySelector('[data-cancel-terms]');
+  terms.textContent = '';
+  let fee = 0;
+  if (!data.user.admin && bookingId) {
+    try {
+      const preview = await api('cancellation-preview?booking='+bookingId);
+      fee = preview.fee_cents;
+      const back = preview.refund_due_cents ? ' '+money(preview.refund_due_cents)+' of what you paid will be due back to you.' : '';
+      terms.textContent = fee ? 'Cancelling now has a fee of '+money(fee)+' ('+preview.percent+'% · within '+preview.cutoff_hours+' hours of the visit).'+back
+        : 'Cancelling is free.'+back;
+    } catch { /* the server still checks the fee */ }
+  }
   cancelDialog.returnValue = '';
   cancelDialog.showModal();
   return new Promise(resolve => {
-    cancelDialog.addEventListener('close',() => resolve(cancelDialog.returnValue === 'confirm'),{ once:true });
+    cancelDialog.addEventListener('close',() => resolve(cancelDialog.returnValue === 'confirm' ? { fee } : null),{ once:true });
   });
 }
 app.addEventListener('submit',async event => {
@@ -1251,7 +1307,11 @@ app.addEventListener('submit',async event => {
   if (form.dataset.id) payload.id = Number(form.dataset.id);
   const cancelling = action === 'status' && payload.status === 'Cancelled';
   const declining = cancelling && data.user.admin && find(data.bookings,payload.id)?.status === 'Requested';
-  if (cancelling && !await confirmCancellation(declining ? 'decline' : 'cancel')) return;
+  if (cancelling) {
+    const confirmed = await confirmCancellation(declining ? 'decline' : 'cancel', payload.id);
+    if (!confirmed) return;
+    if (confirmed.fee) payload.accept_fee_cents = confirmed.fee;
+  }
   const control = event.submitter || form.querySelector('button[type="submit"]');
   control.disabled = true;
   const publication = action === 'events' ? 'Published to the customer’s Pet Diary.'
@@ -1286,6 +1346,7 @@ app.addEventListener('submit',async event => {
         for (const key of ['stay_start','stay_end','drop_time','pick_time','slot']) delete payload[key];
       } else if (!service || !payload.slot) throw new Error('Choose a service and an available appointment.');
       payload.pets = fields.getAll('pets').map(Number);
+      if (fields.has('use_package')) payload.use_package = true; else delete payload.use_package;
       const review = form.querySelector('[data-booking-review]');
       if (form.dataset.quotedCents === undefined) throw new Error('Wait for the updated price before reviewing your booking.');
       payload.cents = Number(form.dataset.quotedCents);
@@ -1312,8 +1373,16 @@ app.addEventListener('submit',async event => {
       payload.cents = Math.round(Number(payload.price)*100);
       payload.extra_pet_cents = Math.round(Number(payload.extra_pet)*100);
       delete payload.extra_pet;
+      payload.cancel_cutoff_hours = Number(payload.cancel_cutoff_hours);
+      payload.cancel_fee_percent = Number(payload.cancel_fee_percent);
     }
     if (action === 'status' && payload.status === 'Completed') payload.secured = fields.has('secured');
+    if (['payments/start','payments/record','refunds','tips'].includes(action)) {
+      payload.booking = payload.id;
+      delete payload.id;
+      if ('dollars' in payload) { payload.cents = Math.round(Number(payload.dollars)*100); delete payload.dollars; }
+    }
+    if (action === 'auto-tip') payload.percent = Number(payload.percent);
     if (action === 'schedule') {
       payload.days = fields.getAll('days').map(Number);
       payload.buffer = Number(payload.buffer);
@@ -1332,6 +1401,8 @@ app.addEventListener('submit',async event => {
     let result;
     try { result = await api(action,payload,key); }
     catch (error) { if (!error.network) pendingKeys.delete(form); throw error; }
+    // Online payment happens on the provider's page; the booking shows as paid once the provider confirms it.
+    if (result?.redirect_url) { drafts.forget(form); location.assign(result.redirect_url); return; }
     saved = true;
     pendingKeys.delete(form);
     form.dataset.submitted = '1'; // saved: start this form empty on the next render
@@ -1360,6 +1431,10 @@ app.addEventListener('submit',async event => {
     if (result?.change) { feedback.textContent = 'Change requested — waiting for Myomi.'; return; }
     if (action === 'changes/decide') { feedback.textContent = payload.decision === 'approve' ? 'Change approved. The visit has moved.' : 'Change declined. The visit keeps its time.'; return; }
     if (action === 'changes/withdraw') { feedback.textContent = 'Change request withdrawn.'; return; }
+    if (action === 'payments/record') { feedback.textContent = 'Payment recorded.'; return; }
+    if (action === 'refunds') { feedback.textContent = 'Refund recorded.'; return; }
+    if (action === 'tips') { feedback.textContent = 'Thank you! Your tip was added to the balance.'; return; }
+    if (action === 'auto-tip') { feedback.textContent = payload.percent ? 'Automatic tip saved.' : 'Automatic tip turned off.'; return; }
     feedback.textContent = action === 'bookings' ? 'Request sent. Myomi still needs to confirm your appointment.'
       : action === 'status' && payload.status === 'Confirmed' ? 'Request approved.'
       : action === 'status' && payload.status === 'Cancelled' ? (declining ? 'Request declined.' : 'Visit cancelled.')
@@ -1407,7 +1482,16 @@ logout.addEventListener('click',async () => {
     feedback.textContent = 'Signed out.';
   } catch (error) { feedback.textContent = error.message; }
 });
-refresh().catch(error => {
+refresh().then(() => {
+  // Back from the hosted checkout: the redirect proves nothing, so say what happens next and tidy the address.
+  const returned = new URLSearchParams(location.search).get('payment');
+  if (!returned) return;
+  feedback.textContent = returned === 'success' ? 'Thank you. Your payment is being confirmed; it shows as paid once the payment provider confirms it.'
+    : 'Checkout cancelled. Nothing was charged.';
+  const clean = new URL(location.href);
+  for (const name of ['payment','fake_session']) clean.searchParams.delete(name);
+  history.replaceState(null,'',clean);
+}).catch(error => {
   app.setAttribute('aria-busy','false');
   app.textContent = 'The care portal needs a running myo. server.';
   feedback.textContent = error.message;

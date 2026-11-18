@@ -29,7 +29,7 @@ lib/stores/    durable.mjs (ctx.storage.sql + transactionSync, R2)   node.mjs (n
 - **Requests and responses are Fetch-style** (`Request`/`Response`) everywhere in `lib/`. Handlers get `ctx` (`user`, `data`, `url`, `request`, `match`, `clientAddress`, `cookies`) and return data (sent as JSON) or a `Response`.
 - **Adding an endpoint:** add `{ method, path, access, handler }` to a file in `lib/routes/`. `access` is `public`, `user` or `staff`, enforced before the handler runs. `tests/routes.test.mjs` checks every route's access rule automatically.
 - **Race-freedom rule:** `transaction(fn)` must be synchronous (it throws on an async callback). Both runtimes process one request's transaction without interleaving: Node is a single process, and on Cloudflare all API traffic goes to one Durable Object instance (`idFromName('myo')`). Do any `await` (R2 upload, password hash) **before** the transaction, then re-check state inside it. `POST /api/events` shows the pattern.
-- **Schema version** is stored in the `meta` table (`schema_version`, now 19; migrations 5–8 add idempotency, trusted devices, checkout holds, then weekly hours and date exceptions; 9–13 add itemised booking lines, change requests, the departure check, service kinds and overnight settings; 14 adds vaccines and agreements; 15 the home-access vault; 16 report-card answers; 17 profile versions and visit feedback; 18 each account's language; 19 staff notes), because Durable Objects forbid `PRAGMA user_version`. Migrations must be safe to re-run. Migration 4 adds `events.photo_key`; the old `photo` BLOB column is no longer read (it only ever held test data).
+- **Schema version** is stored in the `meta` table (`schema_version`, now 25; migrations 5–8 add idempotency, trusted devices, checkout holds, then weekly hours and date exceptions; 9–13 add itemised booking lines, change requests, the departure check, service kinds and overnight settings; 14 adds vaccines and agreements; 15 the home-access vault; 16 report-card answers; 17 profile versions and visit feedback; 18 each account's language; 19 staff notes; 20 fee rules and holidays; 21 the money ledger, checkout sessions, webhook events, auto-tip and cancellation fee; 22 cancellation terms per service; 23 recurring visits; 24 packages; 25 the notification outbox), because Durable Objects forbid `PRAGMA user_version`. Migrations must be safe to re-run. Migration 4 adds `events.photo_key`; the old `photo` BLOB column is no longer read (it only ever held test data).
 - **Name the columns in every `INSERT`.** Migrations add columns, and a positional `INSERT … VALUES(…)` breaks when they do; this happened twice in Phase 2.
 - **Rate limits** are in memory. On Cloudflare they live in the single Durable Object, keyed by `CF-Connecting-IP`.
 
@@ -127,9 +127,39 @@ lib/stores/    durable.mjs (ctx.storage.sql + transactionSync, R2)   node.mjs (n
 - **Record:** `GET /api/clients/:id` returns the customer, their pets (full details and vaccines), the last 50 bookings, the `home_access` summary (no instructions) and `notes`.
 - **Notes:** `POST /api/staff-notes { id?, subject_type:'client'|'pet', subject_id, body ≤3000 }` and `POST /api/staff-notes/delete { id }`. Notes are never in any customer response, which `tests/clients.test.mjs` checks.
 
+**Fee rules (C3.4).** Staff manage `GET`/`POST /api/fee-rules` (`{ id?, code, label, kind:'weekend'|'holiday'|'after_hours'|'short_notice', amount_type:'flat'|'percent', value, params?, active? }`), `POST /api/fee-rules/delete { id }`, `POST /api/holidays { day, name }` and `POST /api/holidays/delete { day }`.
+- **Pricing:** every quote, hold and request is priced by `priceBooking()` in `lib/pricing.mjs`: the service lines plus one `fee` line per matching active rule (`lib/fees.mjs`), applied by kind (weekend, holiday, after hours, short notice) and then id, each line rounded on its own. Percentages are of the service lines.
+- **Params:** `weekend { days:[0–6] }` (default Sat and Sun; a stay counts each matching night at the per-night amount), `holiday` (dates in `holidays`), `after_hours { before:'HH:MM', after:'HH:MM' }` (visits only), `short_notice { hours:1–168 }`.
+- **Booked prices never change** when rules change; rescheduling keeps the original lines. Both tables start empty.
+
+**Money (C3.1).** Every payment, refund and credit is a row in `ledger_entries`, and a booking's `payment` is derived on each read (`lib/ledger.mjs`): `{ status:'none'|'due'|'pending'|'partial'|'paid'|'refund_due'|'refunded', due_cents, paid_cents, refunded_cents, credit_cents, balance_cents }`. A request owes nothing; a cancelled booking owes its `cancel_fee_cents`.
+- **Online payment** is off unless `MYO_PAYMENTS=stripe` with `MYO_STRIPE_SECRET_KEY` and `MYO_STRIPE_WEBHOOK_SECRET` (`MYO_PAYMENTS=fake` is for tests and refused in production). The portal carries `payments_enabled`.
+- **Checkout:** `POST /api/payments/start { booking }` (customer) → `{ redirect_url }` for Stripe Checkout for the balance; an open session for the same amount is reused. The return URL proves nothing: the portal says the payment is being confirmed.
+- **Webhook:** `POST /api/payments/webhook` (public, raw body) verifies Stripe's `t=`/`v1=` signature within five minutes, stores the event id (replays are `duplicate`) and records `payment` lines from `checkout.session.completed`/`async_payment_succeeded` when paid. `expired` and `async_payment_failed` close the session. `refund.created`/`refund.updated` record dashboard refunds once. Point Stripe at `https://<origin>/api/payments/webhook` with those event types.
+- **Staff:** `POST /api/payments/record { booking, cents, method:'cash'|'check'|'other', note? }` and `POST /api/refunds { booking, cents, method:'card'|'cash'|'check'|'other', note? }`. Card refunds go through Stripe, split across card payments newest first, with idempotency keys fixed by what is already refunded. Both work with online payment off (except card refunds).
+- **Tips:** `POST /api/tips { booking, cents 100–50000 }` (customer, In Progress or Completed) adds a `tip` line and raises the total; `POST /api/auto-tip { percent 0–30 }` adds `Tip (n%)` on completion unless the visit was already tipped. The session user carries `auto_tip_percent`.
+- **Reading:** `GET /api/ledger?booking=` (owner or staff) → `{ entries, payment, payments_enabled }`. `GET /api/financials` adds `received { payments_cents, refunds_cents }` (30 days) and `outstanding { owed_cents, refunds_due_cents }`.
+
+**Cancellation policy (C3.2).** Services carry `cancel_cutoff_hours` (default 24) and `cancel_fee_percent` (default 0; always 0 for a Meet & Greet), set through `POST /api/services`.
+- A customer cancelling a **Confirmed** booking after the cutoff owes the percentage of the booking (of one night for a stay; tips excluded). The cancellation must send `accept_fee_cents` equal to the fee, else 409 `cancel_fee_changed { fee_cents }`. Requests are free; staff cancellations waive the fee.
+- `GET /api/cancellation-preview?booking=` → `{ cutoff, cutoff_hours, percent, fee_cents, refund_due_cents }`. The cancel dialog shows it.
+
+**Recurring visits (C3.3).** `POST /api/series { service, pets, weekdays:[0–6], time:'HH:MM', from, until?, notes? }` (customer; walks and drop-ins only, 400 `series_visits_only`; at most 10 active, 409 `series_limit`).
+- **Generation:** reading `/api/portal` or `GET /api/series` books the next four weeks of every active series (`lib/series.mjs`), each date priced and checked like a single request, as Requested (or Confirmed when staff turned on `POST /api/series/auto-approve { id, auto_approve }`). Dates under two hours away, without published hours, taken, or blocked by compliance gates are not booked.
+- **Listing:** `GET /api/series` → `{ series:[{ …, weekdays, time, from, until, paused, ended, auto_approve, projections:[{ date, starts, status:'booked'|'skipped'|'conflict'|'projected', reason?, booking? }] }] }` for eight weeks.
+- **Changes:** `POST /api/series/skip { id, day, skip?:false, accept_fee_cents? }` cancels that date's booking under the cancellation policy (or un-skips and books it again); `POST /api/series/pause { id, paused }` stops new dates; `POST /api/series/end { id }` cancels upcoming requests and leaves confirmed visits.
+
+**Packages (C3.5).** Staff `POST /api/packages { id?, name, service, credits, cents, expires_days, active? }` (visit services only, 400 `package_visits_only`); `GET /api/packages` → `{ packages, balances }` (customers see active ones).
+- **Buying:** `POST /api/packages/buy { package }` → `{ redirect_url }`; the webhook grants the credits once. Staff `POST /api/packages/grant { user, package, method:'cash'|'check'|'other', cents? }`.
+- **Using:** `POST /api/bookings` accepts `use_package:true` and holds the credit that expires first and is valid on the visit date (409 `no_package_credit`). Confirmation writes a `credit` ledger line worth the base price; cancellation returns the credit and reverses the line. The portal carries `package_balances`.
+
+**Notifications (C3.6).** `notify()` in `lib/outbox.mjs` writes an `outbox` row inside the triggering transaction, deduplicated per trigger: `request_received` (staff), `booking_confirmed`, `booking_cancelled` / `customer_cancelled`, `visit_started`, `visit_completed`, `change_decided`, `payment_received`, `keys_to_return` (staff) and `vaccine_due` (30 and 7 days, from a daily scan). Templates render at send time in the recipient's language.
+- **Sending:** `drainOutbox()` runs every minute on Node and on a Durable Object alarm (every five minutes) on the Worker, with exponential backoff and six attempts. `MYO_EMAIL=log` marks messages sent (tests). **No email provider is wired in yet**: with `MYO_EMAIL` unset, messages wait as `pending`. Adding a provider is one more entry in `drivers` in `lib/outbox.mjs`.
+- **Staff:** `GET /api/outbox` → `{ email_enabled, messages }` (last 100, rendered); `POST /api/outbox/drain {}` sends now.
+
 **Booking holds and weekly hours.** `POST /api/checkout-hold` creates a short hold and `POST /api/checkout-release` releases it. The request flow checks the hold and current availability when submitting. Staff set recurring hours with `POST /api/schedule` and individual-date changes with `POST /api/schedule-exception`.
 
-**Configuration.** Cloudflare needs the `MYO_ADMIN_EMAIL`, `MYO_ADMIN_PASSWORD` and `MYO_VAULT_KEY` secrets. The Node-only variables (`MYO_DB`, `NODE_ENV`, `MYO_ORIGIN`, `MYO_SECURE_COOKIES`, `MYO_TRUST_PROXY`) are listed in the README.
+**Configuration.** Cloudflare needs the `MYO_ADMIN_EMAIL`, `MYO_ADMIN_PASSWORD` and `MYO_VAULT_KEY` secrets, plus `MYO_PAYMENTS=stripe`, `MYO_STRIPE_SECRET_KEY` and `MYO_STRIPE_WEBHOOK_SECRET` to switch on online payment. The Node-only variables (`MYO_DB`, `NODE_ENV`, `MYO_ORIGIN`, `MYO_SECURE_COOKIES`, `MYO_TRUST_PROXY`) are listed in the README.
 
 ## 4. Verification
 
@@ -154,10 +184,10 @@ Done since the usability report: early start limited to the visit buffer (H1), h
 |---|---|
 | Public domain | Custom domain on the Worker; `sitemap.xml` and `robots.txt` still point at GitHub Pages (O1, P1-8) |
 | Rescheduling a confirmed visit: allowed for customers? Needs re-approval? | M3: today it silently returns to "Waiting for Myomi" |
-| Cancellation cutoff, no-shows, refunds | Lifecycle rules (D2, P1-4); cancellation copy |
+| Cancellation fee and cutoff per service, no-shows, refund rules | The policy is built (C3.2) with a 24-hour cutoff and **no fee** until Myomi sets one per service in Settings; no-show handling and published policy copy remain (D2, P1-4) |
 | Required care information before approval | Structured profile rules (P1-5) |
-| Email provider and sending domain | Verification, password recovery, request and confirmation emails (S5, P1-6) |
-| Payment provider and payment timing | Checkout, receipts and refunds (P1-7) |
+| Email provider and sending domain | Sending the outbox (built, C3.6), verification and password recovery (S5, P1-6) |
+| Payment timing (Stripe is assumed, per the audits) | Today a customer pays a confirmed booking's balance at any time; deposits, pay-at-booking or automatic charges need a decision. Live Stripe keys and a webhook endpoint are needed to switch it on (P1-7) |
 | Rates, service area, Google review links, launch content | Public site content (see README "Decisions still needed") |
 
 ### UX findings still open (from the usability report)
@@ -171,10 +201,10 @@ Done since the usability report: early start limited to the visit buffer (H1), h
 | L1–L7 | Cancel dialog title, generic "Saved.", Bookings→Today label, publish button below the fold, two-tab hold wording, landscape menu height, device monospace digits | No |
 
 ### Claude plan status
-- **Done:** Phase 1 (C1.1–C1.4) and Phase 2 (C2.1–C2.7) are built and tested on both runtimes, with server contracts in §3 and status notes in `docs/plans/claude-plan.md`.
-- **Codex next:** the Codex tickets these unblock (X1.6–X1.9, X2.1–X2.9) can start.
+- **Done:** Phase 1 (C1.1–C1.4), Phase 2 (C2.1–C2.7) and Phase 3 (C3.1–C3.6) are built and tested on both runtimes, with server contracts in §3 and status notes in `docs/plans/claude-plan.md`.
+- **Codex next:** the Codex tickets these unblock (X1.6–X1.9, X2.1–X2.9, X3.1–X3.6) can start. Phase 3 shipped minimal UI only: payment status, **Pay now**, tips and automatic tip, the cancellation fee in the cancel dialog, staff **Record a payment** and **Refund**, cancellation terms on the service form and a package-credit checkbox. Recurring visits, fee rules, packages and the outbox have no screens yet.
 - **Gates are off by default:** vaccine requirements, the agreement and meet-first stay switched off until Myomi turns them on, and they shouldn't be turned on before their UI (X2.1, X2.2) ships.
-- **Phase 3** waits on the payment provider, cancellation policy and email provider decisions.
+- **Phase 3 assumptions:** Stripe Checkout (named in the audits) behind `MYO_PAYMENTS`; a cancellation fee of 0% until Myomi sets one; no email provider, so the outbox only queues. Each is a setting, not a code change, except adding the email driver.
 
 ### Engineering and verification
 - **First Cloudflare deploy:** never done. It needs the R2 bucket, the secrets (`MYO_ADMIN_EMAIL`, `MYO_ADMIN_PASSWORD`, `MYO_VAULT_KEY`) and a check on the `workers.dev` URL. Use **Workers Paid**: scrypt uses about 40 ms CPU per sign-in, over the Free plan's 10 ms limit.

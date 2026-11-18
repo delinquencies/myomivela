@@ -75,7 +75,7 @@
 .checkout-total strong { color: #842b16; font-size: 1.4rem; font-variant-numeric: tabular-nums; }
 .checkout-payment-note { margin-top: .75rem; }
 .departure-check { margin: .5rem 0; }
-.departure-secured { display: flex; gap: .5rem; align-items: center; min-height: 44px; }
+.departure-secured, .check-row { display: flex; gap: .5rem; align-items: center; min-height: 44px; }
 .diary-departure { margin: .5rem 0; font-weight: 600; }
 .diary-departure-warning { color: #a13013; }
 .diary-fields { display: flex; flex-wrap: wrap; gap: .35rem; list-style: none; padding: 0; margin: .4rem 0; }

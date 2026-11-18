@@ -71,6 +71,10 @@ Names only; set them in the shell (Node), as `--var` flags or a git-ignored `.de
 | `MYO_ORIGIN` | Exact public origin (for example `https://example.com`). Browser POSTs with a different `Origin` are rejected. Without it the server expects `http://<host>`. |
 | `MYO_SECURE_COOKIES` | `1` adds `Secure` to the session cookie and sends HSTS. Required in production. |
 | `MYO_VAULT_KEY` | Required in production (Node refuses to start without it). Base64 of 32 random bytes, for example `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`. Encrypts customers' entry instructions. Keep it with your backups: a restored database needs the same key. To rotate, move the old value to `MYO_VAULT_KEY_PREVIOUS` and set a new one; records are re-encrypted as they're read. |
+| `MYO_PAYMENTS` | Optional. `stripe` turns on online payment through Stripe Checkout (needs the two Stripe settings below). Unset: staff record payments by hand. `fake` is for tests and is refused in production. |
+| `MYO_STRIPE_SECRET_KEY` | With `MYO_PAYMENTS=stripe`. A restricted key that can create Checkout Sessions and Refunds. Secret. |
+| `MYO_STRIPE_WEBHOOK_SECRET` | With `MYO_PAYMENTS=stripe`. The signing secret of a Stripe webhook endpoint at `/api/payments/webhook`, sending `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`, `checkout.session.expired` and `refund.created`/`refund.updated`. Secret. |
+| `MYO_EMAIL` | Optional. No email provider is connected yet, so messages wait in the outbox (staff: `GET /api/outbox`). `log` marks them sent without sending (tests). |
 | `MYO_EARLY_START_MINUTES` | Optional. Minutes before its booked time that staff may start a visit. Unset: the visit buffer from **Services & availability** (default 30). The tests set a large value. |
 | `MYO_TRUST_PROXY` | Node only (the Worker always uses `CF-Connecting-IP`). `1` takes the client address from the last `X-Forwarded-For` entry; `cloudflare` uses `CF-Connecting-IP`. Set only when exactly one trusted proxy sits in front, otherwise leave unset. Used for rate limiting. |
 
@@ -158,11 +162,11 @@ There is no linter or type checker configured. CI is defined in `.github/workflo
 
 ## Not built yet
 
-Hosted payment checkout, paid booking confirmation, invoices or receipts and refunds, recurring bookings and packages, care plans and per-visit checklists, structured medication logging (today “Medication” is a free-text activity type), GPS walk tracking and distance (“Walk started/completed” are diary labels only), messaging, email and other outbound notifications, email verification and password recovery, Spanish sample diary and portal, editing or deleting published diary updates, and customer search and management for staff.
+Screens for recurring visits, fee rules and packages (their APIs exist), sending email (messages are queued but no provider is connected), invoices or receipts, care plans and per-visit checklists, structured medication logging (today “Medication” is a free-text activity type), GPS walk tracking and distance (“Walk started/completed” are diary labels only), messaging, email and other outbound notifications, email verification and password recovery, Spanish sample diary and portal, editing or deleting published diary updates, and customer search and management for staff.
 
 ## Existing integrations
 
-None. There is no payment provider, email provider or analytics. Fonts fall back to files served from `raw.githubusercontent.com` if the local copies fail to load.
+Stripe Checkout, switched off unless `MYO_PAYMENTS=stripe` and its two secrets are set. There is no email provider or analytics. Fonts fall back to files served from `raw.githubusercontent.com` if the local copies fail to load.
 
 ## Known limitations
 

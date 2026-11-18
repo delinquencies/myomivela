@@ -402,6 +402,8 @@ Phase 3  C3.1 Ledger + payments (provider decision) ──▶ X3.1
 ## Phase 3 (needs owner decisions: payment provider, policies, email provider)
 
 ### C3.1: One money ledger and payments · Phase 3 · needs C1.1 and a provider choice
+**Status: done, Stripe assumed** (migration 21, `lib/ledger.mjs`, `lib/payments.mjs`, `lib/routes/payments.mjs`, `tests/payments.test.mjs`, `tests/browser/payments-smoke.mjs`). Built as one-time Stripe Checkout for a confirmed booking's balance, paid any time (no authorise-then-capture: authorisations expire after 7 days and bookings are made weeks ahead). Off unless `MYO_PAYMENTS=stripe`; staff can record cash, check and other payments and refunds without it. Ledger kinds are `payment`, `refund` and `credit`; tips are booking lines, so they are paid with the balance. Minimal UI: payment status, Pay now, tips, automatic tip, staff Record a payment and Refund.
+
 **Why Claude:** money correctness, webhook signature verification, idempotent settlement and refunds that update lines. Unlike Time To Pet, refunds and credits are ledger lines from day one.
 
 **Design**
@@ -417,23 +419,33 @@ Phase 3  C3.1 Ledger + payments (provider decision) ──▶ X3.1
 **Handoff contract for Codex:** `bookings[i].payment:{ status:'none'|'authorized'|'captured'|'refunded'|'failed', balance_cents, lines:LedgerLine[] }`; `POST /api/payments/start { booking } → { redirect_url }`; `POST /api/tips { booking, cents } → {}`; `PUT /api/auto-tip { percent:0–30 }`.
 
 ### C3.2: Cancellation policy · Phase 3 · needs C3.1
+**Status: done** (migration 22, `lib/cancellation.mjs`, `tests/cancellation.test.mjs`). Defaults are a 24-hour cutoff and **0% fee**, so nothing changes until Myomi sets a fee per service. The fee must be accepted (`accept_fee_cents`), and the cancel dialog shows it.
+
 - **Design:** `services.cancel_cutoff_hours` (default 24) and `services.cancel_fee_percent` (default 50).
 - **Route:** `POST /api/status` with Cancelled (customer) computes the fee from the Eastern-time cutoff and writes ledger lines. Staff cancellations waive it.
 - **New route:** `GET /api/cancellation-preview?booking=` → `{ fee_cents, cutoff:number }`.
 - **Edge cases:** overnight stays (nightly lines); Requested bookings are always free; change requests don't count as cancellations.
 
 ### C3.3: Recurring series with projections · Phase 3 · needs C1.1, C1.2
+**Status: done** (migration 23, `lib/series.mjs`, `lib/routes/series.mjs`, `tests/series.test.mjs`). Generation runs when the portal or series list is read, on both runtimes (no alarm needed). No UI yet (X3.3).
+
 - **Design:** `recurring_series(id, owner, service, pets TEXT /*JSON ids*/, weekdays INTEGER, start_minute INTEGER, from_day TEXT, until_day TEXT, auto_approve INTEGER, paused INTEGER)`. A generator creates Requested or Confirmed bookings for the next N weeks (default 4), on a cron Durable Object alarm on the Worker or on read on Node.
 - **Routes:** `/api/series` (create, pause, skip-date), returning projections `{ date, starts, status:'projected'|'booked'|'conflict' }`.
 - **Edge cases:** closed exceptions turn into `conflict` projections; daylight saving; price changes apply only to future generation; skipping one occurrence; series without a pet.
 
 ### C3.4: Fee rules · Phase 3 · needs C1.1
+**Status: done** (migration 20, `lib/fees.mjs`, `lib/routes/fees.mjs`, `tests/fees.test.mjs`). No UI yet (X3.4).
+
 - **Design:** `fee_rules(id, code, label, kind:'weekend'|'holiday'|'after_hours'|'short_notice', amount_type:'flat'|'percent', value, params TEXT, active)`, applied in `quote()` in a fixed order. Holidays come from a staff-managed list.
 - **Edge cases:** stacking order and rounding (round each line); re-quoting on change requests.
 
 ### C3.5: Packages on the ledger · Phase 3 · needs C3.1
+**Status: done** (migration 24, `lib/packages.mjs`, `lib/routes/packages.mjs`, `tests/packages.test.mjs`). A credit covers the base price; recurring visits don't use credits yet. Minimal UI: balances in Account and a Use a package credit checkbox. Buying and staff screens are X3.5.
+
 - **Design:** `packages(id, name, service, credits, cents, expires_days)` and `package_balances(owner, package, remaining, expires)`. A booking consumes a credit as a `credit` ledger line; cancelling restores it.
 
 ### C3.6: Notification outbox · Phase 3 · needs an email provider
+**Status: built without a provider** (migration 25, `lib/outbox.mjs`, `lib/routes/outbox.mjs`, `tests/outbox.test.mjs`). Messages are queued and rendered in English and Spanish; nothing is sent until an email driver is added for the chosen provider. Staff can read the queue at `GET /api/outbox`.
+
 - **Design:** `outbox(id, user, template, params TEXT, locale, status, attempts, send_after, sent_at, dedupe_key UNIQUE)`, written in the same transaction as the triggering change. A sender drains it on a Durable Object alarm or cron. Dedupe keys prevent repeat sends.
 - **Templates:** request received (to staff), approved, change decided, visit started or completed, vaccine due (30 days and 7 days), keys to return.
