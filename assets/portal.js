@@ -34,6 +34,7 @@ const serviceNames = new Map([
   ['pet-sitting', 'Overnight pet sitting'],
   ['dog-walking', 'Dog walking'],
   ['drop-in', 'Drop-in visit'],
+  ['meet', 'Meet & Greet'],
 ]);
 const requestedService = () => serviceNames.get(new URLSearchParams(location.search).get('service'));
 const requestedRate = () => new URLSearchParams(location.search).get('rate');
@@ -59,7 +60,7 @@ async function api(path, payload, key) {
     }
   }
   const result = await response.json();
-  if (!response.ok) throw Object.assign(new Error(result.error || 'Please try again.'), { status:response.status });
+  if (!response.ok) throw Object.assign(new Error(result.error || 'Please try again.'), { status:response.status, code:result.code });
   return result;
 }
 // One key per form submission. It survives a dropped connection (so tapping again replays rather than repeats)
@@ -269,6 +270,8 @@ async function loadDiary({ more = false, filter = diaryFilterValue } = {}) {
 }
 const appointmentTime = new Intl.DateTimeFormat('en-US',{timeStyle:'short',timeZone:'America/New_York'});
 const appointmentDay = new Intl.DateTimeFormat('en-US',{weekday:'short',month:'short',day:'numeric',timeZone:'America/New_York'});
+const appointmentHour = new Intl.DateTimeFormat('en-US',{hour:'numeric',hourCycle:'h23',timeZone:'America/New_York'});
+const daysPerPage = 7;
 // A bookable time is a published window id plus a start time inside it.
 const slotKey = slot => slot.id+':'+slot.starts;
 function slotChoices(slots, labelFor = slot => date(slot.starts), { selected } = {}) {
@@ -287,24 +290,33 @@ function bookingForm() {
   const unavailable = serviceName && !preferred;
   const initial = preferred ?? (unavailable ? null : data.services[0]);
   const serviceOptions = data.services.map(service =>
-    choice('service',service.id,service.name+' · '+service.minutes+' min · '+money(service.cents),{
+    choice('service',service.id,service.name+' · '+service.minutes+' min · '+(service.cents === 0 ? 'Free' : money(service.cents)),{
       checked:service.id === initial?.id, required:true, icon:serviceIcons[service.name],
     })
   ).join('');
   return '<p>Appointment times are shown in Massachusetts time. Myomi reviews each request before confirming.</p>' +
     form('bookings','<div data-booking-inputs><p class="pet-field-error" data-booking-error role="alert" tabindex="-1"></p>'+choiceGroup('Service',serviceOptions)+
+    '<div data-availability hidden><p data-availability-message></p>'+
+    '<button type="button" class="secondary" data-check-availability>'+emoji('🔄')+'Check again</button></div>'+
+    '<p data-availability-status role="status"></p>'+
     choiceGroup('Pets attending',data.pets.map(pet => choice('pets',pet.id,pet.name,{ type:'checkbox', icon:'🐾' })).join(''))+
     '<p class="pet-field-error" data-booking-pet-error role="alert"></p>'+
-    '<div data-booking-days></div><div data-booking-times></div><p data-availability role="status" hidden></p>'+
-    area('Care instructions for this visit','notes','',1500)+
-    '<p data-quote></p>'+button('Review booking','','📅')+'</div><div data-booking-review hidden></div>');
+    '<div data-booking-options hidden><div data-booking-days></div>'+
+    '<div class="booking-date-pages"><button type="button" class="secondary" data-day-page="-1">Earlier</button>'+
+    '<button type="button" class="secondary" data-day-page="1">Later dates</button></div>'+
+    '<div data-booking-times role="group" aria-label="Appointment times"></div>'+
+    area('Care instructions for this visit','notes','',1500)+'</div>'+
+    '<div data-booking-summary hidden><p data-quote></p><div data-quote-lines></div>'+
+    '<p data-quote-status role="status"></p><button type="button" class="secondary" data-retry-quote hidden>Retry price</button>'+
+    button('Review booking','','📅')+'</div></div><div data-booking-review hidden></div>');
 }
 function statusForm(booking,status,label) {
   // Completing records the departure check (C1.3): secured, or a note saying what wasn't and what was done.
   const summary = status === 'Completed' ? '<label>Visit summary<textarea required maxlength="3000" name="summary"></textarea></label>'+
     '<fieldset class="departure-check"><legend>Before you leave</legend>'+
     '<label class="departure-secured"><input type="checkbox" name="secured" value="1"> Doors locked and home secured</label>'+
-    '<label>If not, what wasn’t secured and what did you do?<textarea name="secure_note" maxlength="500"></textarea></label></fieldset>' : '';
+    '<label data-secure-note hidden>What wasn’t secured, and what did you do?<textarea name="secure_note" maxlength="500"></textarea></label>'+
+    '<button type="button" class="secondary" data-report-unsecured>Report an unsecured home</button></fieldset>' : '';
   const control = button(label,status === 'Cancelled' ? 'secondary' : '',{ Confirmed:'✓', 'In Progress':'🐾', Completed:'🏁', Cancelled:'✕' }[status]);
   return form('status','<input type="hidden" name="status" value="'+text(status)+'">'+summary+
     (status === 'Completed' ? control.replace('<button ','<button disabled data-needs-departure ') : control),booking.id);
@@ -313,7 +325,11 @@ function statusForm(booking,status,label) {
 function updateDepartureCheck(form) {
   const control = form.querySelector('[data-needs-departure]');
   if (!control) return;
-  control.disabled = !(form.elements.secured.checked || form.elements.secure_note.value.trim().length >= 3);
+  const { secured,secure_note } = form.elements;
+  const note = form.querySelector('[data-secure-note]');
+  note.hidden = secured.checked || (!form.dataset.unsecured && !secure_note.value.trim());
+  form.querySelector('[data-report-unsecured]').hidden = secured.checked || !note.hidden;
+  control.disabled = !(secured.checked || secure_note.value.trim().length >= 3);
 }
 function choice(name, value, label, { icon = '', checked = false, required = false, type = 'radio' } = {}) {
   return '<label><input type="'+type+'" name="'+name+'" value="'+text(value)+'"'+
@@ -398,6 +414,8 @@ function bookingCard(booking) {
   } else if (change) {
     changeNote = '<p class="change-note">Requested change: '+text(date(change.starts))+' — waiting for Myomi. Your current time stays booked until then.</p>'+
       form('changes/withdraw',button('Withdraw request','secondary','↩️'),change.id);
+  } else if (!data.user.admin && booking.status === 'Confirmed' && booking.last_change?.status === 'Declined') {
+    changeNote = '<p class="change-note">Change declined. Your visit is still booked at the original time.</p>';
   }
   if (['Requested','Confirmed'].includes(booking.status) && (data.user.admin || booking.starts > Date.now())) {
     const slots = availableSlots((booking.ends-booking.starts)/60000);
@@ -407,7 +425,11 @@ function bookingCard(booking) {
       form('reschedule',needsApproval+choiceGroup('New time',slotChoices(slots))+button(needsApproval ? 'Request new time' : 'Confirm new time','secondary','✓'),booking.id)+'</details>';
   }
   const statusLabel = !data.user.admin && booking.status === 'Requested' ? 'Waiting for Myomi' : booking.status;
-  return '<article><h3>'+text(booking.service_name)+' · '+text(statusLabel)+'</h3><p class="appointment-details">'+date(booking.starts)+' – '+date(booking.ends)+' · '+money(booking.cents)+'</p>'+
+  if (!data.user.admin && booking.status === 'Completed') {
+    actions += '<a class="tap-link" href="#book" data-book-again="'+booking.id+'">'+emoji('🐾')+'Book again</a>';
+  }
+  return '<article><h3>'+text(booking.service_name)+' · '+text(statusLabel)+'</h3><p class="appointment-details">'+date(booking.starts)+' – '+date(booking.ends)+' · '+(booking.cents === 0 ? 'Free' : money(booking.cents))+'</p>'+
+    (!data.user.admin ? quoteLines(booking.lines) : '')+
     (data.user.admin ? '<p>'+text(booking.customer)+' · '+text(booking.email)+'</p>' : '')+
     '<p>Pets: '+pets.map(p=>text(p.name)).join(', ')+'</p><p class="preserve">'+text(booking.notes)+'</p>'+
     (booking.arrived ? '<p class="appointment-details">Arrived: '+date(booking.arrived)+'</p>' : '') + (booking.departed ? '<p class="appointment-details">Completed: '+date(booking.departed)+'</p>' : '')+
@@ -475,9 +497,11 @@ function checkoutSummary(booking, expires) {
     '<div><dt>'+ (pets.length === 1 ? 'Pet' : 'Pets')+'</dt><dd>'+text(pets.join(', '))+'</dd></div>'+
     '<div class="checkout-appointment"><dt>Appointment</dt><dd class="appointment-details">'+date(booking.starts)+' – '+ends+' ET</dd></div>'+
     '<div><dt>Duration</dt><dd>'+((booking.ends-booking.starts)/60_000)+' min</dd></div></dl>'+
-    '<div class="checkout-total"><span>Visit total</span><strong>'+money(booking.cents)+'</strong></div>'+
-    (expires ? '<p class="checkout-payment-note" data-hold-note role="status">Time held until '+appointmentTime.format(expires)+' ET. Online payment is currently unavailable. Send a request for Myomi to confirm.</p>' :
-      '<p class="checkout-payment-note">Your visit is confirmed. Online payment is currently unavailable.</p>')+'</article>'+
+    quoteLines(booking.lines)+
+    '<div class="checkout-total"><span>Visit total</span><strong>'+(booking.cents === 0 ? 'No charge' : money(booking.cents))+'</strong></div>'+
+    (expires ? '<p class="checkout-payment-note" data-hold-note role="status">Time held until '+appointmentTime.format(expires)+' ET. '+
+      (booking.cents === 0 ? '' : 'Online payment is currently unavailable. ')+'Send a request for Myomi to confirm.</p>' :
+      (booking.cents === 0 ? '' : '<p class="checkout-payment-note">Your visit is confirmed. Online payment is currently unavailable.</p>'))+'</article>'+
     (expires ? '<div class="checkout-actions"><button type="button" class="secondary" data-edit-booking>Edit booking</button>'+
       button('Send booking request','','📅')+'</div>' : tapLink('#upcoming','Back to my bookings',''));
 }
@@ -532,10 +556,12 @@ function adminSettings() {
       choice('name',service,service,{ icon, checked:index === 0, required:true })
     ).join(''))+
     input('Duration in minutes','minutes','type="number" min="1" max="1440" required')+
-    input('Price in USD','price','type="number" min="0" max="10000" step="0.01" required')+button('Save service','','✓'))+
+    input('Price in USD','price','type="number" min="0" max="10000" step="0.01" required')+
+    input('Extra pet (USD)','extra_pet','type="number" min="0" max="1000" step="0.01" value="0"')+button('Save service','','✓'))+
     form('slots','<h3>Add an extra appointment window</h3><p>Enter the window in your device’s local time. The portal displays Massachusetts time.</p>'+
     input('Starts','starts','type="datetime-local" required')+input('Ends','ends','type="datetime-local" required')+button('Publish window','','📅'))+'</div>'+
-    '<p class="appointment-details">'+data.services.map(s=>text(s.name)+' · '+s.minutes+' min · '+money(s.cents)).join('<br>')+'</p>'+
+    '<p class="appointment-details">'+data.services.map(s=>text(s.name)+' · '+s.minutes+' min · '+money(s.cents)+
+      (s.extra_pet_cents ? ' + '+money(s.extra_pet_cents)+' per extra pet' : '')).join('<br>')+'</p>'+
     data.windows.map(s=>form('slots','<p class="appointment-details">'+date(s.starts)+' – '+date(s.ends)+'</p>'+button('Remove window','secondary','✕'),s.id)).join('')+
     '<h3>Backup</h3><p>Download everything (accounts, pets, bookings, diary updates and photos) as one file. '+
     'It includes password hashes, so store it somewhere private.</p>'+'<a class="tap-link" href="/api/backup" download>'+emoji('💾')+'Download backup</a>';
@@ -618,7 +644,9 @@ app.addEventListener('scroll',event => {
   cards.querySelector('[data-card-move="1"]').setAttribute('aria-disabled',String(index === rail.children.length-1));
 },true);
 function clientHome() {
-  return dashboardActions([
+  const meet = data.first_visit && data.services.some(service => service.kind === 'meet');
+  const invitation = meet ? '<p>'+tapLink('?service=meet#book','Book a free Meet & Greet','🤝')+'<br>Meet Myomi before your first visit.</p>' : '';
+  return invitation+dashboardActions([
     ['book',requestedService() ? 'Continue booking' : 'Book a visit','🐾','Choose care with Myomi.'],
     ['upcoming','My bookings','📅','Check requests and confirmed visits.'],
     ['pets','My pets','🐶','Add a pet or update care details.'],
@@ -702,7 +730,11 @@ function render() {
     section('account','Account',accountSettings());
   updateQuote();
   drafts.restore(app, {
-    onChoice:(form, input) => { if (form.dataset.action === 'bookings' && ['service','day'].includes(input.name)) updateQuote({ target:input }); },
+    onChoice:(form, input) => {
+      if (form.dataset.action !== 'bookings') return;
+      if (['service','day','slot'].includes(input.name)) updateQuote({ target:input });
+      if (input.name === 'pets') updateTotal(form);
+    },
     onFile:(form, input, file) => showPhotoSelection(form, file),
     onStep:(form, step) => showPetCard(form, step),
   });
@@ -749,36 +781,131 @@ document.addEventListener('keydown', event => {
     portalMenu.querySelector('summary').focus();
   }
 });
-// Only the total text: changing pets must not rebuild the day and time choices.
-function updateTotal(booking) {
-  const service = find(data.services,Number(booking.querySelector('[name="service"]:checked')?.value));
-  const petCount = Math.max(1, booking.querySelectorAll('[name="pets"]:checked').length);
-  booking.querySelector('[data-quote]').textContent = service ? 'Request total: '+money(bookingTotal(service, petCount))+' · '+service.minutes+' minutes.' : '';
+function quoteLines(lines) {
+  return lines?.length ? '<dl class="quote-lines">'+lines.map(line =>
+    '<div><dt>'+text(line.label)+(line.code === 'extra_pet' ? ' × '+Number(line.quantity) : '')+
+    '</dt><dd>'+money(line.cents)+'</dd></div>').join('')+'</dl>' : '';
 }
-function updateQuote(event) {
+const quoteRequests = new WeakMap();
+function updateTotal(booking, message = '') {
+  clearTimeout(quoteRequests.get(booking)?.timer);
+  const request = {};
+  quoteRequests.set(booking,request);
+  const fields = new FormData(booking);
+  const service = find(data.services,Number(fields.get('service')));
+  const [slot,start] = (fields.get('slot') || '').split(':').map(Number);
+  const pets = fields.getAll('pets').map(Number);
+  const summary = booking.querySelector('[data-quote]');
+  const lines = booking.querySelector('[data-quote-lines]');
+  const status = booking.querySelector('[data-quote-status]');
+  const retry = booking.querySelector('[data-retry-quote]');
+  const review = booking.querySelector('[data-booking-summary] button[type="submit"]');
+  const showTotal = cents => {
+    summary.textContent = start ? [appointmentDay.format(start),appointmentTime.format(start),money(cents)].join(' · ') : '';
+  };
+  delete booking.dataset.quotedCents;
+  lines.replaceChildren();
+  retry.hidden = true;
+  status.textContent = message;
+  review.disabled = !slot || pets.length > 0;
+  if (!service || !slot) { summary.textContent = ''; return; }
+  showTotal(bookingTotal(service,pets.length));
+  if (!pets.length) return;
+  request.timer = setTimeout(async () => {
+    if (!booking.isConnected || quoteRequests.get(booking) !== request) return;
+    try {
+      const quote = await api('quote',{ service:service.id,slot,start,pets });
+      if (!booking.isConnected || quoteRequests.get(booking) !== request) return;
+      booking.dataset.quotedCents = quote.total_cents;
+      showTotal(quote.total_cents);
+      lines.innerHTML = quoteLines(quote.lines);
+      review.disabled = false;
+    } catch (error) {
+      if (!booking.isConnected || quoteRequests.get(booking) !== request) return;
+      status.textContent = error.message;
+      retry.hidden = false;
+    }
+  },250);
+}
+function showBookingDayPage(booking, page) {
+  const dates = [...booking.querySelectorAll('[name="day"]')];
+  const start = page * daysPerPage;
+  // Keep off-page radios in the form so the selected day remains available to draft capture and restore.
+  dates.forEach((input,index) => { input.closest('label').hidden = index < start || index >= start + daysPerPage; });
+  booking.dataset.bookingDayPage = page;
+  booking.querySelector('[data-day-page="-1"]').disabled = page === 0;
+  booking.querySelector('[data-day-page="1"]').disabled = start + daysPerPage >= dates.length;
+}
+function updateQuote(event, keepDay = false) {
   const booking = app.querySelector('[data-action="bookings"]');
   if (!booking) return;
   const service = find(data.services,Number(booking.querySelector('[name="service"]:checked')?.value));
   const slots = service ? availableSlots(service.minutes,service.id) : [];
   const days = new Map(slots.map(slot => [day(slot.starts),appointmentDay.format(slot.starts)]));
-  const chosenDay = event?.target.name === 'day' ? event.target.value : days.keys().next().value;
-  if (event?.target.name !== 'day') {
-    booking.querySelector('[data-booking-days]').innerHTML = days.size
-      ? choiceGroup('Available day',[...days].map(([key,label]) => choice('day',key,label,{ checked:key === chosenDay, required:true })).join(''))
-      : '';
+  const changed = event?.target.name;
+  const previousDay = booking.querySelector('[name="day"]:checked')?.value;
+  const previousTime = booking.querySelector('[name="slot"]:checked')?.value;
+  const dayKeys = [...days.keys()];
+  const chosenDay = (keepDay || changed === 'day' || changed === 'slot') && days.has(previousDay) ? previousDay : dayKeys[0];
+  if (!['day','slot'].includes(changed)) {
+    booking.querySelector('[data-booking-days]').innerHTML = choiceGroup('Available day',
+      [...days].map(([key,label]) => choice('day',key,label,{ checked:key === dayKeys[0], required:true })).join(''));
+    if (chosenDay) booking.querySelectorAll('[name="day"]')[dayKeys.indexOf(chosenDay)].checked = true;
   }
+  if (changed !== 'slot') showBookingDayPage(booking,Math.floor(Math.max(0,dayKeys.indexOf(chosenDay))/daysPerPage));
   const appointments = slots.filter(slot => day(slot.starts) === chosenDay);
-  booking.querySelector('[data-booking-times]').innerHTML = appointments.length
-    ? choiceGroup('Appointment',slotChoices(appointments,slot => appointmentTime.format(slot.starts),{ selected:slotKey(appointments[0]) }))
-    : '';
+  if (changed !== 'slot') {
+    const groups = new Map([['Morning',[]],['Midday',[]],['Evening',[]]]);
+    for (const slot of appointments) {
+      const hour = Number(appointmentHour.format(slot.starts));
+      groups.get(hour < 12 ? 'Morning' : hour < 16 ? 'Midday' : 'Evening').push(slot);
+    }
+    const firstTime = appointments[0] && slotKey(appointments[0]);
+    booking.querySelector('[data-booking-times]').innerHTML = [...groups].filter(([,times]) => times.length)
+      .map(([label,times]) => choiceGroup(label,slotChoices(times,slot => appointmentTime.format(slot.starts),{ selected:firstTime }))).join('');
+    if (keepDay) {
+      const restored = [...booking.querySelectorAll('[name="slot"]')].find(input => input.value === previousTime);
+      if (restored) restored.checked = true;
+    }
+  }
+  const selectedTime = booking.querySelector('[name="slot"]:checked')?.value;
+  const appointment = appointments.find(slot => slotKey(slot) === selectedTime);
   const availability = booking.querySelector('[data-availability]');
   availability.hidden = slots.length > 0;
   const name = requestedService();
-  availability.textContent = service
-    ? 'No times are available for this service right now. Try another service or check back later.'
+  booking.querySelector('[data-availability-message]').textContent = service
+    ? (data.services.length === 1 ? "Myomi hasn't published times for "+service.name+" yet."
+      : 'No times are available for this service right now. Try another service or check back later.')
     : (name || 'This service')+' is unavailable right now. Choose another service or check back later.';
+  booking.querySelector('[data-check-availability]').hidden = !service;
+  booking.querySelector('[data-booking-options]').hidden = !slots.length;
+  booking.querySelector('[data-booking-summary]').hidden = !appointment;
   updateTotal(booking);
-  booking.querySelector('button[type="submit"]').disabled = appointments.length === 0;
+}
+async function checkAvailability(control) {
+  const booking = control.form;
+  const current = data;
+  const status = booking.querySelector('[data-availability-status]');
+  control.disabled = true;
+  control.textContent = 'Checking…';
+  status.textContent = '';
+  try {
+    const { slots } = await api('portal');
+    if (data !== current || !booking.isConnected) return;
+    const hadButton = !control.closest('[hidden]');
+    data.slots = slots;
+    updateQuote(undefined,true);
+    const found = booking.querySelector('[data-availability]').hidden;
+    status.textContent = found ? 'Available times updated.' : 'Still no times — try again later.';
+    if (found && hadButton && document.activeElement === document.body) {
+      booking.querySelector('[name="day"]:checked')?.focus();
+    }
+  } catch {
+    status.textContent = 'Couldn’t check for times. Try again.';
+  } finally {
+    control.disabled = false;
+    control.innerHTML = emoji('🔄')+'Check again';
+  }
 }
 async function refresh() {
   const user = await api('session');
@@ -830,9 +957,15 @@ app.addEventListener('change', event => {
     if (file) other.value = '';
     showPhotoSelection(form,file || other.files[0]);
   }
-  if (form?.dataset.action === 'bookings' && ['service','day'].includes(name)) updateQuote(event);
-  if (name === 'secured' && form) updateDepartureCheck(form);
+  if (name === 'secured' && form) {
+    if (!event.target.checked) form.dataset.unsecured = '1';
+    updateDepartureCheck(form);
+  }
   if (form?.dataset.action === 'bookings' && name === 'pets') { form.querySelector('[data-booking-pet-error]').textContent = ''; updateTotal(form); }
+  if (form?.dataset.action === 'bookings' && ['service','day','slot'].includes(name)) {
+    form.querySelector('[data-availability-status]').textContent = '';
+    updateQuote(event);
+  }
   if (name === 'diary-filter') updateDiaryFilter(event.target);
 });
 async function updateDiaryFilter(select) {
@@ -893,6 +1026,42 @@ app.addEventListener('click', async event => {
     const heading = app.querySelector('[data-action="register"] h2');
     heading.focus({preventScroll:true});
     heading.scrollIntoView({block:'start',behavior:'instant'});
+    return;
+  }
+  const changeDates = event.target.closest('[data-day-page]');
+  if (changeDates) {
+    const booking = changeDates.form;
+    showBookingDayPage(booking,Number(booking.dataset.bookingDayPage)+Number(changeDates.dataset.dayPage));
+    if (changeDates.disabled) booking.querySelector('[data-day-page="'+(-Number(changeDates.dataset.dayPage))+'"]').focus();
+    return;
+  }
+  const availabilityCheck = event.target.closest('[data-check-availability]');
+  if (availabilityCheck) {
+    await checkAvailability(availabilityCheck);
+    return;
+  }
+  const retryQuote = event.target.closest('[data-retry-quote]');
+  if (retryQuote) {
+    updateTotal(retryQuote.form);
+    return;
+  }
+  const reportUnsecured = event.target.closest('[data-report-unsecured]');
+  if (reportUnsecured) {
+    reportUnsecured.form.dataset.unsecured = '1';
+    updateDepartureCheck(reportUnsecured.form);
+    reportUnsecured.form.elements.secure_note.focus();
+    return;
+  }
+  const bookAgain = event.target.closest('[data-book-again]');
+  if (bookAgain) {
+    const visit = find(data.bookings,Number(bookAgain.dataset.bookAgain));
+    const booking = app.querySelector('[data-action="bookings"]');
+    const service = booking && visit && [...booking.querySelectorAll('[name="service"]')].find(input => Number(input.value) === visit.service);
+    if (service) {
+      service.checked = true;
+      for (const pet of booking.querySelectorAll('[name="pets"]')) pet.checked = visit.pet_ids.includes(Number(pet.value));
+      updateQuote({target:service});
+    }
     return;
   }
   const editBooking = event.target.closest('[data-edit-booking]');
@@ -1036,14 +1205,15 @@ app.addEventListener('submit',async event => {
       const service = find(data.services,payload.service);
       if (!service || !payload.slot) throw new Error('Choose a service and an available appointment.');
       payload.pets = fields.getAll('pets').map(Number);
-      payload.cents = bookingTotal(service, payload.pets.length);
       const review = form.querySelector('[data-booking-review]');
+      if (form.dataset.quotedCents === undefined) throw new Error('Wait for the updated price before reviewing your booking.');
+      payload.cents = Number(form.dataset.quotedCents);
       if (!review.dataset.expires) {
         const hold = await api('checkout-hold',payload,requestKey(form,'checkout-hold\n'+JSON.stringify(payload)));
         pendingKeys.delete(form);
         review.dataset.expires = hold.expires;
         review.innerHTML = checkoutSummary({
-          service_name:service.name, pet_ids:payload.pets, starts:hold.starts, ends:hold.ends, cents:hold.total_cents,
+          service_name:service.name, pet_ids:payload.pets, starts:hold.starts, ends:hold.ends, cents:hold.total_cents, lines:hold.lines,
         },hold.expires);
         form.querySelector('[data-booking-inputs]').hidden = true;
         form.querySelector('[data-booking-error]').textContent = '';
@@ -1057,7 +1227,11 @@ app.addEventListener('submit',async event => {
       }
       payload.hold = Number(review.dataset.expires);
     }
-    if (action === 'services') payload.cents = Math.round(Number(payload.price)*100);
+    if (action === 'services') {
+      payload.cents = Math.round(Number(payload.price)*100);
+      payload.extra_pet_cents = Math.round(Number(payload.extra_pet)*100);
+      delete payload.extra_pet;
+    }
     if (action === 'status' && payload.status === 'Completed') payload.secured = fields.has('secured');
     if (action === 'schedule') {
       payload.days = fields.getAll('days').map(Number);
@@ -1100,7 +1274,7 @@ app.addEventListener('submit',async event => {
     }
     if (resumeBooking || signedIn || action === 'register') showSection(true);
     if (action === 'signout-all') { drafts.clear(); feedback.textContent = 'Signed out on every device.'; return; }
-    if (result?.change) { feedback.textContent = 'Change requested. Myomi will confirm the new time; your current time stays booked until then.'; return; }
+    if (result?.change) { feedback.textContent = 'Change requested — waiting for Myomi.'; return; }
     if (action === 'changes/decide') { feedback.textContent = payload.decision === 'approve' ? 'Change approved. The visit has moved.' : 'Change declined. The visit keeps its time.'; return; }
     if (action === 'changes/withdraw') { feedback.textContent = 'Change request withdrawn.'; return; }
     feedback.textContent = action === 'bookings' ? 'Request sent. Myomi still needs to confirm your appointment.'
@@ -1112,6 +1286,18 @@ app.addEventListener('submit',async event => {
       : signedIn ? ''
       : resumeBooking ? 'Pet added. You can continue booking.' : 'Saved.';
   } catch (error) {
+    if (action === 'bookings' && error.code === 'price_changed') {
+      const review = openReview();
+      if (review) await releaseHold(Number(review.dataset.expires));
+      await reopenBooking('The price changed — review the new total.');
+      const booking = app.querySelector('[data-action="bookings"]');
+      if (booking) updateTotal(booking,'The price changed — review the new total.');
+      return;
+    }
+    if (action === 'changes/decide' && error.code === 'time_reserved') {
+      feedback.textContent = 'That time was taken. Decline the change or ask for another time.';
+      return;
+    }
     // The time was taken, the hold ran out, or another tab replaced it: show current times, not the stale list.
     if (action === 'bookings' && error.status === 409) {
       showPublicationFeedback('');

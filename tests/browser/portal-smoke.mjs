@@ -325,6 +325,7 @@ if (!(await staff.locator('.financial-breakdown').innerText()).includes('$25.00'
   await form.locator('[name=summary]').fill('Walked and fed.');
   const button = form.getByRole('button', { name:/Complete visit/ });
   if (!(await button.isDisabled())) throw new Error('Complete visit should wait for the departure check');
+  await form.getByRole('button',{ name:'Report an unsecured home' }).click();
   await form.locator('[name=secure_note]').fill('Back gate latch broken');
   if (!(await button.isEnabled())) throw new Error('A note explaining what was not secured should enable Complete visit');
   await button.click();
@@ -354,6 +355,15 @@ await diaryPicker.selectOption('');
 await cust.locator('#diary-filter:enabled').waitFor();
 await cust.locator('#refresh-diary').click();
 await feedback(cust).filter({ hasText:'up to date' }).waitFor();
+
+await section(cust,'upcoming');
+await cust.reload();
+await cust.getByRole('link',{ name:'Book again' }).first().click();
+await book.waitFor();
+if (!await book.locator('[name=pets]').first().isChecked()) throw new Error('Book again did not restore the pet');
+if (!await book.locator('[name=service]:checked').locator('xpath=..').filter({ hasText:'Dog walking' }).count()) {
+  throw new Error('Book again did not restore the service');
+}
 
 // Staff downloads a backup from the settings page.
 await section(staff,'settings');
