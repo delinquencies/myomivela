@@ -26,7 +26,7 @@ before(async () => {
   const seed = (user, pet, starts) => {
     const id = db.prepare("INSERT INTO bookings(owner,service,starts,ends,cents,notes,status,summary) VALUES(?,?,?,?,3000,'','Completed','ok')")
       .run(user, service, starts, starts + hours(0.5)).lastInsertRowid;
-    db.prepare('INSERT INTO booking_pets VALUES(?,?)').run(id, pet);
+    db.prepare('INSERT INTO booking_pets(booking,pet) VALUES(?,?)').run(id, pet);
     db.prepare("INSERT INTO events(booking,pet,kind,notes,published) VALUES(?,?,'Feeding','fed',?)").run(id, pet, starts + 60_000);
   };
   const ann = owner('ann@example.test');

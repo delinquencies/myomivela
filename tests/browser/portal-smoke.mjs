@@ -365,7 +365,7 @@ if (server.dbPath) {
     const starts = Date.now() - i * 86400e3;
     const id = db.prepare("INSERT INTO bookings(owner,service,starts,ends,cents,notes,status,summary) VALUES(?,?,?,?,2500,'','Completed','Old visit')")
       .run(owner, service, starts, starts + 1800e3).lastInsertRowid;
-    db.prepare('INSERT INTO booking_pets VALUES(?,?)').run(id, pet);
+    db.prepare('INSERT INTO booking_pets(booking,pet) VALUES(?,?)').run(id, pet);
   }
   db.close();
 await cust.goto(server.base + '/portal/index.html#upcoming');

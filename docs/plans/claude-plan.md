@@ -321,6 +321,8 @@ Phase 3  C3.1 Ledger + payments (provider decision) ──▶ X3.1
 ```
 
 ### C2.5: Care record: profile versions, per-pet timeline, private feedback · Phase 2 · needs C2.4 for fields in the timeline
+**Status: done** (migration 17, `lib/care.mjs`, `lib/routes/care.mjs`, `tests/care.test.mjs`). Additions to the design: `GET /api/profile-versions/:id` returns a snapshot, and staff rows carry `pet_profiles` (one entry per pet) rather than a single `profile_version`. Versions are recorded on every real change, so no lazy version 1 was needed. This task also fixed every positional `INSERT` to name its columns.
+
 **Why Claude:** snapshotting history into bookings, a merged paged timeline across tables, and owner-scoped feedback. This is the "longitudinal record" wedge.
 
 **Design**
