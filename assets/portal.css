@@ -207,6 +207,8 @@
 }
 .portal-feedback.is-notice #feedback { margin: 0; }
 .portal-feedback #dismiss-feedback { flex: 0 0 48px; margin: 0; padding: 0; font-size: 1.35rem; }
+.portal [data-action="events"] .tap-choices,
+.portal [data-action="events"] .tap-choices label { scroll-margin-top: 8rem; }
 .portal .tap-choices { padding: 0; border: 0; min-inline-size: 0; }
 .tap-choices legend { font-weight: 600; margin-bottom: .35rem; }
 .tap-choices > div { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 8rem), 1fr)); gap: .45rem; }

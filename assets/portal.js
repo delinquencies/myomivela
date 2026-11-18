@@ -17,6 +17,7 @@ const accountLink = document.querySelector('#account-link');
 const portalMenu = document.querySelector('.portal-menu');
 const portalLinks = document.querySelector('#portal-links');
 const cancelDialog = document.querySelector('#cancel-booking');
+const staffVisitsLabel = 'Today & upcoming';
 const find = (rows,id) => rows.find(row => row.id === id);
 const money = cents => new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(cents / 100);
 // Mirrors quote() in lib/pricing.mjs; the server re-prices every hold and request and refuses a stale total.
@@ -336,21 +337,21 @@ function eventForm(booking) {
       choice('kind',kind,kind,{ icon:activityIcons[kind], required:true })
     ).join(''))+
     area('Details (include amounts, duration, dose or observations as appropriate)','notes')+
+    button('Publish diary update','','🐾')+
     '<fieldset class="tap-choices photo-choices"><legend>Optional photo</legend><div>'+
     photoChoice('camera','Take a photo','📸',' capture="environment"')+
     photoChoice('photo','Choose from library','🖼️')+'</div>'+
     '<p data-photo-status role="status"></p><button type="button" class="secondary" data-clear-photo hidden>'+
-    emoji('↩️')+'Remove photo</button></fieldset>'+
-    button('Publish diary update','','🐾'),booking.id);
+    emoji('↩️')+'Remove photo</button></fieldset>',booking.id);
 }
 function publishingDesk() {
   const visits = data.bookings.filter(booking => booking.status === 'In Progress');
   if (!visits.length) {
-    return '<p>Start a confirmed visit to publish diary updates.</p>'+tapLink('#upcoming','Go to today’s visits','📅');
+    return '<p>Start a confirmed visit to publish diary updates.</p>'+tapLink('#upcoming','Go to '+staffVisitsLabel,'📅');
   }
   return visits.map(booking => '<article><h3>'+text(booking.service_name)+' for '+text(booking.customer)+'</h3>'+
     '<p class="appointment-details">'+date(booking.starts)+'</p>'+eventForm(booking)+
-    tapLink('#upcoming','Go to Today to complete the visit','🏁')+'</article>').join('');
+    tapLink('#upcoming','Go to '+staffVisitsLabel+' to complete the visit','🏁')+'</article>').join('');
 }
 // "Start visit" opens a set number of minutes before the booked time (the visit buffer); until then it is
 // disabled with the time it opens, and a timer enables it when that time comes.
@@ -629,7 +630,7 @@ function staffHome(bookings) {
   const pending = bookings.filter(booking => booking.status === 'Requested' || booking.pending_change).length;
   const active = bookings.filter(booking => booking.status === 'In Progress').length;
   const tasks = [
-    ['upcoming','Bookings','📅',pending ? pending+' '+(pending === 1 ? 'request to review' : 'requests to review') : 'Review requests and manage visits.'],
+    ['upcoming',staffVisitsLabel,'📅',pending ? pending+' '+(pending === 1 ? 'request to review' : 'requests to review') : 'Review requests and manage visits.'],
     ['diary','Publish updates','🐾',active ? active+' '+(active === 1 ? 'visit in progress' : 'visits in progress') : 'Share activity notes and photos.'],
     ['settings','Services & availability','🗓️','Set prices and publish appointment times.'],
     ['history','Booking history','📖','Find past visits and their details.'],
@@ -677,10 +678,10 @@ function render() {
   const history = data.bookings.filter(b => !bookings.includes(b)).sort((a,b) => b.starts-a.starts);
   const cards = rows => rows.length ? rows.map(bookingCard).join('') : '<p>No appointments here yet.</p>';
   const older = data.history_next ? '<button type="button" class="secondary" id="more-history">'+emoji('⬇️')+'Show older bookings</button>' : '';
-  const main = admin ? 'Today' : 'My bookings';
+  const main = admin ? staffVisitsLabel : 'My bookings';
   document.querySelector('.portal h1').textContent = 'Welcome, '+data.user.name+'.';
   const links = admin
-    ? [['staff-home','Staff home'],['upcoming','Today'],['diary','Publish updates'],['history','Booking history'],['settings','Services & availability'],['financials','Financials']]
+    ? [['staff-home','Staff home'],['upcoming',staffVisitsLabel],['diary','Publish updates'],['history','Booking history'],['settings','Services & availability'],['financials','Financials']]
     : [['client-home','Home'],['upcoming','My bookings'],['book','Book a visit'],['pets','My pets'],['diary','Pet Diary']];
   portalLinks.innerHTML = links.map(([id,label]) => '<a href="#'+id+'">'+text(label)+'</a>').join('');
   const staffNotice = !admin && new URLSearchParams(location.search).get('staff') === '1'
@@ -971,7 +972,11 @@ async function refreshDiaryView(control) {
     controls.forEach(item => { item.disabled = false; });
   }
 }
-function confirmCancellation() {
+function confirmCancellation(kind) {
+  const decline = kind === 'decline';
+  cancelDialog.querySelector('h3').textContent = decline ? 'Decline this request?' : 'Cancel this visit?';
+  cancelDialog.querySelector('[value="keep"]').textContent = decline ? 'Keep request' : 'Keep visit';
+  cancelDialog.querySelector('[data-cancel-label]').textContent = decline ? 'Decline request' : 'Cancel visit';
   cancelDialog.returnValue = '';
   cancelDialog.showModal();
   return new Promise(resolve => {
@@ -1001,7 +1006,9 @@ app.addEventListener('submit',async event => {
   }
   const payload = Object.fromEntries(fields);
   if (form.dataset.id) payload.id = Number(form.dataset.id);
-  if (payload.status === 'Cancelled' && !await confirmCancellation()) return;
+  const cancelling = action === 'status' && payload.status === 'Cancelled';
+  const declining = cancelling && data.user.admin && find(data.bookings,payload.id)?.status === 'Requested';
+  if (cancelling && !await confirmCancellation(declining ? 'decline' : 'cancel')) return;
   const control = event.submitter || form.querySelector('button[type="submit"]');
   control.disabled = true;
   const publication = action === 'events' ? 'Published to the customer’s Pet Diary.'
@@ -1097,6 +1104,9 @@ app.addEventListener('submit',async event => {
     if (action === 'changes/decide') { feedback.textContent = payload.decision === 'approve' ? 'Change approved. The visit has moved.' : 'Change declined. The visit keeps its time.'; return; }
     if (action === 'changes/withdraw') { feedback.textContent = 'Change request withdrawn.'; return; }
     feedback.textContent = action === 'bookings' ? 'Request sent. Myomi still needs to confirm your appointment.'
+      : action === 'status' && payload.status === 'Confirmed' ? 'Request approved.'
+      : action === 'status' && payload.status === 'Cancelled' ? (declining ? 'Request declined.' : 'Visit cancelled.')
+      : action === 'reschedule' ? (data.user.admin ? 'New time saved.' : 'Visit moved to '+date(payload.start)+'.')
       : action === 'password' ? 'Password changed. Your other devices have been signed out.'
       : action === 'register' ? 'Your account is ready.'
       : signedIn ? ''
