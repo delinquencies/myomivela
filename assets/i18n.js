@@ -73,6 +73,10 @@ export const catalogs = {
     'error.tip_too_large': 'Las propinas de una visita tienen un límite.',
     'error.tip_not_open': 'Puedes dejar propina cuando la visita haya comenzado.',
     'error.cancel_fee_changed': 'Cancelar ahora tiene un cargo. Revísalo antes de cancelar.',
+    'error.series_visits_only': 'Las visitas recurrentes son para paseos y visitas a domicilio.',
+    'error.invalid_time': 'Elige una hora en punto o y media.',
+    'error.series_limit': 'Tienes el máximo de visitas recurrentes. Termina una primero.',
+    'error.series_ended': 'Esta visita recurrente ya terminó.',
   },
 };
 export const hasKey = (key, language = locale()) => key in (catalogs[language] || {});
