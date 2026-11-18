@@ -276,6 +276,24 @@ try {
     const moved = ana.page.locator('#upcoming article').filter({ has:ana.page.locator(`form[data-action=reschedule][data-id="${id}"]`) });
     check(!/Requested change/.test(await moved.textContent()) && (await moved.locator('.appointment-details').first().textContent()) !== before,
       'after approval the visit shows its new time, still confirmed');
+    const confirmedTime = await moved.locator('.appointment-details').first().textContent();
+    const requestChange = async () => {
+      await moved.locator('summary',{ hasText:'Reschedule' }).tap();
+      await tapLabel(moved.locator('.reschedule-options input[name=slot]').last());
+      await moved.getByRole('button',{ name:'Request new time' }).tap();
+      await moved.getByRole('button',{ name:'Withdraw request' }).waitFor();
+    };
+    await requestChange();
+    await moved.getByRole('button',{ name:'Withdraw request' }).tap();
+    await ana.page.locator('#feedback').filter({ hasText:'Change request withdrawn.' }).waitFor();
+    check(!/Requested change:/.test(await moved.textContent()), 'withdrawing removes the requested change');
+    await requestChange();
+    await staffPage.reload();
+    await staffCard.getByRole('button',{ name:'Decline change' }).tap();
+    await staffPage.locator('#feedback').filter({ hasText:'Change declined.' }).waitFor();
+    await ana.page.reload();
+    await moved.getByText('Change declined.',{exact:false}).waitFor();
+    check(await moved.locator('.appointment-details').first().textContent() === confirmedTime, 'declining leaves the confirmed time in place');
   });
 } catch (error) {
   failures.push('unexpected: ' + error.message.split('\n')[0]);

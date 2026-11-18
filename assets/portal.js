@@ -739,6 +739,7 @@ function render() {
     onStep:(form, step) => showPetCard(form, step),
   });
   for (const form of app.querySelectorAll('form[data-action="status"]')) updateDepartureCheck(form); // after drafts are restored
+  if (!admin && location.hash === '#book') applyRepeatBooking();
   showSection();
 }
 function showSection(focus = false) {
@@ -762,10 +763,24 @@ function showSection(focus = false) {
 window.addEventListener('hashchange', () => {
   showSection(true);
   if (data?.user && !data.user.admin) {
+    if (location.hash === '#book') applyRepeatBooking();
     showPublicationFeedback('');
     if (location.hash === '#diary') refreshDiaryView();
   }
 });
+function applyRepeatBooking(prefill) {
+  try {
+    prefill ??= JSON.parse(sessionStorage.getItem('myo-prefill'));
+    sessionStorage.removeItem('myo-prefill');
+  } catch { /* a click can still prefill when storage is blocked */ }
+  const booking = app.querySelector('[data-action="bookings"]');
+  if (!booking || !prefill || prefill.owner !== data.user.id) return;
+  const service = [...booking.querySelectorAll('[name="service"]')].find(input => Number(input.value) === prefill.service);
+  if (!service) return;
+  service.checked = true;
+  for (const pet of booking.querySelectorAll('[name="pets"]')) pet.checked = prefill.pets.includes(Number(pet.value));
+  updateQuote({target:service});
+}
 portalMenu.addEventListener('click', event => {
   const link = event.target.closest('a');
   if (!link && !event.target.closest('#logout')) return;
@@ -1055,13 +1070,12 @@ app.addEventListener('click', async event => {
   const bookAgain = event.target.closest('[data-book-again]');
   if (bookAgain) {
     const visit = find(data.bookings,Number(bookAgain.dataset.bookAgain));
-    const booking = app.querySelector('[data-action="bookings"]');
-    const service = booking && visit && [...booking.querySelectorAll('[name="service"]')].find(input => Number(input.value) === visit.service);
-    if (service) {
-      service.checked = true;
-      for (const pet of booking.querySelectorAll('[name="pets"]')) pet.checked = visit.pet_ids.includes(Number(pet.value));
-      updateQuote({target:service});
-    }
+    if (!visit) return;
+    const prefill = {owner:data.user.id,service:visit.service,pets:visit.pet_ids};
+    try {
+      sessionStorage.setItem('myo-prefill',JSON.stringify(prefill));
+      if (location.hash === '#book') applyRepeatBooking(prefill);
+    } catch { applyRepeatBooking(prefill); }
     return;
   }
   const editBooking = event.target.closest('[data-edit-booking]');
