@@ -4,8 +4,8 @@ myo. is Myomi’s pet-care website and portal. Customers request visits and read
 
 ## Status at a glance
 
-- **Implemented:** the flow from request to approval, visit, diary update and completion summary, with data stored in SQLite. See [What works today](#what-works-today).
-- **Not implemented:** payments, recurring bookings and packages, care checklists, GPS walk tracking, messaging, email and notifications, password recovery, and a Spanish portal. See [Not built yet](#not-built-yet).
+- **Implemented:** booking review and a temporary appointment hold, then request, approval, visit, diary update and completion summary. See [What works today](#what-works-today).
+- **Not implemented:** payment collection, automatic paid confirmation, invoices or receipts, recurring bookings and packages, care checklists, GPS walk tracking, messaging, outbound notifications, password recovery, and a Spanish portal. See [Not built yet](#not-built-yet).
 - **Not production-ready for public launch.** Read [Known limitations](#known-limitations) and the [audit](MYO_AUDIT.md) first.
 
 ## Technology and structure
@@ -140,18 +140,19 @@ There is no linter or type checker configured. CI is defined in `.github/workflo
 
 ## What works today
 
-- **Public site:** bilingual (English/Spanish) homepage and FAQ, service cards linking to booking, and a fictional sample diary using the same layout as the real one.
+- **Public site:** bilingual (English/Spanish) homepage, About Myomi and FAQ, service cards linking to booking, and an English sample diary using the same visit card as the private diary.
 - **Accounts:** customer registration, sign-in and sign-out with scrypt password hashes and hashed server-side sessions. Under **Account**, anyone can change their password (other devices are signed out) or sign out everywhere. Failed sign-ins lock out the guessing address, never the owner's devices (see below).
-- **Pets:** create and edit pet profiles (breed, medical, diet, emergency contacts and notes as one JSON profile).
-- **Booking:** customers request a service for one or more of their pets at a start time on a 30-minute grid inside staff-published windows. Staff approve, decline, reschedule and cancel; customers can cancel or reschedule. Overlapping approvals and approvals for withdrawn windows are rejected. The price is snapshotted on the booking.
+- **Pets:** create a profile in five cards with a tab-local draft, field help and validation. Existing profiles can be edited in one form.
+- **Booking:** customers choose a service, pets and an available time. The homepage cards show published rates and the booking entry previews upcoming times before sign-in. Review holds the selected time for up to 10 minutes and shows the quote and Myomi as the sitter. Sending the request releases the hold and creates a pending booking. Staff still approve, decline, reschedule and cancel. Customers can cancel or reschedule within the app's current rules. Overlapping approvals and approvals outside available hours are rejected. The price is snapshotted on the booking.
 - **Visits and diary:** staff start and complete visits (a summary is required), publish typed activity updates with an optional photo, and customers see them grouped by visit. Photo access is checked per request, and photo metadata (including GPS) is removed on upload.
 - **Unsaved typing is kept:** saving one form no longer wipes what was typed or chosen in the others (including a half-filled booking, open editors and a chosen photo), and drafts survive a reload of the tab. They are kept in the tab's session storage, cleared on sign-out and when the form is saved; passwords are never kept.
 - **Safe retries:** every portal form sends an `Idempotency-Key`; if the connection drops, the portal retries and the server runs the write once (bookings, approvals, diary updates and so on).
-- **Staff tools:** service prices and durations, appointment windows, today’s visits, history, and diary publishing.
+- **Dashboards:** clients and staff land on separate home screens with task buttons and a swipeable seven-day calendar. Staff Financials shows booking-price totals and a completed-visit breakdown by service.
+- **Staff tools:** service prices and durations, repeating weekly hours with editable buffers, custom hours or closures by date, extra appointment windows, and diary publishing. Regular hours start generating bookable times after Myomi saves the schedule. The calendar uses Massachusetts time. The client diary refreshes on entry and has one native dropdown for pet or visit filtering.
 
 ## Not built yet
 
-Payments and checkout (Stripe), recurring bookings and packages, care plans and per-visit checklists, structured medication logging (today “Medication” is a free-text activity type), GPS walk tracking and distance (“Walk started/completed” are diary labels only), messaging, email and other notifications, email verification and password recovery, a Spanish portal, editing or deleting published diary updates, and customer search and management for staff.
+Hosted payment checkout, paid booking confirmation, invoices or receipts and refunds, recurring bookings and packages, care plans and per-visit checklists, structured medication logging (today “Medication” is a free-text activity type), GPS walk tracking and distance (“Walk started/completed” are diary labels only), messaging, email and other outbound notifications, email verification and password recovery, Spanish sample diary and portal, editing or deleting published diary updates, and customer search and management for staff.
 
 ## Existing integrations
 
@@ -159,7 +160,8 @@ None. There is no payment provider, email provider or analytics. Fonts fall back
 
 ## Known limitations
 
-- The portal is tested in Chromium only (`npm run test:browser`), not in Safari or on real phones.
+- The Nov 17, 2026 local audit exercised the public pages and portal at 320, 390, 768 and 1280 CSS pixels in Chromium. The 390 px booking and diary browser suite passed. Safari, Firefox, real phones and the deployed Worker still need verification for the current changes.
+- The Node suite passed 48 of 50 tests on Windows after the weekly-hours migration and schema assertion updates. The two remaining restore CLI exit-code assertions also failed on the clean baseline. Recheck the restore CLI before release.
 - The app has **not been deployed to Cloudflare yet**; it has only run under `wrangler dev` locally. The first real deploy should be checked by hand.
 - Rate-limit counters live in memory (in the single Durable Object on Cloudflare), so they reset when it restarts.
 - Lockouts: 8 failed passwords per account and address per 15 minutes; 50 per account per hour from devices that have never signed in to it; a device that has signed in before (it holds a `myo_device` cookie) has its own 8-per-15-minutes allowance and ignores the other two. So a guesser locks out only themselves, and a large distributed attack can block new devices for an hour but never the owner's known phone or computer.
@@ -175,12 +177,16 @@ None. There is no payment provider, email provider or analytics. Fonts fall back
 | Policies | Cancellation, rescheduling, refund and payment timing; required care and emergency details; home access, emergency authorization, photo and location consent, retention. |
 | Launch content | Contact and social links, portrait and photos, testimonials with permission, review of English and Spanish copy. |
 | Production domain | Hosting is decided (Cloudflare Workers + Durable Object + R2). Choose the public domain, then fix `sitemap.xml` and `robots.txt`. |
-| Payments and email | Choose providers and approve payment timing before integrating. |
+| Payments and email | Choose providers and approve rules for instant payment within published windows, manual exceptions, confirmation and receipts, cancellations and refunds. |
+| Google reviews | Decide when to begin asking for reviews and supply the public profile and review-request URLs. |
 | GPS | If walks must track with the phone locked, prototype a native staff app; decide what route data to keep and show. |
+
+Set the public Google Business Profile URLs in `assets/review-links.js`. The `write` URL enables **Leave a Google review** in client Account settings. The button beneath the homepage testimonial cards becomes clickable when the `read` URL is set.
 
 ## Documentation
 
 - [MYO_AUDIT.md](MYO_AUDIT.md): findings, statuses and the remediation log.
 - [DEVELOPMENT_HANDOFF.md](DEVELOPMENT_HANDOFF.md): what changed and the next tasks for Codex.
 - [docs/handoff.md](docs/handoff.md) and [docs/audits/](docs/audits/): earlier notes, kept for history.
+- [Sitewide audit and next steps](docs/audits/myo-sitewide-audit-and-next-steps.md) and [live UX friction log](docs/audits/myo-live-ux-friction-log.md): dated snapshots from the local audit and the first desktop and mobile walkthrough.
 - [docs/archive/design-previews/](docs/archive/design-previews/): retired mockups. They are not served. Rebuild their stylesheet with `npm ci` then `npm run build`.

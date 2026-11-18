@@ -7,6 +7,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { DatabaseSync } from 'node:sqlite';
 import { startServer, adminLogin, password, target, nodeOnly } from './helpers.mjs';
+import { schemaVersion } from '../lib/db.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -65,7 +66,7 @@ test('a pre-migration database upgrades in place and keeps its data', { skip:nod
   const app = await startServer({}, { dbPath:path });
   await app.stop();
   const upgraded = new DatabaseSync(path);
-  assert.equal(upgraded.prepare("SELECT value FROM meta WHERE key='schema_version'").get().value, '6');
+  assert.equal(upgraded.prepare("SELECT value FROM meta WHERE key='schema_version'").get().value, String(schemaVersion));
   assert.ok(upgraded.prepare('PRAGMA table_info(events)').all().some(c => c.name === 'photo_key'));
   assert.ok(upgraded.prepare('PRAGMA table_info(bookings)').all().some(c => c.name === 'summary'));
   assert.equal(upgraded.prepare('SELECT name FROM pets').get().name, 'Biscuit');
@@ -83,7 +84,7 @@ test('backup script writes a verified copy of a live database and refuses to ove
     const run = () => spawnSync(process.execPath, ['--no-warnings', join(root, 'scripts', 'backup.mjs'), target], { env:{ ...process.env, MYO_DB:app.dbPath }, encoding:'utf8' });
     const first = run();
     assert.equal(first.status, 0, first.stderr);
-    assert.match(first.stdout, /schema version 6/);
+    assert.match(first.stdout, new RegExp('schema version '+schemaVersion));
     const copy = new DatabaseSync(target, { readOnly:true });
     assert.equal(copy.prepare("SELECT email FROM users WHERE email='c@example.test'").get().email, 'c@example.test');
     copy.close();

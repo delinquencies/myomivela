@@ -144,7 +144,7 @@ if (stickyHeader) {
     bookingAnimation = booking.animate([
       { transform: 'translate('+(from.left-to.left)+'px, '+(from.top-to.top)+'px)', width: from.width+'px', height: from.height+'px' },
       { transform: 'translate(0, 0)', width: to.width+'px', height: to.height+'px' },
-    ], { duration: 520, easing: 'cubic-bezier(.22,.76,.25,1)' });
+    ], { duration: 950, easing: 'cubic-bezier(.3,.15,.25,1)' });
     animateMark(scrolled ? heart : dot);
   }
 
@@ -193,7 +193,9 @@ function setupDeck(rail, controls, cardSelector, { linkServices = false, status 
 
   function followServiceLink() {
     const index = cards.findIndex(card => '#' + card.id === location.hash);
-    if (index >= 0) showCard(index);
+    if (index < 0) return;
+    showCard(index);
+    rail.scrollIntoView({block:'start',behavior:reducedMotion.matches ? 'instant' : 'smooth'});
   }
 
   rail.classList.add('is-deck');
@@ -202,9 +204,13 @@ function setupDeck(rail, controls, cardSelector, { linkServices = false, status 
   if (linkServices) {
     followServiceLink();
     window.addEventListener('hashchange', followServiceLink);
-    document.addEventListener('click', event => {
+    document.querySelector('.service-pills')?.addEventListener('click', event => {
       const hash = event.target.closest('a[href^="#"]')?.getAttribute('href');
-      if (hash && hash === location.hash) followServiceLink();
+      if (!hash || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      event.preventDefault();
+      if (location.hash !== hash) history.pushState(null,'',hash);
+      followServiceLink();
+      rail.focus({preventScroll:true});
     });
   }
 
@@ -251,4 +257,33 @@ const reviewRail = document.querySelector('.review-rail');
 const reviewControls = document.querySelector('.review-controls');
 if (reviewRail && reviewControls) {
   setupDeck(reviewRail, reviewControls, '.review-card', { status: document.querySelector('[data-review-status]') });
+}
+const reviewGalleryLink = document.querySelector('[data-google-reviews]');
+if (reviewGalleryLink) {
+  import('./review-links.js').then(({googleReviewLinks}) => {
+    if (!googleReviewLinks.read) return;
+    reviewGalleryLink.href = googleReviewLinks.read;
+    reviewGalleryLink.removeAttribute('aria-disabled');
+  });
+}
+const priceTags = document.querySelectorAll('[data-service-price]');
+if (priceTags.length) {
+  fetch('/api/catalog').then(response => response.ok ? response.json() : []).then(rows => {
+    if (!Array.isArray(rows) || !rows.length) return;
+    const showPrices = () => {
+      const spanish = document.documentElement.lang === 'es';
+      for (const tag of priceTags) {
+        const rates = rows.filter(row => row.name === tag.dataset.servicePrice).sort((a,b) => a.cents-b.cents);
+        if (!rates.length) continue;
+        const {cents,minutes} = rates[0];
+        const price = new Intl.NumberFormat(spanish ? 'es-US' : 'en-US',{
+          style:'currency',currency:'USD',minimumFractionDigits:cents % 100 ? 2 : 0,
+        }).format(cents/100);
+        tag.textContent = rates.length > 1 ? (spanish ? 'Desde ' : 'From ')+price : price+' / '+minutes+' min';
+        tag.hidden = false;
+      }
+    };
+    showPrices();
+    new MutationObserver(showPrices).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
+  }).catch(() => { /* Service links are available when the catalog is offline. */ });
 }

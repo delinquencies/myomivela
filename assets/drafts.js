@@ -14,7 +14,7 @@ const choice = field => ['radio','checkbox'].includes(field.type);
 
 export function createDrafts() {
   let user = null;
-  let drafts = new Map(); // identity -> { saved, open, fields:[{ name, value, checked? }], files:{ name: File } }
+  let drafts = new Map(); // identity -> { saved, open, step, fields:[{ name, value, checked? }], files:{ name: File } }
 
   const storageKey = () => prefix + user;
   function load() {
@@ -50,7 +50,8 @@ export function createDrafts() {
           if (field.value !== field.defaultValue) fields.push({ name:field.name, value:field.value });
         }
         const open = Boolean(form.closest('details')?.open);
-        if (fields.length || Object.keys(files).length || open) drafts.set(id, { saved:Date.now(), open, fields, files });
+        const step = Number(form.dataset.draftStep || 0);
+        if (fields.length || Object.keys(files).length || open || step) drafts.set(id, { saved:Date.now(), open, step, fields, files });
         else drafts.delete(id);
       }
       persist();
@@ -58,7 +59,7 @@ export function createDrafts() {
     // Puts recorded drafts back into matching forms under root. onChoice(form, input) runs after a radio or
     // checkbox is restored (the booking form rebuilds its times from the chosen service and day);
     // onFile(form, input, file) runs after a photo is restored.
-    restore(root, { onChoice = () => {}, onFile = () => {} } = {}) {
+    restore(root, { onChoice = () => {}, onFile = () => {}, onStep = () => {} } = {}) {
       for (const form of root.querySelectorAll('form[data-action]')) {
         const draft = drafts.get(identity(form));
         if (!draft) continue;
@@ -84,6 +85,7 @@ export function createDrafts() {
             onFile(form, input, file);
           } catch { /* older browsers cannot set files; the photo has to be chosen again */ }
         }
+        if (draft.step) onStep(form, draft.step);
       }
     },
     // Forgets one form's draft (after it was saved).

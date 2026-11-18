@@ -1,4 +1,4 @@
-// Copies the public site (index, robots, sitemap, assets/, portal/, the two public myo/ pages) into dist/site
+// Copies the public site (index, robots, sitemap, assets/, portal/, and the public myo/ pages) into dist/site
 // for Cloudflare static assets. Only paths allowed by lib/site.mjs are copied, so nothing private is published.
 import { readdir, rm, mkdir, copyFile } from 'node:fs/promises';
 import { join, dirname, relative, sep } from 'node:path';

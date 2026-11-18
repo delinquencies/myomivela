@@ -5,6 +5,9 @@
     <priority>1.0</priority>
   </url>
   <url>
+    <loc>https://delinquencies.github.io/myomivela/myo/about/index.html</loc>
+  </url>
+  <url>
     <loc>https://delinquencies.github.io/myomivela/myo/safety_first_faq/index.html</loc>
     <priority>0.7</priority>
   </url>

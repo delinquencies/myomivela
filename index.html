@@ -31,8 +31,8 @@
     }
   </script>
   <link rel="preload" href="assets/home/fraunces.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="assets/home.css?v=outfit-2">
-  <script src="assets/home.js" defer></script>
+  <link rel="stylesheet" href="assets/home.css?v=outfit-12">
+  <script src="assets/home.js?v=price-tags" defer></script>
 </head>
 <body id="top">
   <a class="skip" href="#main" data-es="Saltar al contenido">Skip to content</a>
@@ -50,7 +50,7 @@
         <div class="menu-panel">
           <nav class="site-nav" aria-label="Main navigation" data-es-label="Navegación principal">
             <a href="#services" data-es="Servicios">Services</a>
-            <a href="#experience" data-es="Sobre mí">About</a>
+            <a href="myo/about/index.html" data-es="Sobre mí">About</a>
             <a href="myo/safety_first_faq/index.html" data-es="Preguntas">FAQ</a>
             <a href="portal/index.html" data-es="Portal de clientes">Client Portal</a>
             <a href="portal/index.html?staff=1#diary" data-es="Acceso para el personal">Staff sign-in</a>
@@ -101,26 +101,29 @@
         <section class="service-rail" id="service-cards" aria-label="Service cards" data-es-label="Tarjetas de servicios" tabindex="0">
           <article class="service" id="pet-sitting">
             <img src="assets/home/sitting-editorial.jpg" width="1000" height="800" alt="A tabby cat looking up" data-es-alt="Un gato atigrado mirando hacia arriba" loading="lazy">
+            <span class="service-price" data-service-price="Overnight pet sitting" hidden></span>
             <div>
               <h3 data-es="Cuidado de mascotas">Pet Sitting</h3>
               <p data-es="Compañía, juegos y tiempo para descansar, al ritmo de tu mascota.">Company, play, and time to unwind, all at your pet’s pace.</p>
-              <a class="button button-secondary" href="portal/index.html?service=pet-sitting#book"><span data-es="Reserva cuidado de mascotas">Book pet sitting</span><span aria-hidden="true">→</span></a>
+              <a class="button button-secondary" href="portal/index.html?service=pet-sitting#book"><span aria-hidden="true">🐾</span><span data-es="Reserva cuidado de mascotas">Book pet sitting</span></a>
             </div>
           </article>
           <article class="service" id="dog-walking">
             <img src="assets/home/walking-editorial.jpg" width="1000" height="800" alt="A golden retriever running along a woodland path" data-es-alt="Un golden retriever corriendo por un sendero del bosque" loading="lazy">
+            <span class="service-price" data-service-price="Dog walking" hidden></span>
             <div>
               <h3 data-es="Paseos de perros">Dog Walking</h3>
               <p data-es="Aire fresco, tiempo para olfatear y un paseo al ritmo de tu perro.">Fresh air, plenty of sniff breaks, and a walk at your dog’s pace.</p>
-              <a class="button button-secondary" href="portal/index.html?service=dog-walking#book"><span data-es="Reserva un paseo">Book a walk</span><span aria-hidden="true">→</span></a>
+              <a class="button button-secondary" href="portal/index.html?service=dog-walking#book"><span aria-hidden="true">🦮</span><span data-es="Reserva un paseo">Book a walk</span></a>
             </div>
           </article>
           <article class="service" id="drop-in">
             <img src="assets/home/drop-in-editorial.jpg" width="1000" height="800" alt="A beagle waiting by a doorway" data-es-alt="Un beagle esperando junto a una puerta" loading="lazy">
+            <span class="service-price" data-service-price="Drop-in visit" hidden></span>
             <div>
               <h3 data-es="Visitas a domicilio">Drop-In Visits</h3>
               <p data-es="Una visita para darle de comer, renovar el agua y hacerle compañía.">A little company, a meal, and a fresh bowl of water while you’re away.</p>
-              <a class="button button-secondary" href="portal/index.html?service=drop-in#book"><span data-es="Reserva una visita a domicilio">Book a drop-in</span><span aria-hidden="true">→</span></a>
+              <a class="button button-secondary" href="portal/index.html?service=drop-in#book"><span aria-hidden="true">🏠</span><span data-es="Reserva una visita a domicilio">Book a drop-in</span></a>
             </div>
           </article>
         </section>
@@ -132,7 +135,7 @@
         <p class="eyebrow" data-es="Conoce a Myomi">Meet Myomi</p>
         <h2 data-es="Una cara conocida. Muchísimo cariño.">A familiar face. A whole lot of love.</h2>
         <p data-es="Soy Myomi, la persona detrás de myo. Cuéntame qué hace feliz a tu mascota y qué necesita para sentirse en casa.">I’m Myomi, the person behind myo. Tell me what makes your pet happy and what helps them feel at home.</p>
-        <a class="button button-secondary" href="portal/index.html#book"><span data-es="Conozcámonos">Let’s get acquainted</span><span aria-hidden="true">→</span></a>
+        <a class="button feature-link" href="myo/about/index.html"><span class="feature-link-icon" aria-hidden="true">🤝</span><span data-es="Conozcámonos">Let’s get acquainted</span></a>
       </div>
       <div class="portrait-wrap" aria-hidden="true">
         <div class="portrait-hearts">
@@ -155,7 +158,7 @@
           <p class="eyebrow" data-es="El diario de tu mascota">The Pet Diary</p>
           <h2 data-es="Tu mascota no puede escribirte. Yo sí.">They can’t text you. We can.</h2>
           <p data-es="Fotos, paseos, notas sobre sus comidas y mensajitos para que sepas cómo le va a tu mascota.">Photos, walk recaps, feeding notes, and little messages to keep you close while you’re away.</p>
-          <a class="button button-secondary" href="myo/client_journal_cute_lively/index.html"><span data-es="Ver un diario de ejemplo">See a sample diary</span><span aria-hidden="true">→</span></a>
+          <a class="button feature-link" href="myo/client_journal_cute_lively/index.html"><span class="feature-link-icon" aria-hidden="true">📖</span><span data-es="Ver un diario de ejemplo">See a sample diary</span></a>
         </div>
         <article class="diary-note">
           <img src="assets/home/diary-editorial.jpg" width="1000" height="800" alt="A golden retriever on a woodland path" data-es-alt="Un golden retriever en un sendero del bosque" loading="lazy">
@@ -227,10 +230,10 @@
             </svg>
           </div>
           <span class="screen-reader-only" data-review-status role="status"></span>
-          <button type="button" class="google-reviews" disabled>
+          <a class="google-reviews" data-google-reviews role="link" aria-disabled="true">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M21.6 12.2c0-.7-.1-1.4-.2-2.1H12V14h5.4a4.6 4.6 0 0 1-2 3v2.5h3.2c1.9-1.7 3-4.3 3-7.3ZM12 22c2.7 0 5-.9 6.6-2.5l-3.2-2.5c-.9.6-2 .9-3.4.9a6 6 0 0 1-5.6-4.1H3.1v2.6A10 10 0 0 0 12 22ZM6.4 13.8a6 6 0 0 1 0-3.6V7.6H3.1a10 10 0 0 0 0 8.8l3.3-2.6ZM12 6.1c1.5 0 2.8.5 3.8 1.5l2.8-2.9A9.5 9.5 0 0 0 12 2a10 10 0 0 0-8.9 5.6l3.3 2.6A6 6 0 0 1 12 6.1Z"/></svg>
-            <span data-es="Ver más reseñas en Google">See more reviews</span>
-          </button>
+            <span data-es="Ver más reseñas en Google">See more reviews on Google</span>
+          </a>
         </div>
       </div>
     </section>

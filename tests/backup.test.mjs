@@ -7,6 +7,7 @@ import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { startServer, adminLogin, password, iso, hours } from './helpers.mjs';
+import { schemaVersion } from '../lib/db.mjs';
 
 // Runs on both runtimes: download a backup from one installation and restore it into a fresh one.
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -54,7 +55,7 @@ after(async () => { await source.stop(); await rm(dir, { recursive:true, force:t
 
 test('the backup holds every table and photo, and no sessions', () => {
   assert.equal(backup.format, 'myo-backup');
-  assert.equal(backup.schema_version, 6);
+  assert.equal(backup.schema_version, schemaVersion);
   assert.equal(backup.tables.users.length, 2);
   assert.ok(backup.tables.users.every(user => /^[0-9a-f]+:[0-9a-f]+$/.test(user.password)), 'password hashes kept so accounts still work');
   assert.equal(backup.tables.events.length, 2);

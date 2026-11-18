@@ -31,9 +31,10 @@ function watch(page, who) {
 // Phone-sized viewport in the business's time zone.
 const ctx = () => browser.newContext({ timezoneId:'America/New_York', viewport:{ width:390, height:844 } });
 const feedback = page => page.locator('#feedback');
-async function waitSaved(page, text = /Saved|Request sent|Published|Pet added/) {
+async function waitSaved(page, text = /Saved|Request sent|Published|Pet added/i) {
   await feedback(page).filter({ hasText:text }).waitFor({ timeout:5000 });
 }
+const section = (page, id) => page.evaluate(id => { location.hash = id; }, id); // hash only, as the portal nav does
 
 // Public pages under the CSP
 const pub = await (await ctx()).newPage(); watch(pub,'public');
@@ -44,26 +45,38 @@ for (const path of ['/', '/myo/safety_first_faq/', '/myo/client_journal_cute_liv
 
 // Staff: service + window
 const staff = await (await ctx()).newPage(); watch(staff,'staff');
-await staff.goto(server.base + '/portal/index.html?staff=1');
+await staff.goto(server.base + '/portal/index.html?staff=1#diary');
 await staff.fill('[name=email]', adminLogin.email);
 await staff.fill('[name=password]', adminLogin.password);
 await staff.click('button:has-text("Sign in")');
-await staff.locator('h1', { hasText:'dashboard' }).waitFor();
-await staff.goto(server.base + '/portal/index.html#settings');
+await staff.locator('h1', { hasText:'Welcome,' }).waitFor();
+if (await staff.locator('#staff-home .week-day').count() !== 7) throw new Error('Staff home needs seven calendar days');
+await staff.getByRole('button',{name:'Next day'}).click();
+await staff.getByText('Day 2 of 7',{exact:true}).waitFor();
+await staff.getByRole('button',{name:'Previous day'}).click();
+await staff.getByText('Day 1 of 7',{exact:true}).waitFor();
+await staff.locator('#staff-home').getByRole('link',{ name:'Services & availability' }).click();
 await staff.locator('#settings').waitFor();
 await staff.locator('[data-action=services] input[value="Dog walking"]').locator('xpath=..').click();
 await staff.fill('[data-action=services] [name=minutes]', '30');
 await staff.fill('[data-action=services] [name=price]', '25');
 await staff.click('[data-action=services] button[type=submit]');
-await waitSaved(staff);
+await waitSaved(staff, /Service saved/);
+await staff.getByRole('button',{ name:'Dismiss notification' }).click();
 const t = new Date(Date.now() + 2*86400e3); // two days out, local NY time
 const pad = n => String(n).padStart(2,'0');
 const local = h => `${t.getFullYear()}-${pad(t.getMonth()+1)}-${pad(t.getDate())}T${pad(h)}:00`;
 await staff.fill('[data-action=slots] [name=starts]', local(9));
 await staff.fill('[data-action=slots] [name=ends]', local(12));
 await staff.locator('[data-action=slots] button:has-text("Publish window")').click();
-await waitSaved(staff);
+await waitSaved(staff, /Appointment window published/);
+await staff.getByRole('button',{ name:'Dismiss notification' }).click();
 log('staff windows listed:', await staff.locator('button:has-text("Remove window")').count());
+await pub.goto(server.base + '/#dog-walking');
+await pub.locator('#dog-walking .service-price').filter({hasText:'$25 / 30 min'}).waitFor();
+await pub.getByRole('link',{name:'Book a walk',exact:true}).click();
+await pub.locator('[data-auth-price-sheet]').getByText('Next available times').waitFor();
+if (!(await pub.locator('[data-auth-price-sheet]').innerText()).includes('$25.00')) throw new Error('Public and portal rates should match');
 
 // Customer: register, pet, book
 const cust = await (await ctx()).newPage(); watch(cust,'customer');
@@ -73,14 +86,42 @@ await reg.locator('[name=name]').fill('Casey');
 await reg.locator('[name=email]').fill('casey@example.test');
 await reg.locator('[name=password]').fill(password);
 await reg.locator('button').click();
-await cust.locator('h1', { hasText:'My account' }).waitFor();
-await cust.goto(server.base + '/portal/index.html#pets');
+await cust.locator('h1', { hasText:'Welcome, Casey.' }).waitFor();
+await cust.locator('#client-home').getByRole('link',{ name:'My pets' }).click();
 const add = cust.locator('#pets form[data-id=""]');
+await add.getByLabel('Help for Species').click();
+await add.getByText('Enter the type of animal', { exact:false }).waitFor();
+await add.getByLabel('Help for Species').click();
+const continuePet = add.locator('button[type="submit"]');
+await continuePet.click();
+await add.getByText('Enter your pet’s name.').waitFor();
 await add.locator('[name=name]').fill('Biscuit');
 await add.locator('[name=species]').fill('Dog');
+await add.getByText('Add more details (optional)',{exact:true}).click();
+await add.locator('[name=weight]').fill('-1');
+await continuePet.click();
+await add.getByText('Enter a weight above zero', { exact:false }).waitFor();
+await add.locator('[name=weight]').fill('12.5');
+await continuePet.click();
+if (await continuePet.innerText() !== 'Skip for now') throw new Error('Blank optional card needs a skip action');
+await continuePet.click();
+await continuePet.click();
 await add.locator('[name=vet]').fill('Main St Vet');
-await add.locator('button[type=submit]').click();
+await add.locator('[name=vetPhone]').fill('123');
+await continuePet.click();
+await add.getByText('Enter a phone number with 7 to 15 digits.').waitFor();
+await add.locator('[name=vetPhone]').fill('(617) 555-0142 ext. 5');
+await continuePet.click();
+await cust.reload();
+await add.locator('[data-pet-card]:visible legend').filter({ hasText:'Daily care' }).waitFor();
+await add.getByRole('button',{ name:'Back' }).click();
+if (await add.locator('[name=vet]').inputValue() !== 'Main St Vet') throw new Error('Pet card draft was lost after reload');
+await continuePet.click();
+await add.getByRole('button',{ name:'Add pet' }).click();
 await waitSaved(cust);
+const profileCards = cust.locator('#pets article > .swipe-cards').first();
+await profileCards.getByRole('button',{name:'Next section'}).click();
+await profileCards.getByText('Section 2 of 5',{exact:true}).waitFor();
 await cust.goto(server.base + '/portal/index.html#book');
 const book = cust.locator('[data-action=bookings]');
 await book.waitFor();
@@ -89,14 +130,26 @@ log('customer sees', times, 'start times for a 3h window');
 if (times !== 6) throw new Error('Expected 6 bookable starts in a 3-hour window, got ' + times);
 await book.locator('input[name=pets]').locator('xpath=..').click();
 await book.locator('[data-booking-times] input[name=slot]').nth(0).locator('xpath=..').click();
-await book.locator('button[type=submit]').click();
+await book.getByRole('button',{name:'Review booking'}).click();
+await book.getByText('Review your visit').waitFor();
+await book.getByRole('button',{name:'Send booking request'}).click();
 await waitSaved(cust);
+await cust.getByRole('heading',{name:'Dog walking · Waiting for Myomi'}).waitFor();
+await section(cust,'client-home');
+await cust.locator('#client-home .week-calendar').getByText('Waiting for Myomi').waitFor();
+await cust.getByRole('button',{name:'Next day'}).click();
+await cust.getByText('Day 2 of 7',{exact:true}).waitFor();
+if ((await cust.request.get(server.base+'/api/financials')).status() !== 403) throw new Error('Client can access staff financials');
 // Unsaved typing survives other saves. Start a new pet and edit an existing one, half-fill a booking,
 // then save the edited pet: the new-pet draft and the whole booking draft (pet, chosen time, notes) must remain.
-const section = (page, id) => page.evaluate(id => { location.hash = id; }, id); // hash only, as the portal nav does
 await cust.goto(server.base + '/portal/index.html#pets');
 await cust.locator('#pets form[data-id=""] [name=name]').fill('Draft pet');
 await cust.locator('#pets details:has-text("Edit profile") summary').first().click();
+const edit = cust.locator('#pets form[data-action=pets]:not([data-id=""])').first();
+for (let sectionNumber=2; sectionNumber<=5; sectionNumber++) {
+  await edit.getByRole('button',{name:'Next section'}).click();
+  await edit.getByText('Section '+sectionNumber+' of 5',{exact:true}).waitFor();
+}
 await cust.locator('#pets form[data-action=pets]:not([data-id=""]) [name=behavior]').first().fill('Pulls on the lead');
 await section(cust, 'book');
 await book.locator('input[name=pets]').locator('xpath=..').click();
@@ -119,7 +172,8 @@ log('after saving a pet: new-pet draft', JSON.stringify(keptPet), '· saved edit
 if (keptPet !== 'Draft pet' || savedNote !== 'Pulls on the lead' || !keptBooking.pet || !keptBooking.time || keptBooking.notes !== 'Gate code 1234') {
   throw new Error('Unsaved form input was lost after another save');
 }
-await book.locator('button[type=submit]').click();
+await book.getByRole('button',{name:'Review booking'}).click();
+await book.getByRole('button',{name:'Send booking request'}).click();
 await waitSaved(cust);
 log('second booking placed; times offered before it:', secondCount);
 await section(cust, 'pets');
@@ -129,7 +183,7 @@ if (await book.locator('[name=notes]').inputValue() !== '') throw new Error('The
 await cust.goto(server.base + '/portal/index.html#upcoming');
 
 // Staff: approve both, reschedule one, start one
-await staff.goto(server.base + '/portal/index.html#upcoming');
+await section(staff,'upcoming');
 await staff.reload();
 await staff.locator('#upcoming article').first().waitFor();
 for (let i = 0; i < 2; i++) {
@@ -147,6 +201,17 @@ log('staff reschedule offered', options, 'options');
 
 // Customer cancels one (dialog)
 await cust.reload();
+const checkoutLink = cust.getByRole('link',{ name:'View visit details' }).first();
+await checkoutLink.click();
+const checkout = cust.locator('.checkout-card:visible');
+await checkout.waitFor();
+const checkoutText = await checkout.innerText();
+if (!['Myomi','Biscuit','$25.00','Online payment is currently unavailable'].every(value => checkoutText.includes(value))) {
+  throw new Error('Checkout is missing details from the confirmed booking');
+}
+await cust.reload();
+await checkout.waitFor();
+await cust.getByRole('link',{ name:'Back to my bookings' }).click();
 await cust.locator('#upcoming button:has-text("Cancel booking")').first().click();
 await cust.locator('#cancel-booking button[value=confirm]').click();
 await waitSaved(cust);
@@ -204,23 +269,35 @@ log('dropped connection on publish → diary shows the update', published, 'time
 if (published !== 1) throw new Error('Expected the retried diary update once, found ' + published);
 const noteAfterPublish = await ev.locator('[name=notes]').inputValue();
 if (noteAfterPublish !== '') throw new Error('The diary form should be empty after publishing, found ' + JSON.stringify(noteAfterPublish));
-await staff.goto(server.base + '/portal/index.html#upcoming');
+await section(staff,'upcoming');
 const done = staff.locator('form[data-action=status]:has(input[value=Completed])').first();
 await done.locator('[name=summary]').fill('All good');
 await done.locator('button').click();
 await waitSaved(staff);
+await section(staff,'financials');
+await staff.locator('.financial-breakdown').getByText('Dog walking · 1 visit').waitFor();
+if (!(await staff.locator('.financial-breakdown').innerText()).includes('$25.00')) throw new Error('Completed visit totals are incorrect');
 
 // Customer diary
-await cust.goto(server.base + '/portal/index.html#diary');
-await cust.reload();
+await section(cust,'diary');
 const img = cust.locator('#diary-feed img').first();
 await img.waitFor();
 log('customer diary photo loaded:', await img.evaluate(i => i.complete && i.naturalWidth > 0));
+const diaryPicker = cust.getByLabel('Filter diary');
+for (const group of ['By pet','By visit']) {
+  const option = diaryPicker.locator('optgroup[label="'+group+'"] option').first();
+  const value = await option.getAttribute('value');
+  await diaryPicker.selectOption(value);
+  await cust.locator('#diary-filter:enabled').waitFor();
+  if (await diaryPicker.inputValue() !== value || !await img.isVisible()) throw new Error('Diary selection failed for '+group);
+}
+await diaryPicker.selectOption('');
+await cust.locator('#diary-filter:enabled').waitFor();
 await cust.locator('#refresh-diary').click();
 await feedback(cust).filter({ hasText:'up to date' }).waitFor();
 
 // Staff downloads a backup from the settings page.
-await staff.goto(server.base + '/portal/index.html#settings');
+await section(staff,'settings');
 await staff.reload();
 const [download] = await Promise.all([staff.waitForEvent('download'), staff.click('a:has-text("Download backup")')]);
 const archive = JSON.parse(gunzipSync(await readFile(await download.path())));
@@ -243,6 +320,7 @@ if (server.dbPath) {
 await cust.goto(server.base + '/portal/index.html#upcoming');
 await cust.reload();
 const pastCards = () => cust.locator('#upcoming article:has-text("Old visit")').count();
+await cust.locator('#more-history').waitFor();
 const beforeMore = await pastCards();
 await cust.click('#more-history');
 await cust.locator('#upcoming article:has-text("Old visit")').nth(beforeMore).waitFor();
@@ -250,6 +328,7 @@ log('past visits shown:', beforeMore, '→', await pastCards(), '(older button g
 if (await pastCards() !== 25) throw new Error('Expected all 25 seeded visits after loading older bookings');
 await cust.goto(server.base + '/portal/index.html#diary');
 const diaryVisits = () => cust.locator('#diary-feed article.diary-visit').count();
+await cust.locator('#more-diary').waitFor();
 const firstPage = await diaryVisits();
 await cust.click('#more-diary');
 await cust.locator('#diary-feed article.diary-visit').nth(firstPage).waitFor();
@@ -263,8 +342,10 @@ await otherBrowser.goto(server.base + '/portal/index.html');
 await otherBrowser.locator('[data-action=login] [name=email]').fill('casey@example.test');
 await otherBrowser.locator('[data-action=login] [name=password]').fill(password);
 await otherBrowser.locator('[data-action=login] button').click();
-await otherBrowser.locator('h1', { hasText:'My account' }).waitFor();
+await otherBrowser.locator('h1', { hasText:'Welcome, Casey.' }).waitFor();
+await otherBrowser.getByRole('heading',{name:'Client home'}).waitFor();
 await cust.reload(); // the device count is part of the page data, so it updates on the next load
+await cust.getByLabel('Portal menu').click();
 await cust.locator('#account-link').click();
 await cust.locator('#account').getByText('signed in on 2 devices').waitFor();
 await cust.locator('[data-action=password] [name=current]').fill(password);
@@ -281,19 +362,21 @@ if (passwordStored) throw new Error('A password was kept in draft storage');
 
 // Signing out forgets drafts, so nothing typed lingers for the next person on a shared phone.
 await cust.goto(server.base + '/portal/index.html#pets');
+await cust.getByLabel('Portal menu').click();
 await cust.locator('#logout').click();
 await feedback(cust).filter({ hasText:/^Signed out\.$/ }).waitFor(); // exact: other messages also mention "signed out"
 const leftover = await cust.evaluate(() => Object.keys(sessionStorage).filter(key => key.startsWith('myo-drafts:')).length);
 await cust.locator('[data-action=login] [name=email]').fill('casey@example.test');
 await cust.locator('[data-action=login] [name=password]').fill('casey-new-password-1');
 await cust.locator('[data-action=login] button').click();
-await cust.locator('h1', { hasText:'My account' }).waitFor();
+await cust.locator('h1', { hasText:'Welcome, Casey.' }).waitFor();
 await cust.goto(server.base + '/portal/index.html#pets');
 const afterSignIn = await cust.locator('#pets form[data-id=""] [name=name]').inputValue();
 log('after sign-out and back in: stored drafts', leftover, '· new pet form', JSON.stringify(afterSignIn));
 if (leftover || afterSignIn) throw new Error('Drafts survived sign-out');
 
 // Sign out everywhere from the Account section ends this session too.
+await cust.getByLabel('Portal menu').click();
 await cust.locator('#account-link').click();
 await cust.locator('[data-action="signout-all"] button').click();
 await feedback(cust).filter({ hasText:'Signed out on every device' }).waitFor();
