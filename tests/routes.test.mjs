@@ -22,7 +22,7 @@ const send = (who, route) => app.call(who, route.method, concrete(route), route.
 test('every route declares a known access level', () => {
   assert.ok(routes.length >= 15);
   for (const route of routes) {
-    assert.ok(['public','user','staff'].includes(route.access), concrete(route));
+    assert.ok(['public','user','staff','owner'].includes(route.access), concrete(route));
     assert.match(concrete(route), /^\/api\/[\w/-]+$/, 'the tests below must be able to call ' + concrete(route));
   }
 });
@@ -33,8 +33,8 @@ test('signed-out callers get 401 from every non-public route', async () => {
   }
 });
 
-test('customers get 403 from every staff route', async () => {
-  for (const route of routes.filter(r => r.access === 'staff')) {
+test('customers get 403 from every staff and owner route', async () => {
+  for (const route of routes.filter(r => ['staff','owner'].includes(r.access))) {
     assert.equal((await send('customer', route)).status, 403, route.method + ' ' + concrete(route));
   }
 });

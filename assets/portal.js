@@ -43,6 +43,8 @@ const stayNightCount = (startDay, endDay) => startDay && endDay && endDay > star
 const day = value => new Intl.DateTimeFormat('en-CA',{dateStyle:'short',timeZone:'America/New_York'}).format(value);
 const emoji = icon => icon ? '<span class="control-icon" aria-hidden="true">'+icon+'</span> ' : '';
 const button = (label, style = '', icon = '') => '<button class="'+style+'" type="submit">'+emoji(icon)+text(translateLabel(label))+'</button>';
+// Staff roles: an owner sees everything; a sitter runs visits and publishes updates (no prices, settings or money).
+const isOwner = () => Boolean(data?.user?.admin) && (data.user.role || 'owner') === 'owner';
 const form = (action, contents, id = '') => '<form data-action="'+action+'" data-id="'+id+'">'+contents+'</form>';
 const input = (label,name,attributes = '') => '<label>'+text(translateLabel(label))+'<input name="'+name+'" '+attributes+'></label>';
 const area = (label,name,value = '',max = 3000) => '<label>'+text(translateLabel(label))+'<textarea maxlength="'+max+'" name="'+name+'">'+text(value)+'</textarea></label>';
@@ -430,6 +432,7 @@ function paymentBlock(booking) {
   const balance = payment.balance_cents > 0 ? ' · '+t("Balance {amount}",{ amount:money(payment.balance_cents) })
     : payment.balance_cents < 0 ? ' · '+t("{amount} to return",{ amount:money(-payment.balance_cents) }) : '';
   let html = '<p class="payment-status" data-payment-status>'+t("Payment:")+' <strong>'+t(paymentLabels[payment.status])+'</strong>'+balance+'</p>';
+  if (data.user.admin && !isOwner()) return html;
   if (data.user.admin) {
     const methods = choiceGroup(t("Method"),['cash','check','other'].map((method,index) => choice('method',method,methodLabel(method),{ checked:index === 0, required:true })).join(''));
     html += '<details><summary>'+emoji('💵')+t("Record a payment")+'</summary>'+form('payments/record',dollarsInput(t("Amount (USD)"),'dollars')+methods+
@@ -456,8 +459,8 @@ function bookingCard(booking) {
   const active = booking.status === 'In Progress';
   let actions = '';
   if (data.user.admin) {
-    if (booking.status === 'Requested') actions += statusForm(booking,'Confirmed',t("Approve request")) + statusForm(booking,'Cancelled',t("Decline request"));
-    if (booking.status === 'Confirmed') actions += startVisitForm(booking) + statusForm(booking,'Cancelled',t("Cancel booking"));
+    if (booking.status === 'Requested' && isOwner()) actions += statusForm(booking,'Confirmed',t("Approve request")) + statusForm(booking,'Cancelled',t("Decline request"));
+    if (booking.status === 'Confirmed') actions += startVisitForm(booking) + (isOwner() ? statusForm(booking,'Cancelled',t("Cancel booking")) : '');
     if (active) actions += tapLink('#diary',t("Publish a diary update"),'🐾')+statusForm(booking,'Completed',t("Complete visit"));
   } else if (booking.starts > Date.now() && ['Requested','Confirmed'].includes(booking.status)) {
     if (canReviewCheckout(booking)) {
@@ -468,17 +471,19 @@ function bookingCard(booking) {
   // A customer's proposed new time for a confirmed visit (C1.2): the visit keeps its time until Myomi decides.
   const change = booking.pending_change;
   let changeNote = '';
-  if (change && data.user.admin) {
+  if (change && data.user.admin && isOwner()) {
     changeNote = ("<p class=\"change-note\"><strong>" + t("Customer asked to move to "))+text(date(change.starts))+'.</strong></p>'+
       form('changes/decide','<input type="hidden" name="decision" value="approve">'+button(t("Approve change"),'','✓'),change.id)+
       form('changes/decide','<input type="hidden" name="decision" value="decline">'+button(t("Decline change"),'secondary','✕'),change.id);
+  } else if (change && data.user.admin) {
+    changeNote = ("<p class=\"change-note\"><strong>" + t("Customer asked to move to "))+text(date(change.starts))+'.</strong> '+t("The owner decides.")+'</p>';
   } else if (change) {
     changeNote = ("<p class=\"change-note\">" + t("Requested change: "))+text(date(change.starts))+(t(" — waiting for Myomi. Your current time stays booked until then.") + "</p>")+
       form('changes/withdraw',button(t("Withdraw request"),'secondary','↩️'),change.id);
   } else if (!data.user.admin && booking.status === 'Confirmed' && booking.last_change?.status === 'Declined') {
     changeNote = ("<p class=\"change-note\">" + t("Change declined. Your visit is still booked at the original time.") + "</p>");
   }
-  if (['Requested','Confirmed'].includes(booking.status) && (data.user.admin || booking.starts > Date.now())) {
+  if (['Requested','Confirmed'].includes(booking.status) && (data.user.admin ? isOwner() : booking.starts > Date.now())) {
     const slots = availableSlots((booking.ends-booking.starts)/60000);
     const needsApproval = !data.user.admin && booking.status === 'Confirmed'
       ? ("<p>" + t("Myomi will confirm the new time. Your current time stays booked until then.") + "</p>") : '';
@@ -597,6 +602,33 @@ function diaryFilter() {
     option('',t("All visits"))+(pets ? ("<optgroup label=\"" + t("By pet") + "\">")+pets+'</optgroup>' : '')+
     (visits ? ("<optgroup label=\"" + t("By visit") + "\">")+visits+'</optgroup>' : '')+'</select></label>';
 }
+// Staff accounts (owner only), loaded when Settings opens: who has access, their role, and adding a sitter.
+function staffPanel(staff) {
+  const roleChoices = selected => choiceGroup(t("Role"),[['sitter',t("Sitter")],['owner',t("Owner")]]
+    .map(([value,label]) => choice('role',value,label,{ checked:value === selected, required:true })).join(''));
+  const rows = staff.map(member => '<li><strong>'+text(member.name)+'</strong> · '+text(member.email)+' · '+
+    t(member.role === 'owner' ? "Owner" : "Sitter")+(member.disabled ? ' · '+t("Switched off") : '')+(member.you ? ' '+t("(you)") : '')+
+    (member.you ? '' : form('staff/update','<input type="hidden" name="disabled" value="'+(!member.disabled)+'">'+
+      button(member.disabled ? t("Switch on") : t("Switch off"),'secondary',member.disabled ? '✓' : '✕'),member.id)+
+      form('staff/update','<input type="hidden" name="role" value="'+(member.role === 'owner' ? 'sitter' : 'owner')+'">'+
+      button(member.role === 'owner' ? t("Make sitter") : t("Make owner"),'secondary','↔️'),member.id)+
+      '<details><summary>'+t("Set a new password")+'</summary>'+form('staff/password',
+        input(t("New password"),'password','required type="password" minlength="12" maxlength="128" autocomplete="new-password"')+
+        button(t("Save password"),'secondary','🔑'),member.id)+'</details>')+'</li>').join('');
+  return '<ul class="staff-list">'+rows+'</ul>'+form('staff','<h4>'+t("Add a staff member")+'</h4>'+
+    input(t("Name"),'name','required maxlength="100"')+input(t("Email"),'email','required type="email" maxlength="254" autocomplete="off"')+
+    input(t("Temporary password (12+ characters)"),'password','required type="password" minlength="12" maxlength="128" autocomplete="new-password"')+
+    roleChoices('sitter')+button(t("Add staff member"),'','➕'));
+}
+async function showStaffPanel() {
+  const panel = document.querySelector('[data-staff-panel]');
+  if (!panel || panel.dataset.loaded) return;
+  panel.dataset.loaded = '1';
+  try {
+    const { staff } = await api('staff');
+    if (panel.isConnected) panel.innerHTML = staffPanel(staff);
+  } catch { panel.textContent = t("Couldn’t load staff accounts."); }
+}
 function adminSettings() {
   const schedule = data.schedule;
   const clock = value => String(Math.floor(value/60)).padStart(2,'0')+':'+String(value%60).padStart(2,'0');
@@ -633,7 +665,9 @@ function adminSettings() {
     data.windows.map(s=>form('slots','<p class="appointment-details">'+date(s.starts)+' – '+date(s.ends)+'</p>'+button(t("Remove window"),'secondary','✕'),s.id)).join('')+
     ("<h3>" + t("Backup") + "</h3><p>" + t("Download everything (accounts, pets, bookings, diary updates and photos) as one file. "))+
     (t("It includes password hashes, so store it somewhere private.") + "</p>")+'<a class="tap-link" href="/api/backup" download>'+emoji('💾')+(t("Download backup") + "</a>")+
-    '<p data-backup-status role="status"></p>';
+    '<p data-backup-status role="status"></p>'+
+    '<h3>'+t("Staff")+'</h3><p>'+t("Sitters run visits and publish updates. Owners also set prices, hours and money, and manage staff.")+'</p>'+
+    '<div data-staff-panel aria-live="polite"></div>';
 }
 function accountSettings() {
   const sessions = data.account?.sessions ?? 1;
@@ -739,7 +773,7 @@ function staffHome(bookings) {
     ['settings',t("Services & availability"),'🗓️',t("Set prices and publish appointment times.")],
     ['history',t("Booking history"),'📖',t("Find past visits and their details.")],
     ['financials',t("Financials"),'📊',t("See visit totals and service breakdowns.")],
-  ];
+  ].filter(([id]) => isOwner() || !['settings','financials'].includes(id));
   return dashboardActions(tasks)+weekCalendar();
 }
 // The daily scheduled backup's state, loaded when Settings opens.
@@ -802,6 +836,7 @@ function render() {
   document.querySelector('.portal h1').textContent = t("Welcome, ")+data.user.name+'.';
   const links = admin
     ? [['staff-home',t("Staff home")],['upcoming',staffVisitsLabel()],['diary',t("Publish updates")],['history',t("Booking history")],['settings',t("Services & availability")],['financials',t("Financials")]]
+      .filter(([id]) => isOwner() || !['settings','financials'].includes(id))
     : [['client-home',t("Home")],['upcoming',t("My bookings")],['book',t("Book a visit")],['pets',t("My pets")],['diary',t("Pet Diary")]];
   portalLinks.innerHTML = links.map(([id,label]) => '<a href="#'+id+'">'+text(translateLabel(label))+'</a>').join('');
   const staffNotice = !admin && new URLSearchParams(location.search).get('staff') === '1'
@@ -810,15 +845,15 @@ function render() {
     section('upcoming',main,admin ? cards(bookings.filter(b=>b.status === 'In Progress' || day(b.starts) === today)) +
       ("<h3>" + t("Other upcoming bookings") + "</h3>")+cards(bookings.filter(b=>b.status !== 'In Progress' && day(b.starts) !== today))
       : ("<h3>" + t("Upcoming visits") + "</h3>")+cards(bookings)+("<h3>" + t("Past visits") + "</h3>")+cards(history)+older)+
-    (admin ? section('settings',t("Services and availability"),adminSettings()) :
+    (admin ? (isOwner() ? section('settings',t("Services and availability"),adminSettings()) : '') :
       section('pets',t("Pet profiles"),data.pets.map(p=>'<article><h3>'+text(p.name)+'</h3>'+profileSummary(p)+("<details><summary>" + t("Edit profile") + "</summary>")+petForm(p)+'</details></article>').join('')+("<h3>" + t("Add a pet") + "</h3>")+petForm())+
       section('book',t("Request care"),bookingForm())+
       bookings.filter(canReviewCheckout).map(booking => section('checkout-'+booking.id,t("Visit details"),checkoutSummary(booking))).join(''))+
     section('diary',admin ? t("Publish updates") : t("Pet Diary"),
       (admin ? publishingDesk()+("<h3>" + t("Published updates") + "</h3>") : '')+'<div id="diary-feed">'+diary()+'</div>')+
     (admin ? section('history',t("Booking history"),cards(history)+older)+
-      section('financials',t("Financials"),("<p>" + t("These totals use booking prices. The portal doesn’t track payments collected or refunds.") + "</p>")+
-        '<div id="financial-summary" aria-live="polite"></div>') : '')+
+      (isOwner() ? section('financials',t("Financials"),("<p>" + t("These totals use booking prices. The portal doesn’t track payments collected or refunds.") + "</p>")+
+        '<div id="financial-summary" aria-live="polite"></div>') : '') : '')+
     section('account',t("Account"),accountSettings());
   updateQuote();
   drafts.restore(app, {
@@ -846,7 +881,7 @@ function showSection(focus = false) {
     else link.removeAttribute('aria-current');
   }
   if (id === 'financials') showFinancials();
-  if (id === 'settings') showBackupStatus();
+  if (id === 'settings') { showBackupStatus(); showStaffPanel(); }
   if (focus) {
     const heading = document.getElementById(id).querySelector('h2');
     heading.tabIndex = -1;
@@ -1407,6 +1442,7 @@ app.addEventListener('submit',async event => {
       if ('dollars' in payload) { payload.cents = Math.round(Number(payload.dollars)*100); delete payload.dollars; }
     }
     if (action === 'auto-tip') payload.percent = Number(payload.percent);
+    if (action === 'staff/update' && 'disabled' in payload) payload.disabled = payload.disabled === 'true';
     if (action === 'schedule') {
       payload.days = fields.getAll('days').map(Number);
       payload.buffer = Number(payload.buffer);
@@ -1456,6 +1492,7 @@ app.addEventListener('submit',async event => {
     if (action === 'changes/decide') { feedback.textContent = payload.decision === 'approve' ? t("Change approved. The visit has moved.") : t("Change declined. The visit keeps its time."); return; }
     if (action === 'changes/withdraw') { feedback.textContent = t("Change request withdrawn."); return; }
     if (action === 'payments/record') { feedback.textContent = t("Payment recorded."); return; }
+    if (action.startsWith('staff')) { feedback.textContent = t("Staff accounts saved."); return; }
     if (action === 'refunds') { feedback.textContent = t("Refund recorded."); return; }
     if (action === 'tips') { feedback.textContent = t("Thank you! Your tip was added to the balance."); return; }
     if (action === 'auto-tip') { feedback.textContent = payload.percent ? t("Automatic tip saved.") : t("Automatic tip turned off."); return; }

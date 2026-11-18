@@ -634,7 +634,25 @@ export const en = {
   "Daily backups are off: no backup destination is set up.": "Daily backups are off: no backup destination is set up.",
   "The last daily backup failed: {error}": "The last daily backup failed: {error}",
   "Daily backup: last made {date}. The newest {keep} are kept.": "Daily backup: last made {date}. The newest {keep} are kept.",
-  "Daily backups are on. The first one is made within a day.": "Daily backups are on. The first one is made within a day."
+  "Daily backups are on. The first one is made within a day.": "Daily backups are on. The first one is made within a day.",
+  "The owner decides.": "The owner decides.",
+  "Owner": "Owner",
+  "Role": "Role",
+  "Switched off": "Switched off",
+  "(you)": "(you)",
+  "Switch on": "Switch on",
+  "Switch off": "Switch off",
+  "Make sitter": "Make sitter",
+  "Make owner": "Make owner",
+  "Set a new password": "Set a new password",
+  "Save password": "Save password",
+  "Add a staff member": "Add a staff member",
+  "Temporary password (12+ characters)": "Temporary password (12+ characters)",
+  "Add staff member": "Add staff member",
+  "Couldn’t load staff accounts.": "Couldn’t load staff accounts.",
+  "Staff": "Staff",
+  "Sitters run visits and publish updates. Owners also set prices, hours and money, and manage staff.": "Sitters run visits and publish updates. Owners also set prices, hours and money, and manage staff.",
+  "Staff accounts saved.": "Staff accounts saved."
 };
 
 /** @type {Record<keyof typeof en, string>} */
@@ -1272,5 +1290,23 @@ export const es = {
   "Daily backups are off: no backup destination is set up.": "Las copias diarias están desactivadas: no hay un destino configurado.",
   "The last daily backup failed: {error}": "La última copia diaria falló: {error}",
   "Daily backup: last made {date}. The newest {keep} are kept.": "Copia diaria: la última se hizo el {date}. Se guardan las {keep} más recientes.",
-  "Daily backups are on. The first one is made within a day.": "Las copias diarias están activadas. La primera se hará en menos de un día."
+  "Daily backups are on. The first one is made within a day.": "Las copias diarias están activadas. La primera se hará en menos de un día.",
+  "The owner decides.": "La administración decide.",
+  "Owner": "Administración",
+  "Role": "Rol",
+  "Switched off": "Desactivada",
+  "(you)": "(tú)",
+  "Switch on": "Activar",
+  "Switch off": "Desactivar",
+  "Make sitter": "Cambiar a cuidado",
+  "Make owner": "Cambiar a administración",
+  "Set a new password": "Poner una contraseña nueva",
+  "Save password": "Guardar contraseña",
+  "Add a staff member": "Agregar a alguien del equipo",
+  "Temporary password (12+ characters)": "Contraseña temporal (12 caracteres o más)",
+  "Add staff member": "Agregar al equipo",
+  "Couldn’t load staff accounts.": "No se pudieron cargar las cuentas del equipo.",
+  "Staff": "Equipo",
+  "Sitters run visits and publish updates. Owners also set prices, hours and money, and manage staff.": "El equipo de cuidado hace las visitas y publica novedades. La administración además fija precios, horarios y pagos, y gestiona el equipo.",
+  "Staff accounts saved.": "Cuentas del equipo guardadas."
 };

@@ -327,3 +327,7 @@
   height: auto;
 }
 .portal .checkout-card :is(dt, dd) { min-width: 0; overflow-wrap: anywhere; }
+
+/* Staff accounts in Settings */
+.staff-list { list-style: none; padding: 0; }
+.staff-list > li { padding: .75rem 0; }
