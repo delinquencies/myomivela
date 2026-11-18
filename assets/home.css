@@ -174,6 +174,23 @@ html:has(.site-header--sticky) { scroll-padding-top: 5.5rem; }
 }
 
 .language button[aria-pressed="true"] { color: var(--ink); background: #efdccf; }
+.language { flex-shrink: 0; }
+.button { max-width: 100%; white-space: normal; text-align: center; overflow-wrap: anywhere; }
+.preview-header { flex-wrap: wrap; }
+.preview-header .language { margin-inline-start: auto; }
+@media (max-width: 580px) {
+  .header-actions { min-width: 0; flex-wrap: wrap; }
+  .header-actions .language button { min-width: 44px; min-height: 44px; }
+  .header-actions .header-booking { width: 48px; height: 48px; padding: 0; flex-shrink: 0; }
+  .header-actions .booking-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .header-actions .header-booking .booking-paw { width: 25px; height: 25px; }
+  .preview-header .portal-header-links { flex-basis: 100%; }
+}
+@media (max-width: 360px) {
+  .site-header--sticky { padding-inline: .75rem; column-gap: .5rem; }
+  .site-header.site-header--sticky .wordmark { font-size: 2rem; }
+  .site-header--sticky .header-actions { gap: .25rem; }
+}
 
 .button {
   display: inline-flex;
@@ -188,7 +205,7 @@ html:has(.site-header--sticky) { scroll-padding-top: 5.5rem; }
   border-radius: 99px;
   font-size: clamp(1.1rem, 2.08vw, 2rem);
   font-weight: 600;
-  white-space: nowrap;
+  white-space: normal;
   transition: background .2s, transform .2s;
 }
 .button span[aria-hidden] { font-size: 1.15em; line-height: 1; }

@@ -108,15 +108,13 @@ try {
   const publicPage = await openPhone();
   await publicPage.goto(server.base);
   await checkScreen(publicPage,'English homepage');
-  const header = await publicPage.evaluate(() =>
-    ['.site-header','.site-header .wordmark','.header-booking','.menu-toggle'].map(selector => {
-      const { x,y,width,height } = document.querySelector(selector).getBoundingClientRect();
-      return [x,y,width,height].map(Math.round);
-    }),
-  );
-  const originalHeader = [[0,0,390,76],[20,18,108,40],[195,14,119,48],[322,14,48,48]];
-  header.forEach((bounds,index) => assert.ok(bounds.every((value,axis) => Math.abs(value-originalHeader[index][axis]) <= 2),
-    `The 100% homepage header changed: actual ${JSON.stringify(header)}`));
+  // Language controls are now visible beside the menu on mobile.
+  for (const language of ['en', 'es']) {
+    const button = publicPage.locator('[data-language="'+language+'"]');
+    assert.equal(await button.isVisible(), true);
+    const bounds = await button.boundingBox();
+    assert.ok(bounds.width >= 44 && bounds.height >= 44, 'Language controls need thumb-sized targets');
+  }
   const menu = publicPage.locator('.menu-toggle');
   assert.equal(await menu.getAttribute('aria-label'),'Menu','The icon-only homepage menu needs an accessible name');
   for (const viewport of [phone,smallPhone]) await checkHomeText(publicPage,'English',viewport);

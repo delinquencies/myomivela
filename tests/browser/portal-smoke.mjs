@@ -283,7 +283,8 @@ await staff.route('**/api/events', async route => {
 await ev.locator('button:has-text("Publish diary update")').click();
 await waitSaved(staff);
 await staff.unroute('**/api/events');
-expected.push(/\/api\/events.*(ERR_CONNECTION_RESET|net::ERR_FAILED)|ERR_CONNECTION_RESET/);
+// Chromium on Windows may describe the intentionally dropped response as aborted.
+expected.push(/\/api\/events.*(ERR_CONNECTION_RESET|net::ERR_FAILED|net::ERR_ABORTED)|ERR_CONNECTION_RESET/);
 const published = await staff.locator('#diary-feed li:has-text("Great walk")').count();
 log('dropped connection on publish → diary shows the update', published, 'time(s)');
 if (published !== 1) throw new Error('Expected the retried diary update once, found ' + published);

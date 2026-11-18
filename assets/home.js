@@ -1,53 +1,4 @@
-const translations = [
-  { selector: '[data-es]', attribute: null, key: 'es' },
-  { selector: '[data-es-label]', attribute: 'aria-label', key: 'esLabel' },
-  { selector: '[data-es-alt]', attribute: 'alt', key: 'esAlt' },
-].flatMap(({ selector, attribute, key }) =>
-  Array.from(document.querySelectorAll(selector), (element) => ({
-    element,
-    attribute,
-    en: attribute ? element.getAttribute(attribute) : element.textContent,
-    es: element.dataset[key],
-  })),
-);
-
-const languageButtons = document.querySelectorAll('[data-language]');
-const englishTitle = document.title;
-const spanishTitle = document.body.dataset.esTitle || 'myo. | Cuidado de mascotas y paseos de perros en Massachusetts';
-
-function setLanguage(language) {
-  document.documentElement.lang = language;
-  document.title = language === 'es' ? spanishTitle : englishTitle;
-  for (const { element, attribute, en, es } of translations) {
-    const value = language === 'es' ? es : en;
-    if (attribute) {
-      element.setAttribute(attribute, value);
-    } else {
-      element.textContent = value;
-    }
-  }
-  for (const button of languageButtons) {
-    button.setAttribute('aria-pressed', String(button.dataset.language === language));
-  }
-}
-
-for (const button of languageButtons) {
-  button.addEventListener('click', () => {
-    const language = button.dataset.language;
-    setLanguage(language);
-    try {
-      localStorage.setItem('myo-language', language);
-    } catch {
-      // Language switching still works when storage is blocked.
-    }
-  });
-}
-
-try {
-  if (localStorage.getItem('myo-language') === 'es') setLanguage('es');
-} catch {
-  // English is already present in the HTML.
-}
+import { t } from './i18n.js';
 
 const siteMenu = document.querySelector('.site-menu');
 if (siteMenu) {
@@ -279,7 +230,7 @@ if (priceTags.length) {
         const price = new Intl.NumberFormat(spanish ? 'es-US' : 'en-US',{
           style:'currency',currency:'USD',minimumFractionDigits:cents % 100 ? 2 : 0,
         }).format(cents/100);
-        tag.textContent = rates.length > 1 ? (spanish ? 'Desde ' : 'From ')+price : price+' / '+minutes+' min';
+        tag.textContent = rates.length > 1 ? t('From {price}', {price}) : t('{price} / {minutes} min', {price, minutes});
         tag.hidden = false;
       }
     };

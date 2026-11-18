@@ -1,5 +1,5 @@
 import { calculateEstimate, myoConfig } from './myo-config.js';
-import { en, es } from './myo-copy.js';
+import { locale as selectedLanguage, setLocale, t } from './i18n.js';
 
 const { business, booking, rates, flags } = myoConfig;
 const byId = id => document.getElementById(id);
@@ -51,6 +51,13 @@ function field(parent, key, type, options = [], value = '') {
     wrapper.append(label, control, error);
     control.value = value;
   }
+  if (parent.id === 'intake-fields') {
+    const hint = element('small');
+    hint.id = control.id + '-hint';
+    hint.dataset.copy = key + 'Hint';
+    control.setAttribute('aria-describedby', hint.id + ' ' + error.id);
+    wrapper.append(hint);
+  }
   parent.append(wrapper);
   return control;
 }
@@ -78,6 +85,7 @@ for (const [key, type] of myoConfig.intakeFields) {
   field(intakeFields, key, type, choices).required = true;
 }
 for (const key of ['overnightAlone', 'overnightBehavior']) field(intakeFields, key, 'textarea');
+field(intakeFields, 'overnightAcknowledgment', 'checkbox');
 
 const policyList = byId('policy-list');
 for (const key of myoConfig.policyKeys) {
@@ -99,8 +107,7 @@ function money(dollars, cents = false) {
   }).format(dollars);
 }
 function copy(key, values = {}) {
-  const dictionary = language === 'es' ? es : en;
-  return dictionary[key].replace(/\{(\w+)\}/g, (token, name) => values[name] ?? token);
+  return t('launch.' + key, values, language);
 }
 
 function policyValues() {
@@ -193,7 +200,7 @@ function updateEstimateFields() {
 
 function updateIntakeFields() {
   const overnight = intakeForm.elements.service.value === 'overnight';
-  for (const key of ['overnightAlone', 'overnightBehavior']) setVisibility(intakeFields, key, overnight, true);
+  for (const key of ['overnightAlone', 'overnightBehavior', 'overnightAcknowledgment']) setVisibility(intakeFields, key, overnight, true);
 }
 
 function renderEstimate(focus = false) {
@@ -235,7 +242,7 @@ function renderEstimate(focus = false) {
   for (const [key, cents] of lines) {
     const row = element('div');
     row.className = 'launch-result-line' + (key === 'estimateTotal' ? ' launch-result-total' : '');
-    row.append(element('dt', copy(key)), element('dd', money(cents / 100, true)));
+    row.append(element('dt', copy(key, policyValues())), element('dd', money(cents / 100, true)));
     list.append(row);
   }
   result.append(list);
@@ -247,7 +254,7 @@ function renderIntakeStatus(focus = false) {
   let firstInvalid;
   for (const control of intakeForm.querySelectorAll('input, select, textarea')) {
     const error = byId(control.id + '-error');
-    const missing = control.required && !control.value.trim() && !control.validity.badInput;
+    const missing = control.required && (control.type === 'checkbox' ? !control.checked : !control.value.trim()) && !control.validity.badInput;
     const invalid = !control.disabled && (missing || !control.validity.valid);
     error.hidden = !invalid;
     if (invalid) {
@@ -264,7 +271,7 @@ function renderIntakeStatus(focus = false) {
 
 function setLanguage(next) {
   language = next;
-  document.documentElement.lang = next;
+  setLocale(next);
   document.title = copy('title');
   const values = policyValues();
   for (const node of document.querySelectorAll('[data-copy]')) {
@@ -278,7 +285,6 @@ function setLanguage(next) {
   renderCalendar();
   renderEstimate();
   renderIntakeStatus();
-  try { localStorage.setItem('myo-language', next); } catch {}
 }
 
 estimateForm.addEventListener('change', () => {
@@ -304,6 +310,4 @@ for (const button of document.querySelectorAll('[data-language]')) {
 }
 updateEstimateFields();
 updateIntakeFields();
-let savedLanguage;
-try { savedLanguage = localStorage.getItem('myo-language'); } catch {}
-setLanguage(savedLanguage === 'es' ? 'es' : 'en');
+setLanguage(selectedLanguage());

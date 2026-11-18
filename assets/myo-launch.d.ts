@@ -30,6 +30,7 @@ export interface IntakeSubmission {
   spendingLimit: number;
   overnightAlone?: string;
   overnightBehavior?: string;
+  overnightAcknowledgment?: boolean;
 }
 export interface LaunchBackend {
   saveIntake(intake: IntakeSubmission): Promise<{id:string}>;
