@@ -71,6 +71,10 @@ h3 { font-size: clamp(2.1rem, 4.2vw, 4.5rem); }
 }
 
 .site-header--sticky {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  row-gap: min(1rem, 16px);
   position: sticky;
   top: 0;
   z-index: 10;
@@ -82,7 +86,7 @@ h3 { font-size: clamp(2.1rem, 4.2vw, 4.5rem); }
   background: var(--paper);
 }
 html:has(.site-header--sticky) { scroll-padding-top: 5.5rem; }
-.site-header--sticky .wordmark { font-size: clamp(2.65rem, 6vw, 3.85rem); }
+.site-header--sticky .wordmark { font-size: clamp(2.65rem, 6vw, 3.85rem); white-space: nowrap; }
 .site-header--sticky.is-scrolled { box-shadow: 0 3px 14px #6d301815; }
 .wordmark-mark { display: inline-block; position: relative; width: .46em; height: .46em; margin-inline-start: .025em; vertical-align: -.07em; }
 .wordmark-shape { display: block; overflow: visible; width: 100%; height: 100%; }
@@ -90,7 +94,7 @@ html:has(.site-header--sticky) { scroll-padding-top: 5.5rem; }
 .wordmark-burst span { position: absolute; color: var(--tomato); font-size: .18em; opacity: 0; }
 .header-booking { position: relative; contain: paint; }
 .header-booking:hover, .header-booking:active { transform: none; }
-.booking-label { min-width: 0; overflow: hidden; transition: opacity .3s ease; }
+.booking-label { min-width: 0; overflow: hidden; white-space: normal; overflow-wrap: anywhere; transition: opacity .3s ease; }
 .header-booking .booking-paw { width: 1.12em; height: 1.12em; flex: 0 0 auto; transition: width .55s, height .55s; }
 .is-scrolled .header-booking {
   position: fixed;
@@ -109,7 +113,7 @@ html:has(.site-header--sticky) { scroll-padding-top: 5.5rem; }
 .site-header--sticky ~ .footer { padding-bottom: calc(5rem + env(safe-area-inset-bottom)); }
 
 .header-actions, .hero-actions { display: flex; align-items: center; }
-.header-actions { justify-content: end; gap: clamp(.5rem, 1.85vw, 1.8rem); }
+.header-actions { justify-content: end; gap: clamp(.5rem, 1.85vw, 1.8rem); margin-inline-start: auto; max-width: 100%; }
 .site-menu { position: relative; z-index: 4; }
 .menu-toggle {
   display: grid;
@@ -206,10 +210,10 @@ html:has(.site-header--sticky) { scroll-padding-top: 5.5rem; }
 .text-link { width: fit-content; text-decoration: underline; text-underline-offset: .3em; transition: text-underline-offset .2s; font-weight: 700; }
 .text-link:hover { text-underline-offset: .5em; }
 
-.hero { overflow: clip; }
+.hero { overflow: clip; container-type: inline-size; }
 .hero-inner { max-width: 1640px; margin: auto; position: relative; isolation: isolate; min-height: min(57.9vw, 950px); display: flex; align-items: start; }
 .hero-copy { position: relative; z-index: 1; padding: clamp(3rem, 6.6vw, 7rem) 0 clamp(2.75rem, 4.9vw, 5rem) var(--gutter); }
-.hero h1 { font-size: clamp(3rem, 8.85vw, 9.25rem); letter-spacing: -.078em; line-height: .85; }
+.hero h1 { font-size: clamp(3rem, 8.85vw, 9.25rem); letter-spacing: -.078em; line-height: .85; overflow-wrap: anywhere; }
 .hero h1 span { display: block; }
 .hero h1 span:first-child { transform: rotate(-4deg); transform-origin: .12em center; }
 .hero h1 span:nth-child(2) { transform: rotate(-3deg); transform-origin: .12em center; }
@@ -341,7 +345,7 @@ html:has(.site-header--sticky) { scroll-padding-top: 5.5rem; }
     transform: translate(var(--x, 0px), var(--y, 0px)) scale(.7);
   }
 }
-.diary { background: var(--peach); }
+.diary { background: var(--peach); container-type: inline-size; }
 .rate-list { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,15rem),1fr)); gap: .75rem; padding: 0; list-style: none; }
 .rate-list > li { min-width: 0; padding: 1rem; border: 1px solid #d8ab94; border-radius: .85rem; background: var(--cream); }
 .rate-list strong { font-size: 1.15rem; color: #842b16; }
@@ -366,6 +370,10 @@ html:has(.site-header--sticky) { scroll-padding-top: 5.5rem; }
 .diary-note dl div { display: grid; grid-template-columns: 5rem 1fr; gap: .5rem; padding: .5rem 0; border-bottom: 1px solid #a8614436; }
 .diary-note dt { font-weight: 700; }
 .diary-note p:last-child { margin-bottom: 0; }
+@container (max-width: 14em) {
+  .diary-note { transform: none; }
+  .hero-heart { display: none; }
+}
 
 .how { padding-block: clamp(4rem, 9vw, 9rem); }
 .how ol { padding: 0; list-style: none; margin-top: clamp(2rem, 5vw, 4rem); }
@@ -533,8 +541,8 @@ a.social-icon:hover { background: #9f3018; color: white; }
 @media (max-width: 850px) {
   .hero-inner { flex-direction: column; }
   .hero-copy { width: 100%; padding-top: clamp(2rem, 5.4vw, 3.5rem); padding-right: var(--gutter); padding-bottom: 0; }
-  .hero h1 { font-size: clamp(3.5rem, 13.8vw, 7.8rem); }
-  [lang="es"] .hero h1 { font-size: clamp(3.05rem, 11.2vw, 6.35rem); }
+  .hero h1 { font-size: min(clamp(3.5rem, 13.8vw, 7.8rem), 25vw); }
+  [lang="es"] .hero h1 { font-size: min(clamp(3.05rem, 11.2vw, 6.35rem), 25vw); }
   .hero-description { max-width: 30ch; }
   .hero-heart { left: 72%; top: 23%; font-size: clamp(3rem, 10vw, 5.5rem); }
   [lang="es"] .hero-heart { left: auto; right: var(--gutter); top: 22%; font-size: clamp(2.2rem, 8vw, 4.5rem); }
@@ -544,7 +552,9 @@ a.social-icon:hover { background: #9f3018; color: white; }
 }
 
 @media (max-width: 580px) {
+  .care, .how, .closing { overflow-wrap: anywhere; }
   .review-rail.is-deck { padding-inline: 1rem; }
+  .review-stars { font-size: min(1.15rem, 5.75vw); }
   .wordmark { font-size: 3.25rem; }
   .button-small { padding-inline: .8em; min-height: 48px; }
   .header-actions { gap: .45rem; }
@@ -556,9 +566,11 @@ a.social-icon:hover { background: #9f3018; color: white; }
   .service-pills, .hero-actions, .footer, .footer-brand { justify-content: center; }
   .hero-art { align-self: center; }
   .hero-heart, [lang="es"] .hero-heart { inset-inline: auto var(--gutter); top: 24%; font-size: clamp(1.75rem, 6vw, 2.5rem); }
-  .split { grid-template-columns: 1fr; }
+  .split { grid-template-columns: minmax(0, 1fr); overflow-wrap: anywhere; }
   .portrait-wrap { width: min(100%, 19rem); justify-self: center; }
+  .portrait-placeholder { width: 100%; }
   .diary-note { margin: .4rem .65rem; }
+  .diary-note dl div { grid-template-columns: minmax(0, 5rem) minmax(0, 1fr); }
   .how li { grid-template-columns: 1fr; gap: .3rem; }
   .footer-brand { flex-basis: 100%; }
 }
@@ -572,6 +584,10 @@ a.social-icon:hover { background: #9f3018; color: white; }
 @media (max-width: 360px) {
   .hero h1 { font-size: 14vw; }
   [lang="es"] .hero h1 { font-size: 11.9vw; }
+}
+
+@container (max-width: 14em) {
+  .hero h1, [lang="es"] .hero h1 { font-size: min(3.5rem, 25vw); line-height: 1; }
 }
 
 @media (prefers-reduced-motion: reduce) {

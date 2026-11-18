@@ -182,21 +182,32 @@ await section(cust, 'book');
 if (await book.locator('[name=notes]').inputValue() !== '') throw new Error('The booking form should be empty after it was submitted');
 await cust.goto(server.base + '/portal/index.html#upcoming');
 
-// Staff: approve both, reschedule one, start one
-await section(staff,'upcoming');
+// Staff: view the queue, approve both, reschedule one, start one
+await section(staff,'staff-home');
 await staff.reload();
+const visitsCard = staff.locator('#staff-home .dashboard-action').first();
+if (!(await visitsCard.innerText()).includes('Today & upcoming')) throw new Error('Staff home should name the visits queue');
+await visitsCard.click();
+await staff.locator('#upcoming h2:focus',{ hasText:'Today & upcoming' }).waitFor();
 await staff.locator('#upcoming article').first().waitFor();
+const staffDialog = staff.locator('#cancel-booking');
+await staff.getByRole('button',{ name:'Decline request' }).first().click();
+await staffDialog.getByRole('heading',{ name:'Decline this request?' }).waitFor();
+await staffDialog.getByRole('button',{ name:'Keep request' }).click();
 for (let i = 0; i < 2; i++) {
   await staff.locator('button:has-text("Approve request")').first().click();
-  await waitSaved(staff);
+  await waitSaved(staff,/^Request approved\.$/);
 }
+await staff.getByRole('button',{ name:'Cancel booking' }).first().click();
+await staffDialog.getByRole('heading',{ name:'Cancel this visit?' }).waitFor();
+await staffDialog.getByRole('button',{ name:'Keep visit' }).click();
 log('confirmed cards:', await staff.locator('#upcoming h3:has-text("Confirmed")').count());
 const resched = staff.locator('#upcoming article').nth(1).locator('details.reschedule-options');
 await resched.locator('summary').click();
 const options = await resched.locator('input[name=slot]').count();
 await resched.locator('input[name=slot]').last().locator('xpath=..').click();
 await resched.locator('button:has-text("Confirm new time")').click();
-await waitSaved(staff);
+await waitSaved(staff,/^New time saved\.$/);
 log('staff reschedule offered', options, 'options');
 
 // Customer cancels one (dialog)
@@ -213,8 +224,11 @@ await cust.reload();
 await checkout.waitFor();
 await cust.getByRole('link',{ name:'Back to my bookings' }).click();
 await cust.locator('#upcoming button:has-text("Cancel booking")').first().click();
-await cust.locator('#cancel-booking button[value=confirm]').click();
-await waitSaved(cust);
+const customerDialog = cust.locator('#cancel-booking');
+await customerDialog.getByRole('heading',{ name:'Cancel this visit?' }).waitFor();
+await customerDialog.getByRole('button',{ name:'Keep visit' }).waitFor();
+await customerDialog.getByRole('button',{ name:'Cancel visit' }).click();
+await waitSaved(cust,/^Visit cancelled\.$/);
 log('customer cancelled; statuses:', await cust.locator('#upcoming article h3').allTextContents());
 
 // Start visit — requires starts in the past? no guard; status flow
@@ -230,6 +244,12 @@ const png = (() => { // 1x1 PNG
 })();
 const ev = staff.locator('#diary form[data-action=events]').first();
 await ev.waitFor();
+await ev.locator('[name=notes]').fill('Ready to publish');
+const publish = ev.getByRole('button',{ name:'Publish diary update' });
+if (!(await publish.evaluate(button => button.getBoundingClientRect().top <= innerHeight &&
+  Boolean(button.compareDocumentPosition(button.form.querySelector('.photo-choices')) & Node.DOCUMENT_POSITION_FOLLOWING)))) {
+  throw new Error('Publish should be within reach after entering notes and before the optional photo controls');
+}
 // A half-written diary note and chosen photo survive saving something else, and the note survives a reload.
 await ev.locator('[name=notes]').fill('Half-written note');
 await ev.locator('input[name=photo]').setInputFiles({ name:'draft.png', mimeType:'image/png', buffer:png });
@@ -298,7 +318,13 @@ if (!(await staff.locator('.financial-breakdown').innerText()).includes('$25.00'
     return (await response.json()).id;
   });
   for (const status of ['Confirmed','In Progress']) {
-    await staff.evaluate(({ id, status }) => fetch('/api/status', { method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify({ id, status }) }), { id, status });
+    await staff.evaluate(async ({ id, status }) => {
+      const response = await fetch('/api/status', {
+        method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify({ id, status }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Could not set the fixture visit status');
+    }, { id, status });
   }
   await staff.reload();
   await section(staff,'upcoming');
@@ -306,6 +332,7 @@ if (!(await staff.locator('.financial-breakdown').innerText()).includes('$25.00'
   await form.locator('[name=summary]').fill('Walked and fed.');
   const button = form.getByRole('button', { name:/Complete visit/ });
   if (!(await button.isDisabled())) throw new Error('Complete visit should wait for the departure check');
+  await form.getByRole('button',{ name:'Report an unsecured home' }).click();
   await form.locator('[name=secure_note]').fill('Back gate latch broken');
   if (!(await button.isEnabled())) throw new Error('A note explaining what was not secured should enable Complete visit');
   await button.click();
@@ -346,6 +373,15 @@ await diaryPicker.selectOption('');
 await cust.locator('#diary-filter:enabled').waitFor();
 await cust.locator('#refresh-diary').click();
 await feedback(cust).filter({ hasText:'up to date' }).waitFor();
+
+await section(cust,'upcoming');
+await cust.reload();
+await cust.getByRole('link',{ name:'Book again' }).first().click();
+await book.waitFor();
+if (!await book.locator('[name=pets]').first().isChecked()) throw new Error('Book again did not restore the pet');
+if (!await book.locator('[name=service]:checked').locator('xpath=..').filter({ hasText:'Dog walking' }).count()) {
+  throw new Error('Book again did not restore the service');
+}
 
 // Staff downloads a backup from the settings page.
 await section(staff,'settings');

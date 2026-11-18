@@ -53,7 +53,9 @@ async function review(page, n, notes = '') {
   const form = page.locator('[data-action=bookings]');
   await form.locator('[data-booking-inputs]').waitFor();
   if (!(await form.locator('input[name=pets]').first().isChecked())) await tapLabel(form.locator('input[name=pets]').first());
-  await tapLabel(form.locator('input[name=slot]').nth(n));
+  // The first day's times shrink as the day goes on, so a late run picks the last time offered instead.
+  const offered = await form.locator('input[name=slot]').count();
+  await tapLabel(form.locator('input[name=slot]').nth(Math.min(n, offered - 1)));
   if (notes) await form.locator('[name=notes]').fill(notes);
   const chosen = await form.locator('input[name=slot]:checked').getAttribute('value');
   await form.locator('[data-booking-inputs] button[type=submit]').tap();
@@ -217,12 +219,26 @@ try {
     await tapLabel(form.locator('input[name=pets]').nth(1));
     check(await form.locator('input[name=slot]:checked').getAttribute('value') === chosen, 'ticking a second pet keeps the chosen time');
     check(/\$45\.00/.test(await form.locator('[data-quote]').textContent()), 'the total shows $45.00 for two pets');
-    await form.locator('[data-booking-inputs] button[type=submit]').tap();
+    await form.locator('[data-quote-lines] .quote-lines').filter({ hasText:'Extra pet × 1' }).waitFor();
+    await staff.evaluate(async () => {
+      const response = await fetch('/api/services', { method:'POST', headers:{ 'Content-Type':'application/json' },
+        body:JSON.stringify({ name:'Dog walking', minutes:30, cents:3000, extra_pet_cents:1800 }) });
+      await response.json();
+      if (!response.ok) throw new Error('Could not update the fixture price');
+    });
+    const reviewButton = form.getByRole('button',{ name:'Review booking' });
+    await reviewButton.tap();
+    await form.locator('[data-booking-error]').filter({ hasText:'The price changed' }).waitFor();
+    await form.locator('[data-quote-lines] .quote-lines').filter({ hasText:'$18.00' }).waitFor();
+    check(/\$48\.00/.test(await form.locator('[data-quote]').textContent()), 'a changed price is quoted again before review');
+    await reviewButton.tap();
     await form.locator('[data-booking-review] .checkout-card').waitFor();
-    check(/\$45\.00/.test(await form.locator('.checkout-total').textContent()), 'the review shows the server’s $45.00 total');
+    check(/\$48\.00/.test(await form.locator('.checkout-total').textContent()), 'the review shows the updated server total');
+    check(/Extra pet × 1/.test(await form.locator('[data-booking-review] .quote-lines').textContent()), 'the review itemizes the extra pet');
     await ben.page.getByRole('button', { name:/Send booking request/ }).tap();
     const sent = await ben.page.waitForFunction(() => /Request sent/.test(document.querySelector('#feedback').textContent), null, { timeout:10_000 }).then(() => true, () => false);
     check(sent, 'the two-pet request is accepted at that price');
+    await ben.page.locator('#upcoming .quote-lines').filter({ hasText:'$18.00' }).waitFor();
   });
   // 7. Change requests: Ana asks to move a confirmed visit; it stays confirmed until staff approve the change.
   await scenario('change request', async () => {
@@ -262,6 +278,24 @@ try {
     const moved = ana.page.locator('#upcoming article').filter({ has:ana.page.locator(`form[data-action=reschedule][data-id="${id}"]`) });
     check(!/Requested change/.test(await moved.textContent()) && (await moved.locator('.appointment-details').first().textContent()) !== before,
       'after approval the visit shows its new time, still confirmed');
+    const confirmedTime = await moved.locator('.appointment-details').first().textContent();
+    const requestChange = async () => {
+      await moved.locator('summary',{ hasText:'Reschedule' }).tap();
+      await tapLabel(moved.locator('.reschedule-options input[name=slot]').last());
+      await moved.getByRole('button',{ name:'Request new time' }).tap();
+      await moved.getByRole('button',{ name:'Withdraw request' }).waitFor();
+    };
+    await requestChange();
+    await moved.getByRole('button',{ name:'Withdraw request' }).tap();
+    await ana.page.locator('#feedback').filter({ hasText:'Change request withdrawn.' }).waitFor();
+    check(!/Requested change:/.test(await moved.textContent()), 'withdrawing removes the requested change');
+    await requestChange();
+    await staffPage.reload();
+    await staffCard.getByRole('button',{ name:'Decline change' }).tap();
+    await staffPage.locator('#feedback').filter({ hasText:'Change declined.' }).waitFor();
+    await ana.page.reload();
+    await moved.getByText('Change declined.',{exact:false}).waitFor();
+    check(await moved.locator('.appointment-details').first().textContent() === confirmedTime, 'declining leaves the confirmed time in place');
   });
   // 8. Overnight stay (C2.1): choose drop-off and pickup dates, see the price for the nights, and send the request.
   await scenario('overnight stay', async () => {

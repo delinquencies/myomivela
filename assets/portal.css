@@ -90,6 +90,29 @@
 }
 .portal .auth-jump { display: none; }
 .portal [data-booking-review] { max-width: 31rem; }
+.booking-date-pages { display: flex; flex-wrap: wrap; gap: .45rem; margin-top: .45rem; }
+.portal .booking-date-pages button { flex: 1; margin-inline: 0; }
+.portal [data-booking-days] label[hidden] { display: none; }
+.portal [data-booking-times] .tap-choices { margin-block: .75rem; }
+.portal [data-booking-summary] {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  padding: .5rem .65rem calc(.5rem + env(safe-area-inset-bottom));
+  border: 1px solid #d8ab94;
+  border-radius: .75rem;
+  background: var(--cream);
+  box-shadow: 0 -.15rem .65rem #231b181a;
+}
+.portal [data-booking-summary] p { margin: 0 0 .35rem; font-variant-numeric: tabular-nums; }
+.portal [data-booking-summary] [data-quote-status]:empty { margin: 0; }
+.portal .quote-lines { margin-block: .35rem; font-size: .9rem; }
+.portal .quote-lines div { display: flex; justify-content: space-between; gap: .65rem; }
+.portal .quote-lines dd { margin: 0; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.portal .departure-check [hidden] { display: none; }
+.portal [data-booking-summary] button { width: 100%; margin: 0; }
+.portal [data-booking-options] label, .portal [data-booking-options] textarea { scroll-margin-bottom: 8rem; }
+.portal [data-availability-status]:empty { margin: 0; }
 .portal .auth-availability { margin: 1rem 0; }
 .portal .auth-availability h2 { font-size: clamp(1.35rem,3vw,1.9rem); }
 .auth-availability > p { margin-bottom: .55rem; }
@@ -110,6 +133,7 @@
 }
 .portal details[open] > summary { background: var(--peach); color: #842b16; }
 .portal .tap-link { margin-block: .35rem; }
+.portal .text-link { display: inline-flex; align-items: center; min-height: 44px; }
 .portal summary { display: flex; width: fit-content; max-width: 100%; list-style: none; }
 .portal summary::-webkit-details-marker { display: none; }
 .portal summary::after { content: ''; flex: 0 0 .45rem; width: .45rem; height: .45rem; margin-inline-start: .25rem; border: solid currentColor; border-width: 0 2px 2px 0; transform: rotate(45deg); }
@@ -209,6 +233,8 @@
 }
 .portal-feedback.is-notice #feedback { margin: 0; }
 .portal-feedback #dismiss-feedback { flex: 0 0 48px; margin: 0; padding: 0; font-size: 1.35rem; }
+.portal [data-action="events"] .tap-choices,
+.portal [data-action="events"] .tap-choices label { scroll-margin-top: 8rem; }
 .portal .tap-choices { padding: 0; border: 0; min-inline-size: 0; }
 .tap-choices legend { font-weight: 600; margin-bottom: .35rem; }
 .tap-choices > div { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 8rem), 1fr)); gap: .45rem; }
@@ -281,7 +307,6 @@
 @media (max-width: 640px) {
   .portal .auth-jump { display: block; margin-top: .75rem; }
   .checkout-card dl > .checkout-appointment { grid-template-columns: 1fr; gap: .15rem; }
-  .portal [data-booking-inputs] > button[type="submit"] { width: 100%; margin-inline: 0; }
   .dashboard-actions { grid-template-columns: 1fr; }
   .checkout-actions { display: grid; justify-items: start; }
   .checkout-actions button[type="submit"] { width: 100%; margin-inline: 0; }
