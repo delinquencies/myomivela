@@ -217,6 +217,8 @@ Phase 3  C3.1 Ledger + payments (provider decision) ──▶ X3.1
 ```
 
 ### C2.2: Compliance gates (vaccines, agreement, meet first) · Phase 2 · needs C1.1, C1.4
+**Status: done** (migration 14, `lib/compliance.mjs`, `lib/routes/compliance.mjs`, `tests/compliance.test.mjs`). Deviation: requirements are **not** seeded with defaults, and the agreement and meet gates apply only once set up, so turning any gate on is Myomi's decision. Staff set requirements with `POST /api/vaccine-requirements` and publish agreements with `POST /api/agreements`. The restore route accepts `vaccines/` keys, so the planned `/api/restore/blob` rename wasn't needed.
+
 **Why Claude:** new tables, document upload to R2, staff verification, and one gate function shared by quotes, holds, bookings and the UI. Blocked requests return structured errors.
 
 **Design**
