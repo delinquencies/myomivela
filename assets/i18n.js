@@ -77,6 +77,8 @@ export const catalogs = {
     'error.invalid_time': 'Elige una hora en punto o y media.',
     'error.series_limit': 'Tienes el máximo de visitas recurrentes. Termina una primero.',
     'error.series_ended': 'Esta visita recurrente ya terminó.',
+    'error.no_package_credit': 'No tienes créditos de paquete válidos para este servicio en esa fecha.',
+    'error.package_visits_only': 'Los paquetes son para paseos y visitas a domicilio.',
   },
 };
 export const hasKey = (key, language = locale()) => key in (catalogs[language] || {});
