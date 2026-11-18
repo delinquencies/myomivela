@@ -6,6 +6,14 @@ export const activityIcons = {
   Medication:'💊', Playtime:'🎾', Rest:'💤', Observation:'👀', Custom:'✏️',
 };
 
+// The departure check recorded at completion (C1.3); older visits have none.
+const departureTime = new Intl.DateTimeFormat('en-US',{timeStyle:'short',timeZone:'America/New_York'});
+function departureLine(check) {
+  if (!check) return '';
+  return check.secured
+    ? '<p class="diary-departure">🔒 Home secured at '+escapeHtml(departureTime.format(check.at))+'</p>'
+    : '<p class="diary-departure diary-departure-warning preserve">⚠️ Not fully secured: '+escapeHtml(check.note)+'</p>';
+}
 export function renderDiaryVisits(visits, eventsByVisit, petName, photoFor) {
   if (!visits.length) return '<p>No diary visits for this selection yet.</p>';
 
@@ -27,6 +35,7 @@ export function renderDiaryVisits(visits, eventsByVisit, petName, photoFor) {
     return '<article class="diary-visit"><header><p class="diary-status">'+escapeHtml(visit.status)+'</p><h3>'+escapeHtml(visit.service_name)+'</h3>'+
       '<p data-visit-date>'+formatVisitDate(visit.starts)+' · '+escapeHtml(pets)+'</p></header>'+
       (visit.summary ? '<p class="diary-summary preserve"><strong>Visit summary</strong><br>'+escapeHtml(visit.summary)+'</p>' : '')+
+      departureLine(visit.departure_check)+
       (entries.length ? '<ol class="diary-timeline">'+entries.map(renderEntry).join('')+'</ol>' : '<p class="diary-summary">No updates for this visit yet.</p>')+'</article>';
   }).join('');
 }

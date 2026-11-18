@@ -272,20 +272,53 @@ if (noteAfterPublish !== '') throw new Error('The diary form should be empty aft
 await section(staff,'upcoming');
 const done = staff.locator('form[data-action=status]:has(input[value=Completed])').first();
 await done.locator('[name=summary]').fill('All good');
-await done.locator('button').click();
+const completeButton = done.getByRole('button', { name:/Complete visit/ });
+if (!(await completeButton.isDisabled())) throw new Error('Complete visit should wait for the departure check');
+await done.locator('[name=secured]').locator('xpath=..').click();
+await completeButton.click();
 await waitSaved(staff);
+
 await section(staff,'financials');
 await staff.locator('.financial-breakdown').getByText('Dog walking · 1 visit').waitFor();
 if (!(await staff.locator('.financial-breakdown').innerText()).includes('$25.00')) throw new Error('Completed visit totals are incorrect');
+// Departure check, unsecured path: a second visit is completed with a note, and Complete waits for it.
+{
+  const id = await cust.evaluate(async () => {
+    const data = await fetch('/api/portal').then(r => r.json());
+    const slot = data.slots.at(-1);
+    const response = await fetch('/api/bookings', { method:'POST', headers:{ 'Content-Type':'application/json' },
+      body:JSON.stringify({ service:data.services[0].id, cents:data.services[0].cents, pets:[data.pets[0].id], slot:slot.id, start:slot.starts, notes:'' }) });
+    return (await response.json()).id;
+  });
+  for (const status of ['Confirmed','In Progress']) {
+    await staff.evaluate(({ id, status }) => fetch('/api/status', { method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify({ id, status }) }), { id, status });
+  }
+  await staff.reload();
+  await section(staff,'upcoming');
+  const form = staff.locator(`form[data-action=status][data-id="${id}"]:has(input[value=Completed])`);
+  await form.locator('[name=summary]').fill('Walked and fed.');
+  const button = form.getByRole('button', { name:/Complete visit/ });
+  if (!(await button.isDisabled())) throw new Error('Complete visit should wait for the departure check');
+  await form.locator('[name=secure_note]').fill('Back gate latch broken');
+  if (!(await button.isEnabled())) throw new Error('A note explaining what was not secured should enable Complete visit');
+  await button.click();
+  await waitSaved(staff);
+  log('departure check: Complete waited for the check; completed with an unsecured note');
+}
 
 // Customer diary
 await section(cust,'diary');
 const img = cust.locator('#diary-feed img').first();
 await img.waitFor();
 log('customer diary photo loaded:', await img.evaluate(i => i.complete && i.naturalWidth > 0));
+const diaryText = await cust.locator('#diary-feed').textContent();
+log('diary departure lines:', /Home secured at/.test(diaryText), /Not fully secured: Back gate latch broken/.test(diaryText));
+if (!/Home secured at/.test(diaryText) || !/Not fully secured: Back gate latch broken/.test(diaryText)) throw new Error('The diary should show both departure checks');
 const diaryPicker = cust.getByLabel('Filter diary');
 for (const group of ['By pet','By visit']) {
-  const option = diaryPicker.locator('optgroup[label="'+group+'"] option').first();
+  // Visits are listed newest first; the visit with the photo is the earlier one (the later visit has no photo).
+  const options = diaryPicker.locator('optgroup[label="'+group+'"] option');
+  const option = group === 'By visit' ? options.last() : options.first();
   const value = await option.getAttribute('value');
   await diaryPicker.selectOption(value);
   await cust.locator('#diary-filter:enabled').waitFor();

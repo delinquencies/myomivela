@@ -19,13 +19,15 @@ const portalLinks = document.querySelector('#portal-links');
 const cancelDialog = document.querySelector('#cancel-booking');
 const find = (rows,id) => rows.find(row => row.id === id);
 const money = cents => new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(cents / 100);
+// Mirrors quote() in lib/pricing.mjs; the server re-prices every hold and request and refuses a stale total.
+const bookingTotal = (service, petCount) => service.cents + Math.max(0, petCount - 1) * (service.extra_pet_cents || 0);
 const day = value => new Intl.DateTimeFormat('en-CA',{dateStyle:'short',timeZone:'America/New_York'}).format(value);
 const emoji = icon => icon ? '<span class="control-icon" aria-hidden="true">'+icon+'</span> ' : '';
 const button = (label, style = '', icon = '') => '<button class="'+style+'" type="submit">'+emoji(icon)+text(label)+'</button>';
 const form = (action, contents, id = '') => '<form data-action="'+action+'" data-id="'+id+'">'+contents+'</form>';
 const input = (label,name,attributes = '') => '<label>'+label+'<input name="'+name+'" '+attributes+'></label>';
 const area = (label,name,value = '',max = 3000) => '<label>'+label+'<textarea maxlength="'+max+'" name="'+name+'">'+text(value)+'</textarea></label>';
-const serviceIcons = { 'Dog walking':'🦮', 'Drop-in visit':'🏠', 'Overnight pet sitting':'🌙' };
+const serviceIcons = { 'Dog walking':'🦮', 'Drop-in visit':'🏠', 'Overnight pet sitting':'🌙', 'Meet & Greet':'🤝' };
 const tapLink = (href,label,icon) => '<a class="tap-link" href="'+text(href)+'">'+emoji(icon)+text(label)+'</a>';
 const serviceNames = new Map([
   ['pet-sitting', 'Overnight pet sitting'],
@@ -297,8 +299,20 @@ function bookingForm() {
     '<p data-quote></p>'+button('Review booking','','📅')+'</div><div data-booking-review hidden></div>');
 }
 function statusForm(booking,status,label) {
-  const summary = status === 'Completed' ? '<label>Visit summary<textarea required maxlength="3000" name="summary"></textarea></label>' : '';
-  return form('status','<input type="hidden" name="status" value="'+text(status)+'">'+summary+button(label,status === 'Cancelled' ? 'secondary' : '',{ Confirmed:'✓', 'In Progress':'🐾', Completed:'🏁', Cancelled:'✕' }[status]),booking.id);
+  // Completing records the departure check (C1.3): secured, or a note saying what wasn't and what was done.
+  const summary = status === 'Completed' ? '<label>Visit summary<textarea required maxlength="3000" name="summary"></textarea></label>'+
+    '<fieldset class="departure-check"><legend>Before you leave</legend>'+
+    '<label class="departure-secured"><input type="checkbox" name="secured" value="1"> Doors locked and home secured</label>'+
+    '<label>If not, what wasn’t secured and what did you do?<textarea name="secure_note" maxlength="500"></textarea></label></fieldset>' : '';
+  const control = button(label,status === 'Cancelled' ? 'secondary' : '',{ Confirmed:'✓', 'In Progress':'🐾', Completed:'🏁', Cancelled:'✕' }[status]);
+  return form('status','<input type="hidden" name="status" value="'+text(status)+'">'+summary+
+    (status === 'Completed' ? control.replace('<button ','<button disabled data-needs-departure ') : control),booking.id);
+}
+// "Complete visit" stays disabled until the home is confirmed secured or a note of at least 3 characters explains why not.
+function updateDepartureCheck(form) {
+  const control = form.querySelector('[data-needs-departure]');
+  if (!control) return;
+  control.disabled = !(form.elements.secured.checked || form.elements.secure_note.value.trim().length >= 3);
 }
 function choice(name, value, label, { icon = '', checked = false, required = false, type = 'radio' } = {}) {
   return '<label><input type="'+type+'" name="'+name+'" value="'+text(value)+'"'+
@@ -373,17 +387,30 @@ function bookingCard(booking) {
     }
     actions += statusForm(booking,'Cancelled','Cancel booking');
   }
+  // A customer's proposed new time for a confirmed visit (C1.2): the visit keeps its time until Myomi decides.
+  const change = booking.pending_change;
+  let changeNote = '';
+  if (change && data.user.admin) {
+    changeNote = '<p class="change-note"><strong>Customer asked to move to '+text(date(change.starts))+'.</strong></p>'+
+      form('changes/decide','<input type="hidden" name="decision" value="approve">'+button('Approve change','','✓'),change.id)+
+      form('changes/decide','<input type="hidden" name="decision" value="decline">'+button('Decline change','secondary','✕'),change.id);
+  } else if (change) {
+    changeNote = '<p class="change-note">Requested change: '+text(date(change.starts))+' — waiting for Myomi. Your current time stays booked until then.</p>'+
+      form('changes/withdraw',button('Withdraw request','secondary','↩️'),change.id);
+  }
   if (['Requested','Confirmed'].includes(booking.status) && (data.user.admin || booking.starts > Date.now())) {
     const slots = availableSlots((booking.ends-booking.starts)/60000);
+    const needsApproval = !data.user.admin && booking.status === 'Confirmed'
+      ? '<p>Myomi will confirm the new time. Your current time stays booked until then.</p>' : '';
     if (slots.length) actions += '<details class="reschedule-options"><summary>'+emoji('📅')+'Reschedule</summary>'+
-      form('reschedule',choiceGroup('New time',slotChoices(slots))+button('Confirm new time','secondary','✓'),booking.id)+'</details>';
+      form('reschedule',needsApproval+choiceGroup('New time',slotChoices(slots))+button(needsApproval ? 'Request new time' : 'Confirm new time','secondary','✓'),booking.id)+'</details>';
   }
   const statusLabel = !data.user.admin && booking.status === 'Requested' ? 'Waiting for Myomi' : booking.status;
   return '<article><h3>'+text(booking.service_name)+' · '+text(statusLabel)+'</h3><p class="appointment-details">'+date(booking.starts)+' – '+date(booking.ends)+' · '+money(booking.cents)+'</p>'+
     (data.user.admin ? '<p>'+text(booking.customer)+' · '+text(booking.email)+'</p>' : '')+
     '<p>Pets: '+pets.map(p=>text(p.name)).join(', ')+'</p><p class="preserve">'+text(booking.notes)+'</p>'+
     (booking.arrived ? '<p class="appointment-details">Arrived: '+date(booking.arrived)+'</p>' : '') + (booking.departed ? '<p class="appointment-details">Completed: '+date(booking.departed)+'</p>' : '')+
-    (booking.summary ? '<p class="preserve"><strong>Visit summary:</strong> '+text(booking.summary)+'</p>' : '')+
+    (booking.summary ? '<p class="preserve"><strong>Visit summary:</strong> '+text(booking.summary)+'</p>' : '')+changeNote+
     (data.user.admin ? pets.map(p=>'<details><summary>'+text(p.name)+'’s care profile</summary>'+profileSummary(p)+'</details>').join('') : '')+
     actions+'</article>';
 }
@@ -598,7 +625,8 @@ function clientHome() {
   ])+weekCalendar();
 }
 function staffHome(bookings) {
-  const pending = bookings.filter(booking => booking.status === 'Requested').length;
+  // Requests and change requests both wait on Myomi.
+  const pending = bookings.filter(booking => booking.status === 'Requested' || booking.pending_change).length;
   const active = bookings.filter(booking => booking.status === 'In Progress').length;
   const tasks = [
     ['upcoming','Bookings','📅',pending ? pending+' '+(pending === 1 ? 'request to review' : 'requests to review') : 'Review requests and manage visits.'],
@@ -677,6 +705,7 @@ function render() {
     onFile:(form, input, file) => showPhotoSelection(form, file),
     onStep:(form, step) => showPetCard(form, step),
   });
+  for (const form of app.querySelectorAll('form[data-action="status"]')) updateDepartureCheck(form); // after drafts are restored
   showSection();
 }
 function showSection(focus = false) {
@@ -719,6 +748,12 @@ document.addEventListener('keydown', event => {
     portalMenu.querySelector('summary').focus();
   }
 });
+// Only the total text: changing pets must not rebuild the day and time choices.
+function updateTotal(booking) {
+  const service = find(data.services,Number(booking.querySelector('[name="service"]:checked')?.value));
+  const petCount = Math.max(1, booking.querySelectorAll('[name="pets"]:checked').length);
+  booking.querySelector('[data-quote]').textContent = service ? 'Request total: '+money(bookingTotal(service, petCount))+' · '+service.minutes+' minutes.' : '';
+}
 function updateQuote(event) {
   const booking = app.querySelector('[data-action="bookings"]');
   if (!booking) return;
@@ -741,7 +776,7 @@ function updateQuote(event) {
   availability.textContent = service
     ? 'No times are available for this service right now. Try another service or check back later.'
     : (name || 'This service')+' is unavailable right now. Choose another service or check back later.';
-  booking.querySelector('[data-quote]').textContent = service ? 'Request total: '+money(service.cents)+' · '+service.minutes+' minutes.' : '';
+  updateTotal(booking);
   booking.querySelector('button[type="submit"]').disabled = appointments.length === 0;
 }
 async function refresh() {
@@ -795,7 +830,8 @@ app.addEventListener('change', event => {
     showPhotoSelection(form,file || other.files[0]);
   }
   if (form?.dataset.action === 'bookings' && ['service','day'].includes(name)) updateQuote(event);
-  if (form?.dataset.action === 'bookings' && name === 'pets') form.querySelector('[data-booking-pet-error]').textContent = '';
+  if (name === 'secured' && form) updateDepartureCheck(form);
+  if (form?.dataset.action === 'bookings' && name === 'pets') { form.querySelector('[data-booking-pet-error]').textContent = ''; updateTotal(form); }
   if (name === 'diary-filter') updateDiaryFilter(event.target);
 });
 async function updateDiaryFilter(select) {
@@ -820,6 +856,7 @@ async function updateDiaryFilter(select) {
 // Save drafts shortly after typing stops, and when the tab is hidden, so a reload or a discarded tab keeps them.
 let draftTimer;
 app.addEventListener('input', event => {
+  if (event.target.name === 'secure_note' && event.target.form) updateDepartureCheck(event.target.form);
   if (event.target.matches('.pet-field [aria-invalid]')) petFieldError(event.target,'');
   const card = event.target.closest('[data-pet-card]');
   if (card) updatePetStepButton(card.form,card);
@@ -992,14 +1029,14 @@ app.addEventListener('submit',async event => {
       const service = find(data.services,payload.service);
       if (!service || !payload.slot) throw new Error('Choose a service and an available appointment.');
       payload.pets = fields.getAll('pets').map(Number);
-      payload.cents = service.cents;
+      payload.cents = bookingTotal(service, payload.pets.length);
       const review = form.querySelector('[data-booking-review]');
       if (!review.dataset.expires) {
         const hold = await api('checkout-hold',payload,requestKey(form,'checkout-hold\n'+JSON.stringify(payload)));
         pendingKeys.delete(form);
         review.dataset.expires = hold.expires;
         review.innerHTML = checkoutSummary({
-          service_name:service.name, pet_ids:payload.pets, starts:hold.starts, ends:hold.ends, cents:service.cents,
+          service_name:service.name, pet_ids:payload.pets, starts:hold.starts, ends:hold.ends, cents:hold.total_cents,
         },hold.expires);
         form.querySelector('[data-booking-inputs]').hidden = true;
         form.querySelector('[data-booking-error]').textContent = '';
@@ -1014,6 +1051,7 @@ app.addEventListener('submit',async event => {
       payload.hold = Number(review.dataset.expires);
     }
     if (action === 'services') payload.cents = Math.round(Number(payload.price)*100);
+    if (action === 'status' && payload.status === 'Completed') payload.secured = fields.has('secured');
     if (action === 'schedule') {
       payload.days = fields.getAll('days').map(Number);
       payload.buffer = Number(payload.buffer);
@@ -1055,6 +1093,9 @@ app.addEventListener('submit',async event => {
     }
     if (resumeBooking || signedIn || action === 'register') showSection(true);
     if (action === 'signout-all') { drafts.clear(); feedback.textContent = 'Signed out on every device.'; return; }
+    if (result?.change) { feedback.textContent = 'Change requested. Myomi will confirm the new time; your current time stays booked until then.'; return; }
+    if (action === 'changes/decide') { feedback.textContent = payload.decision === 'approve' ? 'Change approved. The visit has moved.' : 'Change declined. The visit keeps its time.'; return; }
+    if (action === 'changes/withdraw') { feedback.textContent = 'Change request withdrawn.'; return; }
     feedback.textContent = action === 'bookings' ? 'Request sent. Myomi still needs to confirm your appointment.'
       : action === 'password' ? 'Password changed. Your other devices have been signed out.'
       : action === 'register' ? 'Your account is ready.'

@@ -40,7 +40,7 @@ before(async () => {
   const photo = 'data:image/png;base64,' + png().toString('base64');
   assert.equal((await call('staff','POST','/api/events',{ id:visitId, pet:data.pets[0].id, kind:'Playtime', notes:'Fetch', photo })).status, 200);
   await call('staff','POST','/api/events',{ id:visitId, pet:data.pets[0].id, kind:'Water', notes:'Bowl filled' });
-  await call('staff','POST','/api/status',{ id:visitId, status:'Completed', summary:'Happy dog' });
+  await call('staff','POST','/api/status',{ id:visitId, status:'Completed', summary:'Happy dog', secured:true });
   const event = (await call('ann','GET','/api/diary')).json.events.find(e => e.has_photo);
   photoBytes = (await call('ann','GET','/api/photos/' + event.id)).bytes;
   const response = await call('staff','GET','/api/backup');

@@ -202,6 +202,67 @@ try {
     check(true, 'the server refuses an early start even when the device clock is ahead');
     await ctx.close();
   });
+  // 6. Two pets: the total includes the extra-pet price, ticking a pet keeps the chosen time, and the request goes through.
+  await scenario('extra pet', async () => {
+    await staff.evaluate(() => fetch('/api/services', { method:'POST', headers:{ 'Content-Type':'application/json' },
+      body:JSON.stringify({ name:'Dog walking', minutes:30, cents:3000, extra_pet_cents:1500 }) }));
+    await ben.page.evaluate(() => fetch('/api/pets', { method:'POST', headers:{ 'Content-Type':'application/json' },
+      body:JSON.stringify({ name:'Bean', species:'Dog', details:'' }) }));
+    await ben.page.goto(server.base + '/portal/index.html?fresh=' + Date.now() + '#book');
+    const form = ben.page.locator('[data-action=bookings]');
+    await form.waitFor();
+    await tapLabel(form.locator('input[name=pets]').nth(0));
+    await tapLabel(form.locator('input[name=slot]').nth(2));
+    const chosen = await form.locator('input[name=slot]:checked').getAttribute('value');
+    await tapLabel(form.locator('input[name=pets]').nth(1));
+    check(await form.locator('input[name=slot]:checked').getAttribute('value') === chosen, 'ticking a second pet keeps the chosen time');
+    check(/\$45\.00/.test(await form.locator('[data-quote]').textContent()), 'the total shows $45.00 for two pets');
+    await form.locator('[data-booking-inputs] button[type=submit]').tap();
+    await form.locator('[data-booking-review] .checkout-card').waitFor();
+    check(/\$45\.00/.test(await form.locator('.checkout-total').textContent()), 'the review shows the server’s $45.00 total');
+    await ben.page.getByRole('button', { name:/Send booking request/ }).tap();
+    const sent = await ben.page.waitForFunction(() => /Request sent/.test(document.querySelector('#feedback').textContent), null, { timeout:10_000 }).then(() => true, () => false);
+    check(sent, 'the two-pet request is accepted at that price');
+  });
+  // 7. Change requests: Ana asks to move a confirmed visit; it stays confirmed until staff approve the change.
+  await scenario('change request', async () => {
+    const id = await ana.page.evaluate(async () => {
+      const data = await fetch('/api/portal').then(r => r.json());
+      const slot = data.slots.at(-3);
+      const response = await fetch('/api/bookings', { method:'POST', headers:{ 'Content-Type':'application/json' },
+        body:JSON.stringify({ service:data.services[0].id, cents:data.services[0].cents, pets:[data.pets[0].id], slot:slot.id, start:slot.starts, notes:'' }) });
+      return (await response.json()).id;
+    });
+    await staff.evaluate(id => fetch('/api/status', { method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify({ id, status:'Confirmed' }) }), id);
+    await ana.page.goto(server.base + '/portal/index.html?fresh=' + Date.now() + '#upcoming');
+    const card = ana.page.locator('#upcoming article').filter({ has:ana.page.locator(`form[data-action=reschedule][data-id="${id}"]`) });
+    const before = await card.locator('.appointment-details').first().textContent();
+    await card.locator('summary', { hasText:'Reschedule' }).tap();
+    check(/Myomi will confirm the new time/.test(await card.locator('.reschedule-options').textContent()), 'the reschedule panel says Myomi must confirm');
+    await tapLabel(card.locator('.reschedule-options input[name=slot]').first());
+    await card.getByRole('button', { name:/Request new time/ }).tap();
+    await ana.page.waitForFunction(() => /Change requested/.test(document.querySelector('#feedback').textContent));
+    const after = ana.page.locator('#upcoming article').filter({ hasText:'Requested change' });
+    check(/Confirmed/.test(await after.locator('h3').textContent()) && (await after.locator('.appointment-details').first().textContent()) === before,
+      'the visit stays confirmed at its time, with the requested change shown');
+    const staffPage = await (await phone()).newPage();
+    watch(staffPage, 'staff-changes');
+    await staffPage.goto(server.base + '/portal/index.html?staff=1');
+    await staffPage.locator('[data-action=login] [name=email]').fill(adminLogin.email);
+    await staffPage.locator('[data-action=login] [name=password]').fill(adminLogin.password);
+    await staffPage.locator('[data-action=login] button').tap();
+    await staffPage.locator('#staff-home').waitFor();
+    await staffPage.evaluate(() => { location.hash = 'upcoming'; });
+    const staffCard = staffPage.locator('#upcoming article').filter({ hasText:'Customer asked to move' });
+    check(await staffCard.count() === 1, 'staff see the change request on the visit');
+    await staffCard.getByRole('button', { name:'Approve change' }).tap();
+    await staffPage.waitForFunction(() => /Change approved/.test(document.querySelector('#feedback').textContent));
+    await ana.page.reload();
+    await ana.page.evaluate(() => { location.hash = 'upcoming'; });
+    const moved = ana.page.locator('#upcoming article').filter({ has:ana.page.locator(`form[data-action=reschedule][data-id="${id}"]`) });
+    check(!/Requested change/.test(await moved.textContent()) && (await moved.locator('.appointment-details').first().textContent()) !== before,
+      'after approval the visit shows its new time, still confirmed');
+  });
 } catch (error) {
   failures.push('unexpected: ' + error.message.split('\n')[0]);
   console.error(error);

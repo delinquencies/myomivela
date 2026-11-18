@@ -41,6 +41,8 @@ Phase 3  C3.1 Ledger + payments (provider decision) ──▶ X3.1
 ## Phase 1
 
 ### C1.1: Itemised quotes and machine-readable errors · Phase 1
+**Status: done** (migration 9, `lib/pricing.mjs`, `tests/pricing.test.mjs`, browser scenario 6 in `tests/browser/holds-smoke.mjs`). The portal sends the same total, computed by `bookingTotal()`, and shows the server's total on review; the itemised display is Codex X1.6.
+
 **Why Claude:** this changes the pricing contract shared by `/api/checkout-hold`, `/api/bookings`, `/api/portal`, financials, backup and every later pricing feature (extra pets, late pickup, fee rules, ledger). It also changes the error shape every client consumes.
 
 **Design**
@@ -84,6 +86,8 @@ Phase 3  C3.1 Ledger + payments (provider decision) ──▶ X3.1
 ```
 
 ### C1.2: Change requests for confirmed visits · Phase 1
+**Status: done** (migration 10, `tests/changes.test.mjs`, browser scenario 7). The contract also includes `last_change: { id, status:'Approved'|'Declined', starts, ends, decided } | null` for showing a decision once. Minimal UI shipped so neither side is stranded: the requested-change note and **Withdraw request** for customers, **Approve change** and **Decline change** for staff, and pending changes counted on the staff home card. Codex X1.7 refines it.
+
 **Why Claude:** a new state machine. The booking keeps its confirmed time while a proposed change waits. It touches conflict checks, the early-start rule, cancellation and staff approval.
 
 **Design**
@@ -117,6 +121,8 @@ Phase 3  C3.1 Ledger + payments (provider decision) ──▶ X3.1
 ```
 
 ### C1.3: Departure check (door locked) · Phase 1
+**Status: done** (migration 11, `tests/departure.test.mjs`, completion paths in `tests/browser/portal-smoke.mjs`). Minimal UI shipped, because the server now requires the check: a checkbox and note on the completion form, with **Complete visit** gated, and one line in the customer's diary. Codex X1.8 refines copy and layout.
+
 **Why Claude:** a schema change plus server validation, a completion-rule change in the state machine, and new diary payload fields that the customer renderer depends on.
 
 **Design**
@@ -142,6 +148,8 @@ Phase 3  C3.1 Ledger + payments (provider decision) ──▶ X3.1
 ```
 
 ### C1.4: Service kinds and a free meet & greet · Phase 1
+**Status: done** (migration 12, `tests/service-kinds.test.mjs`). Staff can set the Meet & Greet price in Settings (🤝). The customer-facing "Free" labels, the first-visit card and the homepage link are Codex X1.9.
+
 **Why Claude:** introduces `services.kind`, which overnight stays (C2.1), the compliance gates (C2.2) and the report cards (C2.4) all branch on. It also changes catalog validation and what "first visit" means.
 
 **Design**
