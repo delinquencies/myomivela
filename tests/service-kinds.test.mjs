@@ -62,7 +62,8 @@ test('the migration marks existing overnight services', { skip:nodeOnly }, async
   await own.call('staff','POST','/api/services',{ name:'Overnight pet sitting', minutes:720, cents:11000 });
   await own.stop();
   const db = new DatabaseSync(path);
-  db.exec("UPDATE services SET kind='visit'; UPDATE meta SET value=CAST(value AS INTEGER)-1 WHERE key='schema_version'");
+  // Rewind to just before migration 12 (service kinds), so it and every later migration run again.
+  db.exec("UPDATE services SET kind='visit'; UPDATE meta SET value='11' WHERE key='schema_version'");
   db.close();
   own = await startServer({}, { dbPath:path });
   try {

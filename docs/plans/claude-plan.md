@@ -178,6 +178,8 @@ Phase 3  C3.1 Ledger + payments (provider decision) ──▶ X3.1
 ## Phase 2
 
 ### C2.1: Overnight stays as residencies · Phase 2 · needs C1.1, C1.4
+**Status: done** (migration 13, `tests/overnight.test.mjs`, browser scenario 8 in `holds-smoke.mjs`). Deviations from the design below: no `planned_departure` column, because `bookings.ends` is the planned pickup and `departed` the actual one. The stay-conflict rule is a shared `clashes()` used by every availability check. Stay reschedules are refused for now.
+
 **Why Claude:** a new availability model alongside `schedule_settings` and `upcomingWindows()`, multi-day conflict logic in `reserveTime()` and `conflict()`, nightly pricing and late-pickup lines in `lib/pricing.mjs`, and diary grouping by night. This is the core of our overnight wedge.
 
 **Design**

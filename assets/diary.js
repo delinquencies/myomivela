@@ -4,6 +4,7 @@ export const formatVisitDate = value => new Intl.DateTimeFormat('en-US',{dateSty
 export const activityIcons = {
   Feeding:'🍽️', Water:'💧', 'Walk started':'🐾', 'Walk completed':'🦮', Potty:'💩',
   Medication:'💊', Playtime:'🎾', Rest:'💤', Observation:'👀', Custom:'✏️',
+  Arrival:'🧳', 'Evening check-in':'🌙', 'Morning check-in':'🌅', Departure:'👋',
 };
 
 // The departure check recorded at completion (C1.3); older visits have none.

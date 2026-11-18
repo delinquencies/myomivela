@@ -263,6 +263,32 @@ try {
     check(!/Requested change/.test(await moved.textContent()) && (await moved.locator('.appointment-details').first().textContent()) !== before,
       'after approval the visit shows its new time, still confirmed');
   });
+  // 8. Overnight stay (C2.1): choose drop-off and pickup dates, see the price for the nights, and send the request.
+  await scenario('overnight stay', async () => {
+    await staff.evaluate(async () => {
+      const post = (path, body) => fetch('/api/' + path, { method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify(body) });
+      await post('services', { name:'Overnight pet sitting', minutes:720, cents:11000 });
+      await post('schedule', { days:[0,1,2,3,4,5,6], opens:'08:00', closes:'18:00', buffer:0, overnight_days:[0,1,2,3,4,5,6], late_pickup_grace:120 });
+    });
+    await ana.page.goto(server.base + '/portal/index.html?fresh=' + Date.now() + '#book');
+    const form = ana.page.locator('[data-action=bookings]');
+    await form.waitFor();
+    await tapLabel(form.locator('input[name=service]').filter({ has:ana.page.locator('xpath=..//span[contains(., "Overnight")]') }).first());
+    const start = await form.locator('[name=stay_start]').getAttribute('min');
+    const pickup = new Date(Date.parse(start + 'T12:00:00Z') + 4 * 86_400_000).toISOString().slice(0, 10);
+    const dropoff = new Date(Date.parse(start + 'T12:00:00Z') + 2 * 86_400_000).toISOString().slice(0, 10);
+    await form.locator('[name=stay_start]').fill(dropoff);
+    await form.locator('[name=stay_end]').fill(pickup);
+    if (!(await form.locator('input[name=pets]').first().isChecked())) await tapLabel(form.locator('input[name=pets]').first());
+    check(/\$220\.00 · 2 nights/.test(await form.locator('[data-quote]').textContent()), 'the total shows two nights at $220.00');
+    await form.locator('[data-booking-inputs] button[type=submit]').tap();
+    await form.locator('[data-booking-review] .checkout-card').waitFor();
+    const review = await form.locator('[data-booking-review]').textContent();
+    check(/Nights\s*2/.test(review) && /\$220\.00/.test(review), 'the review shows 2 nights and the server’s total');
+    await ana.page.getByRole('button', { name:/Send booking request/ }).tap();
+    const sent = await ana.page.waitForFunction(() => /Request sent/.test(document.querySelector('#feedback').textContent), null, { timeout:10_000 }).then(() => true, () => false);
+    check(sent, 'the stay request is accepted');
+  });
 } catch (error) {
   failures.push('unexpected: ' + error.message.split('\n')[0]);
   console.error(error);

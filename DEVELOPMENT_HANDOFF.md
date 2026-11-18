@@ -29,7 +29,7 @@ lib/stores/    durable.mjs (ctx.storage.sql + transactionSync, R2)   node.mjs (n
 - **Requests and responses are Fetch-style** (`Request`/`Response`) everywhere in `lib/`. Handlers get `ctx` (`user`, `data`, `url`, `request`, `match`, `clientAddress`, `cookies`) and return data (sent as JSON) or a `Response`.
 - **Adding an endpoint:** add `{ method, path, access, handler }` to a file in `lib/routes/`. `access` is `public`, `user` or `staff`, enforced before the handler runs. `tests/routes.test.mjs` checks every route's access rule automatically.
 - **Race-freedom rule:** `transaction(fn)` must be synchronous (it throws on an async callback). Both runtimes process one request's transaction without interleaving: Node is a single process, and on Cloudflare all API traffic goes to one Durable Object instance (`idFromName('myo')`). Do any `await` (R2 upload, password hash) **before** the transaction, then re-check state inside it. `POST /api/events` shows the pattern.
-- **Schema version** is stored in the `meta` table (`schema_version`, now 12; migrations 5–8 add idempotency, trusted devices, checkout holds, then weekly hours and date exceptions; 9–12 add itemised booking lines, change requests, the departure check and service kinds), because Durable Objects forbid `PRAGMA user_version`. Migrations must be safe to re-run. Migration 4 adds `events.photo_key`; the old `photo` BLOB column is no longer read (it only ever held test data).
+- **Schema version** is stored in the `meta` table (`schema_version`, now 13; migrations 5–8 add idempotency, trusted devices, checkout holds, then weekly hours and date exceptions; 9–13 add itemised booking lines, change requests, the departure check, service kinds and overnight settings), because Durable Objects forbid `PRAGMA user_version`. Migrations must be safe to re-run. Migration 4 adds `events.photo_key`; the old `photo` BLOB column is no longer read (it only ever held test data).
 - **Rate limits** are in memory. On Cloudflare they live in the single Durable Object, keyed by `CF-Connecting-IP`.
 
 ## 3. API reference
@@ -71,6 +71,18 @@ lib/stores/    durable.mjs (ctx.storage.sql + transactionSync, R2)   node.mjs (n
 - **Kinds:** every service has `kind` (`visit`, `meet` or `overnight`), defined in `serviceCatalog` in `lib/domain.mjs`. Migration 12 marks existing overnight services.
 - **Meet & Greet:** must be free (400 `meet_is_free`), and books through the normal quote, hold and request flow at $0.
 - **New customers:** `GET /api/portal` gives customers `first_visit: true` until they have a completed visit.
+
+**Overnight stays (C2.1).**
+- **Requests:** a service with `kind:'overnight'` is priced per night (`services.cents`, plus `extra_pet_cents` per extra pet per night). Requests send `{ arrive, depart }` (epoch ms on the half hour) instead of `{ slot, start }`. Quote lines are `nightly` and `extra_pet`.
+- **Nights:** a stay's nights are the Eastern dates from arrival up to, not including, departure: 1–28 nights.
+- **Availability:** each night must start on a weekday in `schedule_settings.overnight_days`, and no day of the stay, departure day included, may be a closed date (409 `night_unavailable` with `day`).
+- **Conflicts:** confirmed stays don't overlap each other. Daytime visits are allowed mid-stay, except over the 30-minute arrival and departure blocks; `clashes()` in `lib/scheduling.mjs` decides.
+- **Choosing dates:** customers get `overnight_nights` (the next 60 bookable night dates), and `/api/availability` adds `nights` for overnight services. Stays are never offered as grid start times.
+- **Staff settings:** `POST /api/schedule` accepts `overnight_days` and `late_pickup_grace` (minutes; omitted values are kept).
+- **Late pickup:** completing a stay after the planned pickup plus the grace adds a `late_pickup` line: half a night, or a whole night beyond 8 hours.
+- **Not yet supported:** stays can't be rescheduled (409 `stay_reschedule_unsupported`); cancel and rebook.
+- **Diary:** overnight visits carry `nights:[{ date, event_ids }]`. New activity kinds: `Arrival`, `Evening check-in`, `Morning check-in`, `Departure`.
+- **Minimal UI:** date and time fields on the booking form, and the night checkboxes and grace field in Settings. The full calendar is Codex X2.8.
 
 **Booking holds and weekly hours.** `POST /api/checkout-hold` creates a short hold and `POST /api/checkout-release` releases it. The request flow checks the hold and current availability when submitting. Staff set recurring hours with `POST /api/schedule` and individual-date changes with `POST /api/schedule-exception`.
 

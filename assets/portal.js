@@ -20,7 +20,23 @@ const cancelDialog = document.querySelector('#cancel-booking');
 const find = (rows,id) => rows.find(row => row.id === id);
 const money = cents => new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(cents / 100);
 // Mirrors quote() in lib/pricing.mjs; the server re-prices every hold and request and refuses a stale total.
-const bookingTotal = (service, petCount) => service.cents + Math.max(0, petCount - 1) * (service.extra_pet_cents || 0);
+const bookingTotal = (service, petCount, nights = 1) => {
+  const units = service.kind === 'overnight' ? nights : 1;
+  return units * (service.cents + Math.max(0, petCount - 1) * (service.extra_pet_cents || 0));
+};
+// Epoch ms for a wall-clock date and time in Massachusetts (overnight stays are chosen as dates and times there).
+function easternEpoch(dayText, timeText) {
+  const offsetAt = t => {
+    const name = new Intl.DateTimeFormat('en-US',{ timeZone:'America/New_York', timeZoneName:'longOffset' }).formatToParts(t).find(p => p.type === 'timeZoneName').value;
+    const [, sign, h, m] = /GMT([+-])(\d{2}):(\d{2})/.exec(name) || [, '+', '00', '00'];
+    return (sign === '+' ? 1 : -1) * (Number(h) * 60 + Number(m)) * 60_000;
+  };
+  const wall = Date.parse(dayText + 'T' + timeText + ':00Z');
+  return wall - offsetAt(wall - offsetAt(wall));
+}
+// The nights of a stay: Eastern dates from drop-off up to, not including, pickup.
+const stayNightCount = (startDay, endDay) => startDay && endDay && endDay > startDay
+  ? Math.round((Date.parse(endDay + 'T12:00:00Z') - Date.parse(startDay + 'T12:00:00Z')) / 86_400_000) : 0;
 const day = value => new Intl.DateTimeFormat('en-CA',{dateStyle:'short',timeZone:'America/New_York'}).format(value);
 const emoji = icon => icon ? '<span class="control-icon" aria-hidden="true">'+icon+'</span> ' : '';
 const button = (label, style = '', icon = '') => '<button class="'+style+'" type="submit">'+emoji(icon)+text(label)+'</button>';
@@ -473,7 +489,9 @@ function checkoutSummary(booking, expires) {
     '<dl><div><dt>Sitter</dt><dd>Myomi</dd></div>'+
     '<div><dt>'+ (pets.length === 1 ? 'Pet' : 'Pets')+'</dt><dd>'+text(pets.join(', '))+'</dd></div>'+
     '<div class="checkout-appointment"><dt>Appointment</dt><dd class="appointment-details">'+date(booking.starts)+' – '+ends+' ET</dd></div>'+
-    '<div><dt>Duration</dt><dd>'+((booking.ends-booking.starts)/60_000)+' min</dd></div></dl>'+
+    (booking.service_kind === 'overnight'
+      ? '<div><dt>Nights</dt><dd>'+Math.max(1,stayNightCount(day(booking.starts), day(booking.ends)))+'</dd></div></dl>'
+      : '<div><dt>Duration</dt><dd>'+((booking.ends-booking.starts)/60_000)+' min</dd></div></dl>')+
     '<div class="checkout-total"><span>Visit total</span><strong>'+money(booking.cents)+'</strong></div>'+
     (expires ? '<p class="checkout-payment-note" data-hold-note role="status">Time held until '+appointmentTime.format(expires)+' ET. Online payment is currently unavailable. Send a request for Myomi to confirm.</p>' :
       '<p class="checkout-payment-note">Your visit is confirmed. Online payment is currently unavailable.</p>')+'</article>'+
@@ -520,6 +538,8 @@ function adminSettings() {
   return '<div class="grid">'+form('schedule','<h3>Regular hours</h3><p>These hours repeat each week in Massachusetts time.</p>'+
     choiceGroup('Working days',weekdays.map((label,index)=>choice('days',index,label,{type:'checkbox',checked:Boolean(schedule.days & (1<<index))})).join(''))+
     timeFields+input('Buffer before and after a visit (minutes)','buffer','type="number" min="0" max="180" required aria-describedby="buffer-tip" value="'+schedule.buffer+'"')+
+    choiceGroup('Overnight stays (nights starting on)',weekdays.map((label,index)=>choice('overnight_days',index,label,{type:'checkbox',checked:Boolean((schedule.overnight_days || 0) & (1<<index))})).join(''))+
+    input('Late pickup grace (minutes)','late_pickup_grace','type="number" min="0" max="720" required value="'+(schedule.late_pickup_grace ?? 120)+'"')+
     '<small id="buffer-tip">Visits can also start this many minutes before their booked time.</small>'+
     button('Save weekly hours','','✓'))+
     form('schedule-exception','<h3>Adjust a date</h3><p>Close a date, change its regular hours, or go back to the weekly schedule.</p>'+
@@ -752,12 +772,37 @@ document.addEventListener('keydown', event => {
 function updateTotal(booking) {
   const service = find(data.services,Number(booking.querySelector('[name="service"]:checked')?.value));
   const petCount = Math.max(1, booking.querySelectorAll('[name="pets"]:checked').length);
+  if (service?.kind === 'overnight') {
+    const nights = stayNightCount(booking.elements.stay_start?.value, booking.elements.stay_end?.value);
+    booking.querySelector('[data-quote]').textContent = nights
+      ? 'Request total: '+money(bookingTotal(service, petCount, nights))+' · '+nights+(nights === 1 ? ' night.' : ' nights.') : '';
+    booking.querySelector('button[type="submit"]').disabled = !nights;
+    return;
+  }
   booking.querySelector('[data-quote]').textContent = service ? 'Request total: '+money(bookingTotal(service, petCount))+' · '+service.minutes+' minutes.' : '';
+}
+// An overnight stay is chosen as drop-off and pickup dates and times (C2.1). The server checks every night.
+function stayFields(booking) {
+  const nights = data.overnight_nights || [];
+  const availability = booking.querySelector('[data-availability]');
+  availability.hidden = nights.length > 0;
+  availability.textContent = 'Myomi isn’t taking overnight stays right now. Check back later.';
+  const first = nights[0]?.date || '', last = nights.at(-1)?.date || '';
+  const lastPickup = last ? new Date(Date.parse(last + 'T12:00:00Z') + 86_400_000).toISOString().slice(0, 10) : '';
+  booking.querySelector('[data-booking-days]').innerHTML = nights.length ? '<fieldset class="stay-fields"><legend>Your stay</legend>'+
+    '<p>Nights available from '+text(date(easternEpoch(first,'12:00')).split(',').slice(0,2).join(','))+'. Times are Massachusetts time.</p>'+
+    input('Drop-off date','stay_start','type="date" required min="'+first+'" max="'+last+'"')+
+    input('Drop-off time','drop_time','type="time" step="1800" required value="17:00"')+
+    input('Pickup date','stay_end','type="date" required min="'+first+'" max="'+lastPickup+'"')+
+    input('Pickup time','pick_time','type="time" step="1800" required value="10:00"')+'</fieldset>' : '';
+  booking.querySelector('[data-booking-times]').innerHTML = '';
+  updateTotal(booking);
 }
 function updateQuote(event) {
   const booking = app.querySelector('[data-action="bookings"]');
   if (!booking) return;
   const service = find(data.services,Number(booking.querySelector('[name="service"]:checked')?.value));
+  if (service?.kind === 'overnight') { stayFields(booking); return; }
   const slots = service ? availableSlots(service.minutes,service.id) : [];
   const days = new Map(slots.map(slot => [day(slot.starts),appointmentDay.format(slot.starts)]));
   const chosenDay = event?.target.name === 'day' ? event.target.value : days.keys().next().value;
@@ -831,6 +876,7 @@ app.addEventListener('change', event => {
   }
   if (form?.dataset.action === 'bookings' && ['service','day'].includes(name)) updateQuote(event);
   if (name === 'secured' && form) updateDepartureCheck(form);
+  if (form?.dataset.action === 'bookings' && ['stay_start','stay_end'].includes(name)) updateTotal(form);
   if (form?.dataset.action === 'bookings' && name === 'pets') { form.querySelector('[data-booking-pet-error]').textContent = ''; updateTotal(form); }
   if (name === 'diary-filter') updateDiaryFilter(event.target);
 });
@@ -1027,16 +1073,23 @@ app.addEventListener('submit',async event => {
     for (const key of ['service','slot','pet','minutes']) if (key in payload) payload[key] = Number(payload[key]);
     if (action === 'bookings') {
       const service = find(data.services,payload.service);
-      if (!service || !payload.slot) throw new Error('Choose a service and an available appointment.');
+      let nights = 1;
+      if (service?.kind === 'overnight') {
+        nights = stayNightCount(payload.stay_start, payload.stay_end);
+        if (!nights) throw new Error('Choose a pickup date after the drop-off date.');
+        payload.arrive = easternEpoch(payload.stay_start, payload.drop_time);
+        payload.depart = easternEpoch(payload.stay_end, payload.pick_time);
+        for (const key of ['stay_start','stay_end','drop_time','pick_time','slot']) delete payload[key];
+      } else if (!service || !payload.slot) throw new Error('Choose a service and an available appointment.');
       payload.pets = fields.getAll('pets').map(Number);
-      payload.cents = bookingTotal(service, payload.pets.length);
+      payload.cents = bookingTotal(service, payload.pets.length, nights);
       const review = form.querySelector('[data-booking-review]');
       if (!review.dataset.expires) {
         const hold = await api('checkout-hold',payload,requestKey(form,'checkout-hold\n'+JSON.stringify(payload)));
         pendingKeys.delete(form);
         review.dataset.expires = hold.expires;
         review.innerHTML = checkoutSummary({
-          service_name:service.name, pet_ids:payload.pets, starts:hold.starts, ends:hold.ends, cents:hold.total_cents,
+          service_name:service.name, service_kind:service.kind, pet_ids:payload.pets, starts:hold.starts, ends:hold.ends, cents:hold.total_cents,
         },hold.expires);
         form.querySelector('[data-booking-inputs]').hidden = true;
         form.querySelector('[data-booking-error]').textContent = '';
@@ -1055,6 +1108,8 @@ app.addEventListener('submit',async event => {
     if (action === 'schedule') {
       payload.days = fields.getAll('days').map(Number);
       payload.buffer = Number(payload.buffer);
+      payload.overnight_days = fields.getAll('overnight_days').map(Number);
+      payload.late_pickup_grace = Number(payload.late_pickup_grace);
     }
     if (action === 'slots' && !payload.id) {
       payload.starts = new Date(payload.starts).toISOString();
