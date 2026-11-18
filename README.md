@@ -5,7 +5,8 @@ myo. is Myomi’s pet-care website and portal. Customers request visits and read
 ## Status at a glance
 
 - **Implemented:** booking review and a temporary appointment hold, then request, approval, visit, diary update and completion summary. See [What works today](#what-works-today).
-- **Not implemented:** payment collection, automatic paid confirmation, invoices or receipts, recurring bookings and packages, care checklists, GPS walk tracking, messaging, outbound notifications, password recovery, and a Spanish portal. See [Not built yet](#not-built-yet).
+- **Built but switched off or without screens:** online payment (Stripe, off until configured), recurring visits, fee rules and packages (APIs and minimal UI), and the notification outbox (no email provider yet).
+- **Not implemented:** invoices or receipts, care checklists, GPS walk tracking, messaging, sending email, and password recovery. See [Not built yet](#not-built-yet).
 - **Not production-ready for public launch.** Read [Known limitations](#known-limitations) and the [audit](MYO_AUDIT.md) first.
 
 ## Technology and structure
@@ -75,6 +76,8 @@ Names only; set them in the shell (Node), as `--var` flags or a git-ignored `.de
 | `MYO_STRIPE_SECRET_KEY` | With `MYO_PAYMENTS=stripe`. A restricted key that can create Checkout Sessions and Refunds. Secret. |
 | `MYO_STRIPE_WEBHOOK_SECRET` | With `MYO_PAYMENTS=stripe`. The signing secret of a Stripe webhook endpoint at `/api/payments/webhook`, sending `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`, `checkout.session.expired` and `refund.created`/`refund.updated`. Secret. |
 | `MYO_EMAIL` | Optional. No email provider is connected yet, so messages wait in the outbox (staff: `GET /api/outbox`). `log` marks them sent without sending (tests). |
+| `MYO_BACKUP_DIR` | Node only, optional. A directory for the daily scheduled backup (use another disk or a synced folder). Unset: no scheduled backups on Node. Cloudflare uses the `myo-backups` bucket instead. |
+| `MYO_BACKUP_KEEP` | Optional. How many scheduled backups to keep (default 30). |
 | `MYO_EARLY_START_MINUTES` | Optional. Minutes before its booked time that staff may start a visit. Unset: the visit buffer from **Services & availability** (default 30). The tests set a large value. |
 | `MYO_TRUST_PROXY` | Node only (the Worker always uses `CF-Connecting-IP`). `1` takes the client address from the last `X-Forwarded-For` entry; `cloudflare` uses `CF-Connecting-IP`. Set only when exactly one trusted proxy sits in front, otherwise leave unset. Used for rate limiting. |
 
@@ -105,6 +108,7 @@ One-time setup, from a machine logged in to the Cloudflare account. Sign-in hash
 npm ci
 npx wrangler login
 npx wrangler r2 bucket create myo-photos
+npx wrangler r2 bucket create myo-backups
 npx wrangler secret put MYO_ADMIN_EMAIL
 npx wrangler secret put MYO_ADMIN_PASSWORD
 ```
@@ -118,11 +122,11 @@ npm run deploy
 
 ## Database and migrations
 
-SQLite in both runtimes: the Durable Object's built-in SQLite on Cloudflare, `node:sqlite` locally. The schema is created and upgraded automatically on start by the ordered `migrations` list in `lib/db.mjs`. The applied count is stored in the `meta` table (`schema_version`, currently 8), because Durable Objects do not allow `PRAGMA user_version`. To change the schema, **append** a migration that is safe to re-run. Never edit an earlier one. Photos are not in the database: they are stored in R2 (Cloudflare) or files (Node) under the event's `photo_key`.
+SQLite in both runtimes: the Durable Object's built-in SQLite on Cloudflare, `node:sqlite` locally. The schema is created and upgraded automatically on start by the ordered `migrations` list in `lib/db.mjs`. The applied count is stored in the `meta` table (`schema_version`, currently 26), because Durable Objects do not allow `PRAGMA user_version`. To change the schema, **append** a migration that is safe to re-run. Never edit an earlier one. Photos are not in the database: they are stored in R2 (Cloudflare) or files (Node) under the event's `photo_key`.
 
 ### Backups and restore
 
-**Download backup** (staff portal, **Services & availability**, or `GET /api/backup` as staff) saves the whole installation as one `myo-backup-<date>.json.gz` file. It includes accounts, pets, services, windows, bookings, diary updates and every photo, and works the same on Cloudflare and Node. All tables are read in one consistent pass. Sessions are not included. **The file contains password hashes and customers' personal details: store it privately**, for example in an encrypted drive, never in the repository or a shared folder. Downloads are manual for now; nothing schedules them.
+**Download backup** (owner, **Services & availability**, or `GET /api/backup`) saves the whole installation as one `myo-backup-<date>.json.gz` file. It includes accounts, pets, services, windows, bookings, diary updates and every photo, and works the same on Cloudflare and Node. All tables are read in one consistent pass. Sessions are not included. **The file contains password hashes and customers' personal details: store it privately**, for example in an encrypted drive, never in the repository or a shared folder. **Scheduled backups** write the same file once a day, keeping the newest 30 (`MYO_BACKUP_KEEP`): to the `myo-backups` R2 bucket on Cloudflare, and to `MYO_BACKUP_DIR` on Node when it is set. Settings shows when the last one was made; the owner can download any of them (`GET /api/backups`) for a restore.
 
 To restore, deploy or start a **new, empty** installation, then run:
 
@@ -162,7 +166,7 @@ There is no linter or type checker configured. CI is defined in `.github/workflo
 
 ## Not built yet
 
-Screens for recurring visits, fee rules and packages (their APIs exist), sending email (messages are queued but no provider is connected), invoices or receipts, care plans and per-visit checklists, structured medication logging (today “Medication” is a free-text activity type), GPS walk tracking and distance (“Walk started/completed” are diary labels only), messaging, email and other outbound notifications, email verification and password recovery, Spanish sample diary and portal, editing or deleting published diary updates, and customer search and management for staff.
+Screens for recurring visits, fee rules and packages (their APIs exist), sending email (messages are queued but no provider is connected), invoices or receipts, care plans and per-visit checklists, structured medication logging (today “Medication” is a free-text activity type), GPS walk tracking and distance (“Walk started/completed” are diary labels only), messaging, email and other outbound notifications, email verification and password recovery, and editing or deleting published diary updates.
 
 ## Existing integrations
 
@@ -175,8 +179,8 @@ Stripe Checkout, switched off unless `MYO_PAYMENTS=stripe` and its two secrets a
 - The app has **not been deployed to Cloudflare yet**; it has only run under `wrangler dev` locally. The first real deploy should be checked by hand.
 - Rate-limit counters live in memory (in the single Durable Object on Cloudflare), so they reset when it restarts.
 - Lockouts: 8 failed passwords per account and address per 15 minutes; 50 per account per hour from devices that have never signed in to it; a device that has signed in before (it holds a `myo_device` cookie) has its own 8-per-15-minutes allowance and ignores the other two. So a guesser locks out only themselves, and a large distributed attack can block new devices for an hour but never the owner's known phone or computer.
-- Staff is a single shared account created from environment variables (its password can be changed in the portal); there is no second staff user.
-- Visits can start from the visit buffer (default 30 minutes) before their booked time. Policies for no-shows, cancellation cutoffs and customers rescheduling confirmed visits are undecided and unenforced.
+- The first staff account (the owner) is created from environment variables. The owner adds sitters and other owners in **Settings → Staff**; sitters run visits but can't change prices, settings or money. Without email, the owner hands over each temporary password.
+- Visits can start from the visit buffer (default 30 minutes) before their booked time. Cancellation fees are set per service (0% until Myomi sets one); no-shows have no policy yet.
 - The current list of open work, decisions and usability findings is in [DEVELOPMENT_HANDOFF.md §5](DEVELOPMENT_HANDOFF.md#5-what-is-still-open-as-of-november-18-2026).
 - `sitemap.xml` and `robots.txt` still point at GitHub Pages; update them once the Cloudflare domain is chosen.
 

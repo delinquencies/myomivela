@@ -27,9 +27,9 @@ lib/stores/    durable.mjs (ctx.storage.sql + transactionSync, R2)   node.mjs (n
 ```
 
 - **Requests and responses are Fetch-style** (`Request`/`Response`) everywhere in `lib/`. Handlers get `ctx` (`user`, `data`, `url`, `request`, `match`, `clientAddress`, `cookies`) and return data (sent as JSON) or a `Response`.
-- **Adding an endpoint:** add `{ method, path, access, handler }` to a file in `lib/routes/`. `access` is `public`, `user` or `staff`, enforced before the handler runs. `tests/routes.test.mjs` checks every route's access rule automatically.
+- **Adding an endpoint:** add `{ method, path, access, handler }` to a file in `lib/routes/`. `access` is `public`, `user`, `staff` (any staff account) or `owner` (staff with the owner role), enforced before the handler runs. `tests/routes.test.mjs` checks every route's access rule automatically, and `tests/staff.test.mjs` checks that a sitter gets 403 from every `owner` route.
 - **Race-freedom rule:** `transaction(fn)` must be synchronous (it throws on an async callback). Both runtimes process one request's transaction without interleaving: Node is a single process, and on Cloudflare all API traffic goes to one Durable Object instance (`idFromName('myo')`). Do any `await` (R2 upload, password hash) **before** the transaction, then re-check state inside it. `POST /api/events` shows the pattern.
-- **Schema version** is stored in the `meta` table (`schema_version`, now 25; migrations 5–8 add idempotency, trusted devices, checkout holds, then weekly hours and date exceptions; 9–13 add itemised booking lines, change requests, the departure check, service kinds and overnight settings; 14 adds vaccines and agreements; 15 the home-access vault; 16 report-card answers; 17 profile versions and visit feedback; 18 each account's language; 19 staff notes; 20 fee rules and holidays; 21 the money ledger, checkout sessions, webhook events, auto-tip and cancellation fee; 22 cancellation terms per service; 23 recurring visits; 24 packages; 25 the notification outbox), because Durable Objects forbid `PRAGMA user_version`. Migrations must be safe to re-run. Migration 4 adds `events.photo_key`; the old `photo` BLOB column is no longer read (it only ever held test data).
+- **Schema version** is stored in the `meta` table (`schema_version`, now 26; migrations 5–8 add idempotency, trusted devices, checkout holds, then weekly hours and date exceptions; 9–13 add itemised booking lines, change requests, the departure check, service kinds and overnight settings; 14 adds vaccines and agreements; 15 the home-access vault; 16 report-card answers; 17 profile versions and visit feedback; 18 each account's language; 19 staff notes; 20 fee rules and holidays; 21 the money ledger, checkout sessions, webhook events, auto-tip and cancellation fee; 22 cancellation terms per service; 23 recurring visits; 24 packages; 25 the notification outbox; 26 staff roles and switched-off accounts), because Durable Objects forbid `PRAGMA user_version`. Migrations must be safe to re-run. Migration 4 adds `events.photo_key`; the old `photo` BLOB column is no longer read (it only ever held test data).
 - **Name the columns in every `INSERT`.** Migrations add columns, and a positional `INSERT … VALUES(…)` breaks when they do; this happened twice in Phase 2.
 - **Rate limits** are in memory. On Cloudflare they live in the single Durable Object, keyed by `CF-Connecting-IP`.
 
@@ -120,7 +120,7 @@ lib/stores/    durable.mjs (ctx.storage.sql + transactionSync, R2)   node.mjs (n
 - **`assets/i18n.js`:** `locale()` reads the same `myo-language` choice as the public site. It also provides `t(key, params, language)` (placeholders, plus `{ one, other }` plurals), `formatDate(ms, 'visit'|'day'|'time'|'date', language)` in Massachusetts time, and `formatMoney(cents, language)`.
 - **Spanish errors:** every server error code has a Spanish message (`error.<code>`). `tests/i18n.test.mjs` scans `lib/` for codes and fails when one is missing.
 - **Saved per account:** `users.locale`, `POST /api/locale { locale:'en'|'es' }`, returned in the session. The portal syncs it from the reader's choice, for messages sent outside the portal later.
-- **The portal still renders in English.** `uiLocale()` in `assets/portal.js` returns `'en'` until Codex X2.6 translates the strings and switches it to `locale()`. Dates, money and error messages already route through it.
+- **The portal is bilingual** (Codex X2.6): portal phrases go through `t()` with English and Spanish in `assets/ui-copy.js`, and error codes have both languages in `assets/i18n.js`. New UI text needs an entry in both, or `tests/i18n.test.mjs` fails.
 
 **Staff customer records (C2.7).** All routes are staff-only.
 - **List:** `GET /api/clients?q=&before=` returns 20 customers per page by name, searched by name or email. Each has `pets`, `upcoming` and `last_visit`; `before` is the last customer's id.
@@ -157,19 +157,27 @@ lib/stores/    durable.mjs (ctx.storage.sql + transactionSync, R2)   node.mjs (n
 - **Sending:** `drainOutbox()` runs every minute on Node and on a Durable Object alarm (every five minutes) on the Worker, with exponential backoff and six attempts. `MYO_EMAIL=log` marks messages sent (tests). **No email provider is wired in yet**: with `MYO_EMAIL` unset, messages wait as `pending`. Adding a provider is one more entry in `drivers` in `lib/outbox.mjs`.
 - **Staff:** `GET /api/outbox` → `{ email_enabled, messages }` (last 100, rendered); `POST /api/outbox/drain {}` sends now.
 
+**Staff roles.** Staff accounts have `role` `'owner'` (the account from `MYO_ADMIN_EMAIL`, and every staff account created before migration 26) or `'sitter'`; the session user carries `role` (`null` for customers).
+- **Sitters** start and complete visits, publish updates, reveal home access when allowed, return keys, verify vaccines and read customer records and notes. Approving, declining, cancelling and moving visits, deciding change requests, and every `owner` route are refused with 403 `owner_only`.
+- **Owners** manage staff: `GET /api/staff`, `POST /api/staff { name, email, password, role }`, `POST /api/staff/update { id, role?, disabled? }` and `POST /api/staff/password { id, password }`. Nobody can change their own role or switch themselves off (409 `staff_self`); at least one active owner remains (409 `last_owner`). A role change, switch-off or new password ends that account's sessions; a switched-off account can't sign in (403 `account_disabled`, only after a correct password). Settings has a Staff panel.
+
+**Scheduled backups.** The same file as **Download backup** is written once a day to a second destination: `MYO_BACKUP_DIR` on Node (checked hourly, off when unset) or the `BACKUPS` R2 bucket on Cloudflare (checked by the Durable Object alarm). The newest `MYO_BACKUP_KEEP` (30) are kept; a failure is stored and retried hourly.
+- **Owner routes:** `GET /api/backups` → `{ enabled, keep, last_backup, last_error, backups:[{ name, size }] }`, `POST /api/backups/run {}`, and `GET /api/backups/file/<name>` to download one for `scripts/restore.mjs`. Settings shows the last backup or the problem.
+- **Size:** the file is built in memory before upload (R2 needs its length). That suits one sitter's data; a large photo library would need a multipart upload.
+
 **Booking holds and weekly hours.** `POST /api/checkout-hold` creates a short hold and `POST /api/checkout-release` releases it. The request flow checks the hold and current availability when submitting. Staff set recurring hours with `POST /api/schedule` and individual-date changes with `POST /api/schedule-exception`.
 
-**Configuration.** Cloudflare needs the `MYO_ADMIN_EMAIL`, `MYO_ADMIN_PASSWORD` and `MYO_VAULT_KEY` secrets, plus `MYO_PAYMENTS=stripe`, `MYO_STRIPE_SECRET_KEY` and `MYO_STRIPE_WEBHOOK_SECRET` to switch on online payment. The Node-only variables (`MYO_DB`, `NODE_ENV`, `MYO_ORIGIN`, `MYO_SECURE_COOKIES`, `MYO_TRUST_PROXY`) are listed in the README.
+**Configuration.** Cloudflare needs the `MYO_ADMIN_EMAIL`, `MYO_ADMIN_PASSWORD` and `MYO_VAULT_KEY` secrets, plus `MYO_PAYMENTS=stripe`, `MYO_STRIPE_SECRET_KEY` and `MYO_STRIPE_WEBHOOK_SECRET` to switch on online payment, and a second R2 bucket `myo-backups` for scheduled backups. The Node-only variables (`MYO_DB`, `NODE_ENV`, `MYO_ORIGIN`, `MYO_SECURE_COOKIES`, `MYO_TRUST_PROXY`) are listed in the README.
 
 ## 4. Verification
 
-| Command | Runs | Earlier remediation baseline (Node v22.23.4, Wrangler 4.164.0) |
+| Command | Runs | Latest result (November 18, 2026, Node v22.23.4) |
 |---|---|---|
-| `npm test` | all suites on Node | 49 passed |
-| `npm run test:worker` | the same suites under `wrangler dev` (Durable Object SQLite, local R2, static assets) | 41 passed, 8 skipped (Node-only: direct database seeding, backup script, legacy upgrade, Node production checks) |
-| `npm run test:browser` | Chromium, phone viewport, full customer and staff flow, unsaved input surviving other saves, reloads and sign-out, a simulated dropped connection while publishing, and the backup download; fails on any console or CSP error | clean on Node |
+| `npm test` | all suites on Node | 152 passed |
+| `npm run test:worker` | the same suites under `wrangler dev` (Durable Object SQLite, local R2, static assets) | 138 passed, 14 skipped (Node-only: direct database seeding, backup script, legacy upgrade, Node production checks, backups switched off) |
+| `npm run test:browser` | Chromium: the full customer and staff flow, holds, the booking form at 390 and 320 px, Meet & Greet, accessibility (axe), English and Spanish pages, payments with the fake provider, and staff roles; fails on any console or CSP error | clean on Node |
 | `MYO_TARGET=worker npm run test:browser` | the same on the Worker | clean (the database-seeded paging step is skipped) |
-| `npx wrangler deploy --dry-run` | production bundle | 40 KB, no Node-only modules |
+| `npx wrangler deploy --dry-run` | production bundle | about 190 KB, no Node-only modules |
 
 [GitHub CI for `0681457`](https://github.com/delinquencies/myomivela/actions/runs/44227268734) passed on Node 22 and 24 and in the Worker job. The latest local Chromium audit includes the 390 px booking and diary smoke test. The README records a separate Windows run with 48 of 50 tests passing and two restore CLI exit-code failures also seen on the baseline. This workflow does not run the browser or Windows checks.
 
@@ -197,7 +205,7 @@ Done since the usability report: early start limited to the visit buffer (H1), h
 | M2 | No times published: "Try another service" with one service, no **Check again**, reload needed | No |
 | M3 | Customer reschedule of a confirmed visit silently un-confirms it | Yes (above) |
 | M4 | 200 % text: Book button covers the wordmark, headline clipped | No |
-| M5 | Spanish stops at the portal | Translation review |
+| M5 | Spanish stopped at the portal: now translated (Codex X2.6); the payment, staff and backup screens added since have Spanish copy but no native-speaker review | Translation review |
 | L1–L7 | Cancel dialog title, generic "Saved.", Bookings→Today label, publish button below the fold, two-tab hold wording, landscape menu height, device monospace digits | No |
 
 ### Claude plan status
@@ -207,20 +215,17 @@ Done since the usability report: early start limited to the visit buffer (H1), h
 - **Phase 3 assumptions:** Stripe Checkout (named in the audits) behind `MYO_PAYMENTS`; a cancellation fee of 0% until Myomi sets one; no email provider, so the outbox only queues. Each is a setting, not a code change, except adding the email driver.
 
 ### Engineering and verification
-- **First Cloudflare deploy:** never done. It needs the R2 bucket, the secrets (`MYO_ADMIN_EMAIL`, `MYO_ADMIN_PASSWORD`, `MYO_VAULT_KEY`) and a check on the `workers.dev` URL. Use **Workers Paid**: scrypt uses about 40 ms CPU per sign-in, over the Free plan's 10 ms limit.
+- **First Cloudflare deploy:** never done. It needs the two R2 buckets (`myo-photos`, `myo-backups`), the secrets (`MYO_ADMIN_EMAIL`, `MYO_ADMIN_PASSWORD`, `MYO_VAULT_KEY`) and a check on the `workers.dev` URL, including a first scheduled backup and a restore rehearsal from it. Use **Workers Paid**: scrypt uses about 40 ms CPU per sign-in, over the Free plan's 10 ms limit.
 - **Real devices and browsers:** Safari (macOS and iOS), Firefox, Android Chrome, camera capture, HEIC photos, the software keyboard and screen readers. Only Chromium emulation has been run.
-- **Scheduled off-account backups:** "Download backup" and `scripts/restore.mjs` exist. Still missing are a schedule (a Cron Trigger) writing to a second destination, and a restore rehearsal on the deployed site.
 - **Windows:** two restore-script exit-code assertions fail on Windows (README "Known limitations"). They are not reproducible on Linux or in CI.
-- **Spanish portal:** account, intake, booking, diary and messages are English only.
-- **Second staff account** and staff roles. Today there is one shared staff account.
 
 ## 6. Recommended next tasks
 
 1. **No decisions needed:** shorten the booking form on phones (H3), fix the empty-availability state (M2) and the 200 % text collisions (M4), then the wording items (L1–L3).
 2. **First Cloudflare deploy and smoke check** once the account exists, then the custom domain with `sitemap.xml` and `robots.txt`.
 3. **Real-device pass:** section 4 of the brief in §7 on iPhone Safari and Android Chrome.
-4. **Scheduled backups**, once a destination is chosen.
-5. **Email, then payments**, after the provider and policy decisions above.
+4. **Codex screens for Phase 3:** recurring visits (X3.3), fee rules (X3.4), packages (X3.5) and the outbox (X3.6).
+5. **Email driver and live payments**, after the provider and policy decisions above.
 
 ## 7. Usability and UX test for Claude
 
