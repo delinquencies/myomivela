@@ -1,8 +1,10 @@
 import type {en as uiEnglish} from './ui-copy.js';
 import type {en as launchEnglish} from './myo-copy.js';
+import type {en as careEnglish} from './care-copy.js';
 
 export type Language = 'en' | 'es';
 export type ErrorCode =
+  | 'pet_ineligible' | 'unsupported_duration' | 'custom_quote_required'
   | 'time_unavailable' | 'window_too_short' | 'time_reserved' | 'hold_expired'
   | 'price_changed' | 'change_not_pending' | 'departure_check_required'
   | 'secure_note_required' | 'meet_is_free' | 'night_unavailable' | 'stay_length'
@@ -12,6 +14,7 @@ export type ErrorCode =
   | 'invalid_score' | 'feedback_closed' | 'invalid_locale' | 'invalid_subject';
 export type TranslationKey =
   | keyof typeof uiEnglish
+  | keyof typeof careEnglish
   | `launch.${keyof typeof launchEnglish}`
   | `error.${ErrorCode}`
   | `status.${'Requested' | 'Confirmed' | 'In Progress' | 'Completed' | 'Cancelled'}`

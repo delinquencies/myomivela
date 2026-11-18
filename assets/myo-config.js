@@ -29,6 +29,7 @@ export const myoConfig = {
     ['christmas27','2027-12-23','2028-01-02'],
   ]),
   policyKeys: /** @type {const} */ (['area','services','peak','booking','meet','payments','clientCancel','myoCancel','access','eligibility','intake','backup','security','weather','privacy','contact']),
+  intakeMaxLength:20000,
   intakeFields: /** @type {const} */ ([
     ['pets','text'],['feeding','textarea'],['health','textarea'],['medication','textarea'],
     ['behavior','textarea'],['vaccines','textarea'],['vet','text'],['emergency','text'],

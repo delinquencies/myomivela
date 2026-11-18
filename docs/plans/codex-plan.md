@@ -4,6 +4,8 @@ November 18, 2026 · Based on [the competitive audit](../competitive-audit.md) �
 
 Tickets are self-contained. A ticket marked **Independent** can start now. A ticket marked **Blocked on C…** starts once that Claude task has landed and published its contract; the contract is quoted in `claude-plan.md` under that task.
 
+Verified implementation status, November 18, 2026 — the [launch iteration report](../audits/2026-11-18-launch-iteration.md) records the completed portal integrations and tests. Earlier ticket bodies are retained as specifications. Phase 3 provider-dependent work is still open.
+
 ## Conventions for every ticket
 - **Portal UI** lives in `assets/portal.js`: string-built HTML through the helpers `form()`, `input()`, `area()`, `button()`, `choice()`, `choiceGroup()`, `tapLink()` and `section()`.
   - Escape every value with `text()` (`escapeHtml`).

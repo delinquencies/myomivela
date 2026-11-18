@@ -50,6 +50,16 @@ MYO_AUDIT.md          Current audit with remediation log
 DEVELOPMENT_HANDOFF.md  Where Claude stopped, and what Codex should do next
 ```
 
+## Current launch iteration
+
+The approved launch rates in `assets/myo-config.js` now price live server quotes, holds, requests and reviewed reschedules by default. The public calculator and generated service agreements use the same configuration. `MYO_PRICING_MODE=catalog` explicitly retains staff-defined catalog pricing for existing installations and compatibility fixtures. Existing booking totals are retained until a reviewed reschedule.
+
+Customers use **Care details** to save all required intake and emergency information, accept the current agreement and save encrypted home-entry instructions. Pet cards offer vaccine records with PDF/image uploads and a care timeline. Staff can configure vaccine requirements, publish bilingual agreement versions, reveal entry details within the visit window, publish structured activity answers, and manage private client or pet notes. Overnight bookings have a two-month date picker and a diary grouped by night.
+
+In launch mode, each paid booking requires saved intake and its own completed complimentary Meet & Greet. Cancelling a booking releases that Meet & Greet for a replacement request. The ten-visit daily limit is checked on quotes and confirmation. Short notice uses Massachusetts calendar days and adds the configured fee. The first attending pet in the displayed list determines the base rate.
+
+Main now includes Stripe Checkout, payment/refund records, recurring and package APIs, staff roles and scheduled backups. Live payment credentials and an email driver remain unconfigured. The launch-specific 50% deposit and 48-hour unpaid-request expiry still require integration. Current requests continue through Myomi’s approval flow. See the [iteration report](docs/audits/2026-11-18-launch-iteration.md) for verified work and open dependencies.
+
 ## Run locally
 
 ```sh

@@ -1,3 +1,4 @@
+import {policyParameters} from './policy-copy.js';
 import { calculateEstimate, myoConfig } from './myo-config.js';
 import { locale as selectedLanguage, setLocale, t } from './i18n.js';
 
@@ -110,27 +111,7 @@ function copy(key, values = {}) {
   return t('launch.' + key, values, language);
 }
 
-function policyValues() {
-  const percent = ratio => new Intl.NumberFormat(locale(), { style: 'percent' }).format(ratio);
-  const hour = time => new Intl.DateTimeFormat(locale(), {
-    timeZone: 'UTC', hour: 'numeric', minute: '2-digit', hour12: language === 'en',
-  }).format(new Date('2000-01-01T' + time + ':00Z'));
-  return {
-    city: business.city, state: business.state, zip: business.zip, radius: business.radiusMiles,
-    hours: hour(business.opens) + '–' + hour(business.closes), capacity: business.capacity,
-    contact: business.contact, aloneMin: booking.aloneHoursMin, aloneMax: booking.aloneHoursMax,
-    peakVisit: money(rates.peakVisit), visitMinutes: rates.visitMinutes,
-    peakLong: money(rates.peakVisit + rates.extension), longMinutes: rates.longVisitMinutes,
-    nightSurcharge: money(rates.overnightPeakSurcharge), peakNight: money(rates.overnight + rates.overnightPeakSurcharge),
-    visitNotice: booking.visitNoticeDays, overnightNotice: booking.overnightNoticeDays,
-    lastMinuteTerms: copy(flags.autoApplyLastMinuteFee ? 'lastMinuteFeeOn' : 'lastMinuteFeeOff', {lastMinute: money(rates.lastMinute)}),
-    depositPercent: percent(booking.depositRatio), depositHours: booking.depositHours,
-    meetPrice: money(booking.meetAndGreet), balancePercent: percent(1 - booking.depositRatio),
-    cancelDays: booking.cancellationDays, retentionPercent: percent(flags.lateCancellationDepositRetentionRatio),
-    retentionTotal: percent(flags.lateCancellationDepositRetentionRatio * booking.depositRatio),
-    weightMin: booking.dogWeightMin, weightMax: booking.dogWeightMax, puppyAge: booking.puppyAgeYears,
-  };
-}
+const policyValues = () => policyParameters(language);
 
 function renderRates() {
   const cards = services.map(service => {

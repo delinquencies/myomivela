@@ -1,4 +1,4 @@
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
@@ -25,7 +25,7 @@ export const nodeOnly = target === 'worker' ? 'needs the Node runtime (direct da
 // Most suites start visits booked days ahead, so they lift the early-start limit. Pass
 // { MYO_EARLY_START_MINUTES:'' } to test the real rule (the visit buffer).
 // Tests also get a fixed vault key (base64 of 32 bytes) for home-access details.
-const testDefaults = { MYO_EARLY_START_MINUTES:'1000000', MYO_VAULT_KEY:Buffer.from('test-vault-key-0123456789abcdef!').toString('base64') };
+const testDefaults = { MYO_PRICING_MODE:'catalog', MYO_EARLY_START_MINUTES:'1000000', MYO_VAULT_KEY:Buffer.from('test-vault-key-0123456789abcdef!').toString('base64') };
 
 function spawnTarget(dir, port, env, dbPath, inspectorPort) {
   if (target === 'worker') {
@@ -33,8 +33,9 @@ function spawnTarget(dir, port, env, dbPath, inspectorPort) {
     const args = ['dev', '--port', String(port), '--ip', '127.0.0.1', '--persist-to', join(dir, 'state'), '--inspector-port', String(inspectorPort),
       '--show-interactive-dev-session=false', ...Object.entries(vars).filter(([name, value]) => name.startsWith('MYO_') && value !== '').flatMap(([name, value]) => ['--var', name + ':' + value])];
     // detached: wrangler starts workerd as a child, and stop() kills the whole process group.
-    return spawn(join(root, 'node_modules', '.bin', 'wrangler'), args, {
-      cwd:root, detached:true, stdio:['ignore','pipe','pipe'], env:{ ...process.env, WRANGLER_SEND_METRICS:'false' },
+    return spawn(process.execPath, [join(root, 'node_modules', 'wrangler', 'bin', 'wrangler.js'), ...args], {
+      cwd:root, detached:true, windowsHide:true, stdio:['ignore','pipe','pipe'],
+      env:{ ...process.env, WRANGLER_SEND_METRICS:'false', XDG_CONFIG_HOME:join(dir,'config'), WRANGLER_LOG_PATH:join(dir,'logs') },
     });
   }
   return spawn(process.execPath, ['--no-warnings', join(root, 'server.mjs')], {
@@ -55,7 +56,7 @@ export async function startServer(env = {}, { dbPath } = {}) {
   let output = '';
   await new Promise((done, fail) => {
     // The Worker is ready when it answers (waitForWorker below); its "Ready on" line can come before that.
-    if (target === 'worker') waitForWorker('http://127.0.0.1:' + port).then(done, fail);
+    if (target === 'worker') waitForWorker('http://127.0.0.1:' + port,()=>child.exitCode===null).then(done, fail);
     const ready = /listening/;
     const read = chunk => { output += chunk; if (ready.test(output)) done(); };
     child.stdout.on('data', target === 'node' ? read : chunk => output += chunk);
@@ -87,16 +88,21 @@ export async function startServer(env = {}, { dbPath } = {}) {
     base, call, cookies: who => new Map(jars[who] || []), forgetCookie: (who, name) => jars[who]?.delete(name), output: () => output, dbPath: target === 'node' ? dbPath || join(dir, 'test.sqlite') : undefined,
     async stop() {
       const exited = new Promise(done => child.once('exit', done));
-      if (target === 'worker') { try { process.kill(-child.pid, 'SIGTERM'); } catch { /* already gone */ } } else child.kill();
+      if (target === 'worker' && process.platform === 'win32') {
+        const killed=spawnSync('taskkill',['/PID',String(child.pid),'/T','/F'],{windowsHide:true,timeout:5000});
+        if(killed.status!==0)child.kill();
+      }
+      else if (target === 'worker') { try { process.kill(-child.pid, 'SIGTERM'); } catch { /* already gone */ } } else child.kill();
       await exited;
-      await rm(dir, { recursive:true, force:true });
+      await rm(dir, { recursive:true, force:true, maxRetries:20, retryDelay:100 });
     },
   };
 }
 
 // "Ready on" can print before the Durable Object has finished starting; wait for a real answer.
-async function waitForWorker(base) {
+async function waitForWorker(base,alive=()=>true) {
   for (let attempt = 0; attempt < 250; attempt++) {
+    if(!alive())throw new Error('Worker exited before it was ready.');
     try { if ((await fetch(base + '/api/session')).ok) return; } catch { /* not listening yet */ }
     await new Promise(done => setTimeout(done, 200));
   }

@@ -311,8 +311,12 @@ try {
     const start = await form.locator('[name=stay_start]').getAttribute('min');
     const pickup = new Date(Date.parse(start + 'T12:00:00Z') + 4 * 86_400_000).toISOString().slice(0, 10);
     const dropoff = new Date(Date.parse(start + 'T12:00:00Z') + 2 * 86_400_000).toISOString().slice(0, 10);
-    await form.locator('[name=stay_start]').fill(dropoff);
-    await form.locator('[name=stay_end]').fill(pickup);
+    await form.locator('[data-stay-date="'+dropoff+'"]').click();
+    await form.locator('[data-stay-date="'+pickup+'"]').click();
+    check(await form.locator('[name=stay_start]').inputValue()===dropoff && await form.locator('[name=stay_end]').inputValue()===pickup,'calendar taps choose arrival and departure');
+    await ana.page.locator('[data-language=es]').click();
+    check(await form.locator('[name=stay_start]').inputValue()===dropoff && await form.locator('[name=stay_end]').inputValue()===pickup,'stay dates survive a language change');
+    await ana.page.locator('[data-language=en]').click();
     if (!(await form.locator('input[name=pets]').first().isChecked())) await tapLabel(form.locator('input[name=pets]').first());
     check(/\$220\.00 · 2 nights/.test(await form.locator('[data-quote]').textContent()), 'the total shows two nights at $220.00');
     await form.locator('[data-booking-inputs] button[type=submit]').tap();

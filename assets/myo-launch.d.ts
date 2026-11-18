@@ -33,6 +33,6 @@ export interface IntakeSubmission {
   overnightAcknowledgment?: boolean;
 }
 export interface LaunchBackend {
-  saveIntake(intake: IntakeSubmission): Promise<{id:string}>;
+  saveIntake(intake: IntakeSubmission): Promise<{updated:number}>;
   beginDepositCheckout(requestId:string): Promise<{url:string}>;
 }

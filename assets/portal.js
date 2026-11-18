@@ -3,6 +3,8 @@ import { createDrafts } from './drafts.js';
 import { googleReviewLinks } from './review-links.js';
 import { showPriceSheet } from './price-sheet.js';
 import { locale, t, hasKey, formatDate, formatMoney, translateLabel, catalogs } from './i18n.js';
+import {careSettings,staffComplianceSettings,stayCalendar,syncStayCalendar,vaccineTools,blockerHtml,staffCareTools,feedbackTool,reportInputs,reportPayload,timelineSection,clientSection,configureCareUi,bindCareUi,loadCareSection,clearEntryDetails} from './care-portal.js';
+import {myoConfig} from './myo-config.js';
 const uiLocale = locale;
 
 const app = document.querySelector('#app');
@@ -86,7 +88,7 @@ async function api(path, payload, key) {
       ? t('error.'+result.code, {}, uiLocale())
       : hasKey(result?.error) ? t(result.error)
       : uiLocale() === 'en' && result?.error ? result.error : t('Please try again.');
-    throw Object.assign(new Error(message || t("Please try again.")), { status:response.status, code:result?.code });
+    throw Object.assign(new Error(message || t("Please try again.")), { status:response.status, code:result?.code, blockers:result?.blockers });
   }
   return result;
 }
@@ -278,7 +280,7 @@ function availableSlots(minutes, serviceId) {
 // Pets arrive with each page of bookings or diary visits; keep one list so names resolve everywhere.
 function mergePets(rows = []) {
   const known = new Map(data.pets.map(pet => [pet.id,pet]));
-  for (const pet of rows) known.set(pet.id,pet);
+  for (const pet of rows) known.set(pet.id,{...known.get(pet.id),...pet});
   data.pets = [...known.values()].sort((a,b) => a.name.localeCompare(b.name));
 }
 async function loadDiary({ more = false, filter = diaryFilterValue } = {}) {
@@ -326,6 +328,7 @@ function bookingForm() {
     '<div data-availability hidden><p data-availability-message></p>'+
     '<button type="button" class="secondary" data-check-availability>'+emoji('🔄')+(t("Check again") + "</button></div>")+
     '<p data-availability-status role="status"></p>'+
+    (data.pricing_mode==='launch'?'<p>'+text(t('The first attending pet in this list uses the base rate.'))+'</p>':'')+
     choiceGroup(t("Pets attending"),data.pets.map(pet => choice('pets',pet.id,pet.name,{ type:'checkbox', icon:'🐾' })).join(''))+
     '<p class="pet-field-error" data-booking-pet-error role="alert"></p>'+
     '<div data-booking-options hidden><div data-booking-days></div>'+
@@ -384,6 +387,7 @@ function eventForm(booking) {
       choice('kind',kind,kind,{ icon:activityIcons[kind], required:true })
     ).join(''))+
     area(t("Details (include amounts, duration, dose or observations as appropriate)"),'notes')+
+    '<div data-report-fields data-service-kind="'+booking.service_kind+'"></div>'+
     button(t("Publish diary update"),'','🐾')+
     ("<fieldset class=\"tap-choices photo-choices\"><legend>" + t("Optional photo") + "</legend><div>")+
     photoChoice('camera',t("Take a photo"),'📸',' capture="environment"')+
@@ -420,6 +424,22 @@ setInterval(() => {
     if (note) note.textContent = t("You can start this visit now.");
   }
 }, 15_000);
+function updateLaunchServiceForm(form) {
+  if(!form || data.pricing_mode!=='launch')return;
+  const name=form.querySelector('[name="name"]:checked')?.value;
+  const minutes=form.elements.minutes;
+  if(!minutes.value)minutes.value=30;
+  const price=name==='Meet & Greet'?0:name==='Overnight pet sitting'?myoConfig.rates.overnight:myoConfig.rates.visit+(Number(minutes.value)===60?myoConfig.rates.extension:0);
+  form.elements.price.value=price;
+  form.elements.price.readOnly=true;
+  form.elements.extra_pet.value=name==='Meet & Greet'?0:myoConfig.rates.additionalDog;
+  form.elements.extra_pet.readOnly=true;
+  form.elements.extra_pet.closest('label').hidden=true;
+  if(!form.querySelector('[data-launch-rates]')){
+    const note=document.createElement('p');note.dataset.launchRates='';note.textContent=t('Approved launch rates apply automatically.');form.append(note);
+  }
+}
+const moveQuotes=new WeakMap();
 const canReviewCheckout = booking => !data.user.admin && booking.status === 'Confirmed' && booking.starts > Date.now();
 // Money on a booking card (C3.1): its payment status for both sides, Pay now and tips for customers, and
 // recording payments and refunds for staff. Refunds by card need online payment to be on.
@@ -483,12 +503,13 @@ function bookingCard(booking) {
   } else if (!data.user.admin && booking.status === 'Confirmed' && booking.last_change?.status === 'Declined') {
     changeNote = ("<p class=\"change-note\">" + t("Change declined. Your visit is still booked at the original time.") + "</p>");
   }
+  if(change?.proposed_cents!=null)changeNote+='<p>'+text(t('Proposed total {amount}',{amount:money(change.proposed_cents)}))+'</p>';
   if (['Requested','Confirmed'].includes(booking.status) && (data.user.admin ? isOwner() : booking.starts > Date.now())) {
     const slots = availableSlots((booking.ends-booking.starts)/60000);
     const needsApproval = !data.user.admin && booking.status === 'Confirmed'
       ? ("<p>" + t("Myomi will confirm the new time. Your current time stays booked until then.") + "</p>") : '';
     if (slots.length) actions += '<details class="reschedule-options"><summary>'+emoji('📅')+(t("Reschedule") + "</summary>")+
-      form('reschedule',needsApproval+choiceGroup(t("New time"),slotChoices(slots))+button(needsApproval ? t("Request new time") : t("Confirm new time"),'secondary','✓'),booking.id)+'</details>';
+      form('reschedule',needsApproval+choiceGroup(t("New time"),slotChoices(slots))+'<p data-move-quote role="status"></p><input type="hidden" name="cents">'+button(needsApproval ? t("Request new time") : t("Confirm new time"),'secondary','✓'),booking.id)+'</details>';
   }
   const statusLabel = !data.user.admin && booking.status === 'Requested' ? t("Waiting for Myomi") : booking.status;
   if (!data.user.admin && booking.status === 'Completed') {
@@ -501,7 +522,7 @@ function bookingCard(booking) {
     (booking.arrived ? ("<p class=\"appointment-details\">" + t("Arrived: "))+date(booking.arrived)+'</p>' : '') + (booking.departed ? ("<p class=\"appointment-details\">" + t("Completed: "))+date(booking.departed)+'</p>' : '')+
     (booking.summary ? ("<p class=\"preserve\"><strong>" + t("Visit summary:") + "</strong> ")+text(booking.summary)+'</p>' : '')+changeNote+paymentBlock(booking)+
     (data.user.admin ? pets.map(p=>'<details><summary>'+text(p.name)+(t("’s care profile") + "</summary>")+profileSummary(p)+'</details>').join('') : '')+
-    actions+'</article>';
+    (data.user.admin ? staffCareTools(booking,pets) : '')+actions+'</article>';
 }
 // Holds: a reviewed time is held for the customer until `expires` (server time, at most 10 minutes).
 // The review shows when the hold ends, and a hold the page can no longer use is released so others can book it.
@@ -587,7 +608,7 @@ function diary() {
       if (!event.has_photo) return null;
       const url = '/api/photos/'+event.id;
       return { src:url, href:url, alt:t("Open full photo from the care visit") };
-    }))+
+    },data.user.admin ? undefined : feedbackTool))+
     (data.diary.next ? '<button type="button" class="secondary" id="more-diary">'+emoji('⬇️')+(t("Show older visits") + "</button>") : '');
 }
 function diaryFilter() {
@@ -754,12 +775,13 @@ app.addEventListener('scroll',event => {
   cards.querySelector('[data-card-move="1"]').setAttribute('aria-disabled',String(index === rail.children.length-1));
 },true);
 function clientHome() {
-  const meet = data.first_visit && data.services.some(service => service.kind === 'meet');
-  const invitation = meet ? '<p>'+tapLink('?service=meet#book',t("Book a free Meet & Greet"),'🤝')+("<br>" + t("Meet Myomi before your first visit.") + "</p>") : '';
+  const meet = (data.first_visit || (data.pricing_mode === 'launch' && !data.meet_available)) && data.services.some(service => service.kind === 'meet');
+  const invitation = meet ? '<p>'+tapLink('?service=meet#book',t("Book a free Meet & Greet"),'🤝')+("<br>" + text(data.pricing_mode==='launch'?t('A complimentary Meet & Greet is required for each new booking.'):t("Meet Myomi before your first visit.")) + "</p>") : '';
   return invitation+dashboardActions([
     ['book',requestedService() ? t("Continue booking") : t("Book a visit"),'🐾',t("Choose care with Myomi.")],
     ['upcoming',t("My bookings"),'📅',t("Check requests and confirmed visits.")],
     ['pets',t("My pets"),'🐶',t("Add a pet or update care details.")],
+    ['care',t('Care details'),'📝',t('Complete intake, agreements, and home access.')],
     ['diary',t("Pet Diary"),'📖',t("Read visit notes and see photos.")],
   ])+weekCalendar();
 }
@@ -773,8 +795,10 @@ function staffHome(bookings) {
     ['settings',t("Services & availability"),'🗓️',t("Set prices and publish appointment times.")],
     ['history',t("Booking history"),'📖',t("Find past visits and their details.")],
     ['financials',t("Financials"),'📊',t("See visit totals and service breakdowns.")],
+    ['clients',t('Clients'),'👥',t('Find customer records and private notes.')],
   ].filter(([id]) => isOwner() || !['settings','financials'].includes(id));
-  return dashboardActions(tasks)+weekCalendar();
+  const keys=data.keys_to_return||[];
+  return dashboardActions(tasks)+weekCalendar()+(keys.length?'<aside><h3>'+text(t('Keys to return'))+'</h3>'+keys.map(client=>'<button type="button" data-client="'+client.owner+'">'+text(client.customer)+'</button>').join('')+'</aside>':'');
 }
 // The daily scheduled backup's state, loaded when Settings opens.
 async function showBackupStatus() {
@@ -796,7 +820,7 @@ async function showFinancials() {
   panel.setAttribute('aria-busy','true');
   panel.textContent = t("Loading booking totals…");
   try {
-    const {completed,upcoming} = await api('financials');
+    const [{completed,upcoming},feedback] = await Promise.all([api('financials'),api('feedback')]);
     if (!panel.isConnected) return;
     const totals = completed.reduce((total, row) => ({visits:total.visits+row.visits,cents:total.cents+row.cents}),{visits:0,cents:0});
     const metric = (label, row) => '<article><h3>'+label+'</h3><strong>'+money(row.cents)+'</strong><p>'+
@@ -806,6 +830,9 @@ async function showFinancials() {
     panel.innerHTML = '<div class="financial-metrics">'+metric(t("Completed in the last 30 days"),totals)+
       metric(t("Upcoming confirmed"),upcoming)+("</div><h3>" + t("Completed visits by service") + "</h3>")+
       (rows ? '<ul class="financial-breakdown">'+rows+'</ul>' : ("<p>" + t("No completed visits in the last 30 days.") + "</p>"));
+    panel.insertAdjacentHTML('beforeend','<h3>'+text(t('Visit feedback'))+'</h3><p>'+
+      [[1,'Happy'],[0,'Okay'],[-1,'Needs attention']].map(([score,label])=>text(t(label))+' '+feedback.counts[score]).join(' · ')+'</p>'+
+      feedback.recent.filter(item=>item.comment).map(item=>'<p class="preserve"><strong>'+text(item.customer)+'</strong> · '+text(item.comment)+'</p>').join(''));
     panel.dataset.loaded = '1';
   } catch {
     panel.innerHTML = ("<p>" + t("Couldn’t load booking totals.") + "</p><button type=\"button\" data-retry-financials>" + t("Try again") + "</button>");
@@ -814,6 +841,7 @@ async function showFinancials() {
 let changingLanguage = false;
 let heldBooking;
 function render() {
+  configureCareUi({data,api,refresh,notify:showPublicationFeedback});
   logout.hidden = accountLink.hidden = !data?.user;
   if (!data?.user) {
     portalLinks.replaceChildren();
@@ -835,9 +863,8 @@ function render() {
   const main = admin ? staffVisitsLabel() : t("My bookings");
   document.querySelector('.portal h1').textContent = t("Welcome, ")+data.user.name+'.';
   const links = admin
-    ? [['staff-home',t("Staff home")],['upcoming',staffVisitsLabel()],['diary',t("Publish updates")],['history',t("Booking history")],['settings',t("Services & availability")],['financials',t("Financials")]]
-      .filter(([id]) => isOwner() || !['settings','financials'].includes(id))
-    : [['client-home',t("Home")],['upcoming',t("My bookings")],['book',t("Book a visit")],['pets',t("My pets")],['diary',t("Pet Diary")]];
+    ? [['staff-home',t("Staff home")],['upcoming',staffVisitsLabel()],['diary',t("Publish updates")],['history',t("Booking history")],['settings',t("Services & availability")],['financials',t("Financials")],['clients',t('Clients')]].filter(([id]) => isOwner() || !['settings','financials'].includes(id))
+    : [['client-home',t("Home")],['upcoming',t("My bookings")],['book',t("Book a visit")],['pets',t("My pets")],['care',t('Care details')],['diary',t("Pet Diary")]];
   portalLinks.innerHTML = links.map(([id,label]) => '<a href="#'+id+'">'+text(translateLabel(label))+'</a>').join('');
   const staffNotice = !admin && new URLSearchParams(location.search).get('staff') === '1'
     ? ("<p>" + t("You’re signed in as a client. Sign out to switch to your staff account.") + "</p>") : '';
@@ -845,8 +872,8 @@ function render() {
     section('upcoming',main,admin ? cards(bookings.filter(b=>b.status === 'In Progress' || day(b.starts) === today)) +
       ("<h3>" + t("Other upcoming bookings") + "</h3>")+cards(bookings.filter(b=>b.status !== 'In Progress' && day(b.starts) !== today))
       : ("<h3>" + t("Upcoming visits") + "</h3>")+cards(bookings)+("<h3>" + t("Past visits") + "</h3>")+cards(history)+older)+
-    (admin ? (isOwner() ? section('settings',t("Services and availability"),adminSettings()) : '') :
-      section('pets',t("Pet profiles"),data.pets.map(p=>'<article><h3>'+text(p.name)+'</h3>'+profileSummary(p)+("<details><summary>" + t("Edit profile") + "</summary>")+petForm(p)+'</details></article>').join('')+("<h3>" + t("Add a pet") + "</h3>")+petForm())+
+    (admin ? (isOwner() ? section('settings',t("Services and availability"),adminSettings()+staffComplianceSettings(data)) : '') :
+      section('pets',t("Pet profiles"),data.pets.map(p=>'<article><h3>'+text(p.name)+'</h3>'+profileSummary(p)+vaccineTools(p)+tapLink('#pet-'+p.id,t('Care history'),'📖')+("<details><summary>" + t("Edit profile") + "</summary>")+petForm(p)+'</details></article>').join('')+("<h3>" + t("Add a pet") + "</h3>")+petForm())+
       section('book',t("Request care"),bookingForm())+
       bookings.filter(canReviewCheckout).map(booking => section('checkout-'+booking.id,t("Visit details"),checkoutSummary(booking))).join(''))+
     section('diary',admin ? t("Publish updates") : t("Pet Diary"),
@@ -854,10 +881,17 @@ function render() {
     (admin ? section('history',t("Booking history"),cards(history)+older)+
       (isOwner() ? section('financials',t("Financials"),("<p>" + t("These totals use booking prices. The portal doesn’t track payments collected or refunds.") + "</p>")+
         '<div id="financial-summary" aria-live="polite"></div>') : '') : '')+
-    section('account',t("Account"),accountSettings());
+    section('account',t("Account"),accountSettings())+
+    (admin ? clientSection() : section('care',t('Care details'),careSettings(data))+data.pets.map(timelineSection).join(''));
+  if(admin)updateLaunchServiceForm(app.querySelector('[data-action="services"]'));
   updateQuote();
   drafts.restore(app, {
     onChoice:(form, input) => {
+      if(form.dataset.action==='reschedule' && data.pricing_mode==='launch')input.dispatchEvent(new Event('change',{bubbles:true}));
+      if (form.dataset.action === 'events' && input.name === 'kind') {
+        const panel=form.querySelector('[data-report-fields]');
+        panel.innerHTML=reportInputs(data.reportFields[panel.dataset.serviceKind]?.[input.value] || []);
+      }
       if (form.dataset.action !== 'bookings') return;
       if (['service','day','slot'].includes(input.name)) updateQuote({ target:input });
       if (input.name === 'pets') updateTotal(form);
@@ -881,6 +915,7 @@ function showSection(focus = false) {
     else link.removeAttribute('aria-current');
   }
   if (id === 'financials') showFinancials();
+  loadCareSection(id);
   if (id === 'settings') { showBackupStatus(); showStaffPanel(); }
   if (focus) {
     const heading = document.getElementById(id).querySelector('h2');
@@ -931,6 +966,7 @@ function quoteLines(lines) {
 }
 const quoteRequests = new WeakMap();
 function updateTotal(booking, message = '') {
+  syncStayCalendar(booking);
   clearTimeout(quoteRequests.get(booking)?.timer);
   const request = {};
   quoteRequests.set(booking,request);
@@ -966,7 +1002,9 @@ function updateTotal(booking, message = '') {
       booking.dataset.quotedCents = quote.total_cents;
       showTotal(quote.total_cents);
       lines.innerHTML = quoteLines(quote.lines);
-      review.disabled = false;
+      const blocked = quote.blockers || [];
+      status.innerHTML = blockerHtml(blocked,data);
+      review.disabled = blocked.length > 0;
     } catch (error) {
       if (!booking.isConnected || quoteRequests.get(booking) !== request) return;
       status.textContent = error.message;
@@ -996,8 +1034,8 @@ function stayFields(booking) {
   const first = nights[0]?.date || '', last = nights.at(-1)?.date || '';
   const lastPickup = last ? new Date(Date.parse(last + 'T12:00:00Z') + 86_400_000).toISOString().slice(0, 10) : '';
   booking.querySelector('[data-booking-days]').innerHTML = nights.length ? ("<fieldset class=\"stay-fields\"><legend>" + t("Your stay") + "</legend>")+
-    ("<p>" + t("Nights available from "))+text(date(easternEpoch(first,'12:00')).split(',').slice(0,2).join(','))+(t(". Times are Massachusetts time.") + "</p>")+
-    input(t("Drop-off date"),'stay_start','type="date" required min="'+first+'" max="'+last+'"')+
+    ("<p>" + t("Nights available from "))+text(formatDate(easternEpoch(first,'12:00'),'date'))+(t(". Times are Massachusetts time.") + "</p>")+
+    stayCalendar(nights)+input(t("Drop-off date"),'stay_start','type="date" required min="'+first+'" max="'+last+'"')+
     input(t("Drop-off time"),'drop_time','type="time" step="1800" required value="17:00"')+
     input(t("Pickup date"),'stay_end','type="date" required min="'+first+'" max="'+lastPickup+'"')+
     input(t("Pickup time"),'pick_time','type="time" step="1800" required value="10:00"')+'</fieldset>' : '';
@@ -1123,6 +1161,27 @@ function showPhotoSelection(form, file) {
 
 app.addEventListener('change', event => {
   const { name, value, form } = event.target;
+  if(form?.dataset.action==='services')updateLaunchServiceForm(form);
+  if (name === 'kind' && form?.dataset.action === 'events') {
+    const panel=form.querySelector('[data-report-fields]');
+    panel.innerHTML=reportInputs(data.reportFields[panel.dataset.serviceKind]?.[value] || []);
+  }
+  if (form?.dataset.action === 'reschedule' && name==='slot' && data.pricing_mode==='launch') {
+    const token={};
+    moveQuotes.set(form,token);
+    const control=form.querySelector('button[type="submit"]');
+    const status=form.querySelector('[data-move-quote]');
+    control.disabled=true;
+    const [slot,start]=value.split(':').map(Number);
+    api('reschedule-quote',{id:Number(form.dataset.id),slot,start}).then(result=>{
+      if(!form.isConnected||moveQuotes.get(form)!==token)return;
+      let cents=form.elements.cents;
+      if(!cents){cents=document.createElement('input');cents.type='hidden';cents.name='cents';form.append(cents);}
+      cents.value=result.total_cents;
+      status.textContent=t('Proposed total {amount}',{amount:money(result.total_cents)});
+      control.disabled=false;
+    }).catch(error=>{if(form.isConnected&&moveQuotes.get(form)===token)status.textContent=error.message;});
+  }
   if (['camera','photo'].includes(name) && form && event.target.type === 'file') {
     const other = form.elements[name === 'camera' ? 'photo' : 'camera'];
     const file = event.target.files[0];
@@ -1339,6 +1398,7 @@ async function confirmCancellation(kind, bookingId) {
   });
 }
 app.addEventListener('submit',async event => {
+  if (event.target.matches('[data-care-action]')) return;
   event.preventDefault();
   const form = event.target;
   const action = form.dataset.action;
@@ -1369,6 +1429,7 @@ app.addEventListener('submit',async event => {
     if (confirmed.fee) payload.accept_fee_cents = confirmed.fee;
   }
   const control = event.submitter || form.querySelector('button[type="submit"]');
+  if (action === 'signout-all') suspendBookingQuote();
   control.disabled = true;
   const languageControls = [...document.querySelectorAll('[data-language]')];
   languageControls.forEach(button => { button.disabled = true; });
@@ -1392,7 +1453,7 @@ app.addEventListener('submit',async event => {
       if (payload.details.length > 3000) throw new Error(t("Shorten the care notes so the profile can be saved."));
     }
     if (typeof payload.slot === 'string' && payload.slot.includes(':')) [payload.slot,payload.start] = payload.slot.split(':').map(Number);
-    for (const key of ['service','slot','pet','minutes']) if (key in payload) payload[key] = Number(payload[key]);
+    for (const key of ['service','slot','pet','minutes','cents']) if (key in payload) payload[key] = Number(payload[key]);
     if (action === 'bookings') {
       const service = find(data.services,payload.service);
       let nights = 1;
@@ -1454,6 +1515,9 @@ app.addEventListener('submit',async event => {
       payload.ends = new Date(payload.ends).toISOString();
     }
     if (action === 'events') {
+      const panel=form.querySelector('[data-report-fields]');
+      payload.data=reportPayload(form,data.reportFields[panel.dataset.serviceKind]?.[payload.kind] || []);
+      for(const key of Object.keys(payload)) if(key.startsWith('report_'))delete payload[key];
       payload.photo = await readPhoto(fields.get('camera')?.size ? fields.get('camera') : fields.get('photo'));
       delete payload.camera;
     }
@@ -1505,6 +1569,14 @@ app.addEventListener('submit',async event => {
       : signedIn ? ''
       : resumeBooking ? t("Pet added. You can continue booking.") : t("Saved.");
   } catch (error) {
+    if (action === 'bookings' && error.code === 'blocked') {
+      const review=openReview();
+      if(review)await releaseHold(Number(review.dataset.expires));
+      await reopenBooking(t('Complete the booking requirements below.'));
+      const status=app.querySelector('[data-quote-status]');
+      if(status)status.innerHTML=blockerHtml(error.blockers || [],data);
+      return;
+    }
     if (action === 'bookings' && error.code === 'price_changed') {
       const review = openReview();
       if (review) await releaseHold(Number(review.dataset.expires));
@@ -1537,6 +1609,7 @@ app.addEventListener('submit',async event => {
   }
 });
 logout.addEventListener('click',async () => {
+  suspendBookingQuote();
   showPublicationFeedback('');
   try {
     await api('logout',{});
@@ -1546,6 +1619,13 @@ logout.addEventListener('click',async () => {
     feedback.textContent = t("Signed out.");
   } catch (error) { feedback.textContent = error.message; }
 });
+
+function suspendBookingQuote() {
+  const booking=app.querySelector('[data-action="bookings"]');
+  if (!booking) return;
+  clearTimeout(quoteRequests.get(booking)?.timer);
+  quoteRequests.delete(booking);
+}
 refresh().then(() => {
   // Back from the hosted checkout: the redirect proves nothing, so say what happens next and tidy the address.
   const returned = new URLSearchParams(location.search).get('payment');
@@ -1563,9 +1643,12 @@ refresh().then(() => {
 
 // A language change re-renders labels while keeping the current form values in memory.
 // Passwords and files never enter localStorage or sessionStorage through this snapshot.
+bindCareUi(app);
+document.addEventListener('visibilitychange', () => {if(document.hidden)clearEntryDetails();});
+window.addEventListener('pagehide',clearEntryDetails);
 window.addEventListener('myo:languagechange', () => {
   const forms = [...app.querySelectorAll('form')].map(form => ({
-    fields: [...form.elements].filter(field => field.name).map(field => ({
+    fields: [...form.elements].filter(field => field.name && !field.matches('[data-no-draft]')).map(field => ({
       name: field.name, value: field.value, checked: field.checked,
       type: field.type, files: field.type === 'file' ? field.files : null,
       error: field.closest('.pet-field')?.querySelector('.pet-field-error')?.textContent || '',

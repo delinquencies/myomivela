@@ -11,8 +11,8 @@
     "deploy": "wrangler deploy",
     "build:site": "node scripts/build-site.mjs",
     "test": "node --test tests/*.test.mjs",
-    "test:worker": "MYO_TARGET=worker node --test --test-concurrency=1 tests/*.test.mjs",
-    "test:browser": "node --no-warnings tests/browser/portal-smoke.mjs && node --no-warnings tests/browser/holds-smoke.mjs && node --no-warnings tests/browser/booking-form-smoke.mjs && node --no-warnings tests/browser/meet-smoke.mjs && node --no-warnings tests/browser/a11y-smoke.mjs && node --no-warnings tests/browser/i18n-smoke.mjs && node --no-warnings tests/browser/payments-smoke.mjs && node --no-warnings tests/browser/staff-smoke.mjs",
+    "test:worker": "node scripts/test-worker.mjs",
+    "test:browser": "node --no-warnings tests/browser/portal-smoke.mjs && node --no-warnings tests/browser/holds-smoke.mjs && node --no-warnings tests/browser/booking-form-smoke.mjs && node --no-warnings tests/browser/meet-smoke.mjs && node --no-warnings tests/browser/a11y-smoke.mjs && node --no-warnings tests/browser/i18n-smoke.mjs && node --no-warnings tests/browser/care-smoke.mjs && node --no-warnings tests/browser/payments-smoke.mjs && node --no-warnings tests/browser/staff-smoke.mjs",
     "backup": "node scripts/backup.mjs",
     "build": "tailwindcss -c docs/archive/design-previews/tailwind.config.cjs -i docs/archive/design-previews/assets/legacy-tailwind.input.css -o docs/archive/design-previews/assets/legacy-tailwind.css --minify"
   },

@@ -157,7 +157,7 @@ try {
     await openPortalSection(customer,section);
     await checkScreen(customer,name);
   }
-  await customer.locator('[name="pets"]').locator('xpath=..').tap();
+  await customer.locator('[data-action=bookings] [name="pets"]').locator('xpath=..').tap();
   await customer.getByRole('button',{ name:'Review booking' }).tap();
   await customer.locator('[data-booking-review] .checkout-card').waitFor();
   await checkScreen(customer,'Booking review');

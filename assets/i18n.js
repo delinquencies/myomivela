@@ -1,5 +1,6 @@
 import { en as uiEnglish, es as uiSpanish } from './ui-copy.js';
 import { en as launchEnglish, es as launchSpanish } from './myo-copy.js';
+import {en as careEnglish,es as careSpanish} from './care-copy.js';
 
 // Language support shared by the portal and the diary (C2.6).
 // - locale(): the reader's choice ('en' or 'es'), from the same storage key the public site uses.
@@ -25,6 +26,7 @@ export function setLocale(language) {
 
 export const catalogs = {
   en: {
+    ...careEnglish,
     ...uiEnglish,
     "error.time_unavailable": "That time is no longer available. Choose another.",
     "error.window_too_short": "This service does not fit in that window. Choose an earlier time.",
@@ -87,6 +89,7 @@ export const catalogs = {
     'booking.visits': { one:'{count} visit', other:'{count} visits' },
   },
   es: {
+    ...careSpanish,
     ...uiSpanish,
     ...Object.fromEntries(Object.entries(launchSpanish).map(([key, value]) => ['launch.'+key, value])),
     'status.Requested': 'Esperando a Myomi',

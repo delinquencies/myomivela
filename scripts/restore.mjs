@@ -9,45 +9,75 @@
 import { readFile } from 'node:fs/promises';
 import { gunzipSync } from 'node:zlib';
 
-const [file, site] = process.argv.slice(2);
-const { MYO_STAFF_EMAIL:email, MYO_STAFF_PASSWORD:password } = process.env;
-if (!file || !site || !email || !password) {
-  console.error('Usage: MYO_STAFF_EMAIL=... MYO_STAFF_PASSWORD=... node scripts/restore.mjs <backup.json.gz> <site URL>');
-  process.exit(2);
-}
-const base = new URL(site).origin;
-const backup = JSON.parse(gunzipSync(await readFile(file)));
-if (backup.format !== 'myo-backup') { console.error(file + ' is not a myo. backup.'); process.exit(1); }
-
-let cookie = '';
-async function call(path, body) {
-  const response = await fetch(base + path, {
-    method:'POST', headers:{ 'Content-Type':'application/json', ...(cookie ? { cookie } : {}) }, body:JSON.stringify(body),
-  });
-  // Sign-in sets several cookies (session and recognised device); only the session is needed here.
-  const session = response.headers.getSetCookie().find(value => value.startsWith('myo_session='));
-  if (session) cookie = session.split(';')[0];
-  const result = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(path + ' failed (' + response.status + '): ' + (result.error || 'no details'));
-  return result;
-}
-
-try {
-  await call('/api/login', { email, password });
-  const entries = Object.entries(backup.photos || {});
-  const missing = entries.filter(([, photo]) => !photo).map(([key]) => key);
-  let sent = 0;
-  for (const [key, photo] of entries) {
-    if (!photo) continue;
-    await call('/api/restore/photo', { key, photo });
-    process.stdout.write('\rPhotos: ' + ++sent + ' of ' + (entries.length - missing.length));
+async function main() {
+  const [file, site] = process.argv.slice(2);
+  const { MYO_STAFF_EMAIL: email, MYO_STAFF_PASSWORD: password } = process.env;
+  if (!file || !site || !email || !password) {
+    console.error(
+      'Usage: MYO_STAFF_EMAIL=... MYO_STAFF_PASSWORD=... node scripts/restore.mjs <backup.json.gz> <site URL>'
+    );
+    process.exitCode = 2;
+    return;
   }
-  if (sent) process.stdout.write('\n');
-  const { restored } = await call('/api/restore', backup);
-  console.log('Restored from ' + backup.created + ': ' + Object.entries(restored).map(([table, count]) => count + ' ' + table).join(', ') + '.');
-  if (missing.length) console.warn('Warning: ' + missing.length + ' photo(s) were already missing when the backup was made: ' + missing.join(', '));
-  console.log('Everyone has been signed out. Sign in with an account from the backup.');
-} catch (error) {
-  console.error('Restore failed: ' + error.message);
-  process.exit(1);
+  const base = new URL(site).origin;
+  const backup = JSON.parse(gunzipSync(await readFile(file)));
+  if (backup.format !== 'myo-backup') {
+    console.error(file + ' is not a myo. backup.');
+    process.exitCode = 1;
+    return;
+  }
+
+  let cookie = '';
+  async function call(path, body) {
+    const response = await fetch(base + path, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...(cookie ? { cookie } : {}) },
+      body: JSON.stringify(body),
+    });
+    // Sign-in sets several cookies (session and recognised device); only the session is needed here.
+    const session = response.headers.getSetCookie().find((value) => value.startsWith('myo_session='));
+    if (session) cookie = session.split(';')[0];
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok)
+      throw new Error(path + ' failed (' + response.status + '): ' + (result.error || 'no details'));
+    return result;
+  }
+
+  try {
+    await call('/api/login', { email, password });
+    const entries = Object.entries(backup.photos || {});
+    const missing = entries.filter(([, photo]) => !photo).map(([key]) => key);
+    let sent = 0;
+    for (const [key, photo] of entries) {
+      if (!photo) continue;
+      await call('/api/restore/photo', { key, photo });
+      process.stdout.write('\rPhotos: ' + ++sent + ' of ' + (entries.length - missing.length));
+    }
+    if (sent) process.stdout.write('\n');
+    const { restored } = await call('/api/restore', backup);
+    console.log(
+      'Restored from ' +
+        backup.created +
+        ': ' +
+        Object.entries(restored)
+          .map(([table, count]) => count + ' ' + table)
+          .join(', ') +
+        '.'
+    );
+    if (missing.length)
+      console.warn(
+        'Warning: ' +
+          missing.length +
+          ' photo(s) were already missing when the backup was made: ' +
+          missing.join(', ')
+      );
+    console.log('Everyone has been signed out. Sign in with an account from the backup.');
+  } catch (error) {
+    console.error('Restore failed: ' + error.message);
+    process.exitCode = 1;
+  }
 }
+main().catch((error) => {
+  console.error('Restore failed: ' + error.message);
+  process.exitCode = 1;
+});

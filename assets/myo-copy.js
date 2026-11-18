@@ -1,4 +1,5 @@
 export const en = {
+  portalIntakeLink:'Save real care details in your portal',
   serviceHint:'Choose the care you are preparing for.',
   petsHint:'Include each pet’s name, approximate age, and species.',
   feedingHint:'Include food, portions, meal times, treats, and restrictions.',
@@ -56,7 +57,7 @@ export const en = {
   nights:'Number of nights', primary:'Primary pet', dog:'Dog', cat:'Cat', exotic:'Small exotic pet',
   extraDogCount:'Additional dogs', extraCatCount:'Additional cats', extraExoticCount:'Additional small exotic pets',
   puppyLabel:'The primary dog is under {puppyAge} year old', estimateButton:'Calculate estimate',
-  estimateHint:'This calculator previews the launch rates. The portal currently uses a separate price list. Confirm your quote with Myomi before booking.', estimateBase:'Base rate', estimatePeakNights:'Peak night surcharge',
+  estimateHint:'This is an estimate. Your private booking review shows the current server-calculated quote before you send a request.', estimateBase:'Base rate', estimatePeakNights:'Peak night surcharge',
   estimateExtension:'Longer visit', estimateExtraPets:'Additional pets', estimateLastMinute:'Last-minute fee',
   estimateTotal:'Estimated total', estimateDeposit:'Estimated deposit ({depositPercent})', estimateBalance:'Estimated balance ({balancePercent})',
   estimateInvalid:'Check the date and pet selections. Dog walking is for dogs only.',
@@ -77,6 +78,7 @@ export const en = {
 };
 
 export const es = {
+  portalIntakeLink:'Guardar tus datos de cuidado en el portal',
   serviceHint:'Elige el tipo de cuidado que estás preparando.',
   petsHint:'Incluye el nombre, la edad aproximada y la especie de cada mascota.',
   feedingHint:'Incluye el alimento, las porciones, los horarios, los premios y las restricciones.',
@@ -134,7 +136,7 @@ export const es = {
   nights:'Número de noches', primary:'Mascota principal', dog:'Perro', cat:'Gato', exotic:'Mascota exótica pequeña',
   extraDogCount:'Perros adicionales', extraCatCount:'Gatos adicionales', extraExoticCount:'Mascotas exóticas pequeñas adicionales',
   puppyLabel:'El perro principal tiene menos de {puppyAge} año', estimateButton:'Calcular costo',
-  estimateHint:'Este cálculo muestra las tarifas de lanzamiento. El portal todavía usa su propia lista de precios. Confirma tu presupuesto con Myomi antes de reservar.', estimateBase:'Tarifa base', estimatePeakNights:'Recargo por noches de temporada alta',
+  estimateHint:'Este cálculo es orientativo. Antes de enviar tu solicitud, la revisión privada de la reserva muestra el presupuesto actualizado.', estimateBase:'Tarifa base', estimatePeakNights:'Recargo por noches de temporada alta',
   estimateExtension:'Visita más larga', estimateExtraPets:'Mascotas adicionales', estimateLastMinute:'Cargo de último momento',
   estimateTotal:'Total estimado', estimateDeposit:'Depósito del {depositPercent} estimado', estimateBalance:'Saldo estimado ({balancePercent})',
   estimateInvalid:'Revisa la fecha y las mascotas elegidas. Los paseos son solo para perros.',

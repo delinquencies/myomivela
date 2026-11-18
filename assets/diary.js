@@ -17,7 +17,7 @@ function departureLine(check) {
     ? ("<p class=\"diary-departure\">" + t("🔒 Home secured at "))+escapeHtml(departureTime.format(check.at))+'</p>'
     : ("<p class=\"diary-departure diary-departure-warning preserve\">" + t("⚠️ Not fully secured: "))+escapeHtml(check.note)+'</p>';
 }
-export function renderDiaryVisits(visits, eventsByVisit, petName, photoFor) {
+export function renderDiaryVisits(visits, eventsByVisit, petName, photoFor, afterVisit = () => '') {
   if (!visits.length) return ("<p>" + t("No diary visits for this selection yet.") + "</p>");
 
   // Report-card answers as short chips; staff see answers hidden from the customer, greyed out.
@@ -44,10 +44,14 @@ export function renderDiaryVisits(visits, eventsByVisit, petName, photoFor) {
   return visits.map(visit => {
     const entries = eventsByVisit.get(visit.id) || [];
     const pets = visit.pet_ids.map(petName).filter(Boolean).join(', ');
+    const timeline = rows => rows.length ? '<ol class="diary-timeline">'+rows.map(renderEntry).join('')+'</ol>' : '<p>'+escapeHtml(t('No updates for this visit yet.'))+'</p>';
+    const updates = visit.nights?.length ? visit.nights.map(night =>
+      '<section class="diary-night"><h4>'+formatDate(Date.parse(night.date+'T12:00:00Z'),'date')+'</h4>'+
+      timeline(entries.filter(event=>night.event_ids.includes(event.id)))+'</section>').join('') : timeline(entries);
     return '<article class="diary-visit"><header><p class="diary-status">'+escapeHtml(translateLabel(visit.status))+'</p><h3>'+escapeHtml(translateLabel(visit.service_name))+'</h3>'+
       '<p data-visit-date>'+formatVisitDate(visit.starts)+' · '+escapeHtml(pets)+'</p></header>'+
       (visit.summary ? ("<p class=\"diary-summary preserve\"><strong>" + t("Visit summary") + "</strong><br>")+escapeHtml(visit.summary)+'</p>' : '')+
       departureLine(visit.departure_check)+
-      (entries.length ? '<ol class="diary-timeline">'+entries.map(renderEntry).join('')+'</ol>' : ("<p class=\"diary-summary\">" + t("No updates for this visit yet.") + "</p>"))+'</article>';
+      updates+afterVisit(visit)+'</article>';
   }).join('');
 }

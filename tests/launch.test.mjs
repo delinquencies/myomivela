@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { isPeakDate, calculateEstimate, myoConfig } from '../assets/myo-config.js';
 import { en, es } from '../assets/myo-copy.js';
+import {policyText} from '../assets/policy-copy.js';
 
 const periods = [
   ['2026-11-25','2026-11-30'], ['2026-12-30','2027-01-02'], ['2027-01-15','2027-01-18'],
@@ -85,4 +86,12 @@ test('English and Spanish cover the same keys, template values, policies and fie
   }
   for (const [key] of myoConfig.intakeFields) assert.ok(en[key], key);
   for (const [key] of myoConfig.peakPeriods) assert.ok(en[key], key);
+  for(const language of ['en','es']){
+    const agreement=policyText(language);
+    assert.doesNotMatch(agreement,/\{\w+\}/);
+    assert.ok(agreement.includes('$30'));
+    assert.ok(agreement.includes('$139'));
+    assert.ok(agreement.includes('01108'));
+    for(const key of myoConfig.policyKeys)assert.ok(agreement.includes((language==='es'?es:en)[key==='peak'?'peakTitlePolicy':key+'Title']));
+  }
 });

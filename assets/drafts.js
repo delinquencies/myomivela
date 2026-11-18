@@ -9,7 +9,7 @@ const keepFor = 24 * 60 * 60_000;
 // A form is identified by what it does and what it belongs to: "events|12|", "status|12|Completed", "pets||".
 const identity = form => [form.dataset.action, form.dataset.id || '',
   form.querySelector('input[type="hidden"][name="status"]')?.value || ''].join('|');
-const ignored = field => !field.name || ['password','hidden','submit','button','reset'].includes(field.type);
+const ignored = field => !field.name || field.matches('[data-no-draft]') || ['password','hidden','submit','button','reset'].includes(field.type);
 const choice = field => ['radio','checkbox'].includes(field.type);
 
 export function createDrafts() {
@@ -66,7 +66,7 @@ export function createDrafts() {
         if (draft.open) { const details = form.closest('details'); if (details) details.open = true; }
         for (const field of draft.fields) {
           if ('checked' in field) {
-            const input = [...form.elements].find(element => choice(element) && element.name === field.name && element.value === field.value);
+            const input = [...form.elements].find(element => !ignored(element) && choice(element) && element.name === field.name && element.value === field.value);
             if (!input) continue; // that option no longer exists (for example, the time was taken)
             input.checked = field.checked;
             if (field.checked) onChoice(form, input);
@@ -76,7 +76,7 @@ export function createDrafts() {
           }
         }
         for (const [name, file] of Object.entries(draft.files || {})) {
-          const input = [...form.elements].find(element => element.type === 'file' && element.name === name);
+          const input = [...form.elements].find(element => !ignored(element) && element.type === 'file' && element.name === name);
           if (!input) continue;
           try {
             const transfer = new DataTransfer();

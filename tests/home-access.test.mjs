@@ -95,7 +95,9 @@ test('rotating the key: the previous key still opens records, which are re-seale
   await server.call('c','POST','/api/register',{ name:'c', email:'c@example.test', password });
   await server.call('c','POST','/api/home-access',{ method:'code', instructions:'Door code 2580' });
   await server.stop();
-  const sealedA = new DatabaseSync(path).prepare('SELECT secret_enc FROM home_access').get().secret_enc;
+  const inspection = new DatabaseSync(path);
+  const sealedA = inspection.prepare('SELECT secret_enc FROM home_access').get().secret_enc;
+  inspection.close();
   assert.ok(!sealedA.includes('2580'));
   server = await startServer({ MYO_VAULT_KEY:keyB }, { dbPath:path });
   await server.call('c','POST','/api/login',{ email:'c@example.test', password });
