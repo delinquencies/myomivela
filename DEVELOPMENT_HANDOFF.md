@@ -53,6 +53,14 @@ lib/stores/    durable.mjs (ctx.storage.sql + transactionSync, R2)   node.mjs (n
 - **Storage:** bookings store their lines in `booking_lines`, and `bookings.cents` is the total. `GET /api/portal` bookings carry `lines`; older bookings show one `base` line.
 - **Error shape:** errors are `{ error, code?, ...details }`. Codes so far: `time_unavailable`, `window_too_short`, `time_reserved`, `hold_expired`, `price_changed`.
 
+**Change requests (C1.2).**
+- **Customer, Confirmed visit:** `POST /api/reschedule` creates a Pending `booking_changes` row and returns `{ change }`. The visit keeps its confirmed time. A newer request replaces an older pending one.
+- **Requested visits and staff moves:** these still move directly.
+- **Staff:** `POST /api/changes/decide { id, decision:'approve'|'decline' }`. Approval re-checks the time, and returns 409 `time_reserved` or `time_unavailable` if it's gone, leaving the change pending.
+- **Customer:** `POST /api/changes/withdraw { id }`.
+- **Automatic endings:** cancelling a visit withdraws its pending change; starting the visit declines it.
+- **Portal data:** bookings carry `pending_change` and `last_change`.
+
 **Booking holds and weekly hours.** `POST /api/checkout-hold` creates a short hold and `POST /api/checkout-release` releases it. The request flow checks the hold and current availability when submitting. Staff set recurring hours with `POST /api/schedule` and individual-date changes with `POST /api/schedule-exception`.
 
 **Configuration.** Cloudflare needs only the `MYO_ADMIN_EMAIL` and `MYO_ADMIN_PASSWORD` secrets. The Node-only variables (`MYO_DB`, `NODE_ENV`, `MYO_ORIGIN`, `MYO_SECURE_COOKIES`, `MYO_TRUST_PROXY`) are listed in the README.

@@ -375,17 +375,30 @@ function bookingCard(booking) {
     }
     actions += statusForm(booking,'Cancelled','Cancel booking');
   }
+  // A customer's proposed new time for a confirmed visit (C1.2): the visit keeps its time until Myomi decides.
+  const change = booking.pending_change;
+  let changeNote = '';
+  if (change && data.user.admin) {
+    changeNote = '<p class="change-note"><strong>Customer asked to move to '+text(date(change.starts))+'.</strong></p>'+
+      form('changes/decide','<input type="hidden" name="decision" value="approve">'+button('Approve change','','✓'),change.id)+
+      form('changes/decide','<input type="hidden" name="decision" value="decline">'+button('Decline change','secondary','✕'),change.id);
+  } else if (change) {
+    changeNote = '<p class="change-note">Requested change: '+text(date(change.starts))+' — waiting for Myomi. Your current time stays booked until then.</p>'+
+      form('changes/withdraw',button('Withdraw request','secondary','↩️'),change.id);
+  }
   if (['Requested','Confirmed'].includes(booking.status) && (data.user.admin || booking.starts > Date.now())) {
     const slots = availableSlots((booking.ends-booking.starts)/60000);
+    const needsApproval = !data.user.admin && booking.status === 'Confirmed'
+      ? '<p>Myomi will confirm the new time. Your current time stays booked until then.</p>' : '';
     if (slots.length) actions += '<details class="reschedule-options"><summary>'+emoji('📅')+'Reschedule</summary>'+
-      form('reschedule',choiceGroup('New time',slotChoices(slots))+button('Confirm new time','secondary','✓'),booking.id)+'</details>';
+      form('reschedule',needsApproval+choiceGroup('New time',slotChoices(slots))+button(needsApproval ? 'Request new time' : 'Confirm new time','secondary','✓'),booking.id)+'</details>';
   }
   const statusLabel = !data.user.admin && booking.status === 'Requested' ? 'Waiting for Myomi' : booking.status;
   return '<article><h3>'+text(booking.service_name)+' · '+text(statusLabel)+'</h3><p class="appointment-details">'+date(booking.starts)+' – '+date(booking.ends)+' · '+money(booking.cents)+'</p>'+
     (data.user.admin ? '<p>'+text(booking.customer)+' · '+text(booking.email)+'</p>' : '')+
     '<p>Pets: '+pets.map(p=>text(p.name)).join(', ')+'</p><p class="preserve">'+text(booking.notes)+'</p>'+
     (booking.arrived ? '<p class="appointment-details">Arrived: '+date(booking.arrived)+'</p>' : '') + (booking.departed ? '<p class="appointment-details">Completed: '+date(booking.departed)+'</p>' : '')+
-    (booking.summary ? '<p class="preserve"><strong>Visit summary:</strong> '+text(booking.summary)+'</p>' : '')+
+    (booking.summary ? '<p class="preserve"><strong>Visit summary:</strong> '+text(booking.summary)+'</p>' : '')+changeNote+
     (data.user.admin ? pets.map(p=>'<details><summary>'+text(p.name)+'’s care profile</summary>'+profileSummary(p)+'</details>').join('') : '')+
     actions+'</article>';
 }
@@ -600,7 +613,8 @@ function clientHome() {
   ])+weekCalendar();
 }
 function staffHome(bookings) {
-  const pending = bookings.filter(booking => booking.status === 'Requested').length;
+  // Requests and change requests both wait on Myomi.
+  const pending = bookings.filter(booking => booking.status === 'Requested' || booking.pending_change).length;
   const active = bookings.filter(booking => booking.status === 'In Progress').length;
   const tasks = [
     ['upcoming','Bookings','📅',pending ? pending+' '+(pending === 1 ? 'request to review' : 'requests to review') : 'Review requests and manage visits.'],
@@ -1063,6 +1077,9 @@ app.addEventListener('submit',async event => {
     }
     if (resumeBooking || signedIn || action === 'register') showSection(true);
     if (action === 'signout-all') { drafts.clear(); feedback.textContent = 'Signed out on every device.'; return; }
+    if (result?.change) { feedback.textContent = 'Change requested. Myomi will confirm the new time; your current time stays booked until then.'; return; }
+    if (action === 'changes/decide') { feedback.textContent = payload.decision === 'approve' ? 'Change approved. The visit has moved.' : 'Change declined. The visit keeps its time.'; return; }
+    if (action === 'changes/withdraw') { feedback.textContent = 'Change request withdrawn.'; return; }
     feedback.textContent = action === 'bookings' ? 'Request sent. Myomi still needs to confirm your appointment.'
       : action === 'password' ? 'Password changed. Your other devices have been signed out.'
       : action === 'register' ? 'Your account is ready.'

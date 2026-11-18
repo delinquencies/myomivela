@@ -86,6 +86,8 @@ Phase 3  C3.1 Ledger + payments (provider decision) ──▶ X3.1
 ```
 
 ### C1.2: Change requests for confirmed visits · Phase 1
+**Status: done** (migration 10, `tests/changes.test.mjs`, browser scenario 7). The contract also includes `last_change: { id, status:'Approved'|'Declined', starts, ends, decided } | null` for showing a decision once. Minimal UI shipped so neither side is stranded: the requested-change note and **Withdraw request** for customers, **Approve change** and **Decline change** for staff, and pending changes counted on the staff home card. Codex X1.7 refines it.
+
 **Why Claude:** a new state machine. The booking keeps its confirmed time while a proposed change waits. It touches conflict checks, the early-start rule, cancellation and staff approval.
 
 **Design**
