@@ -16,7 +16,7 @@ before(async () => {
 });
 after(async () => { await app.stop(); await rm(dir, { recursive:true, force:true }); });
 
-const concrete = route => route.path instanceof RegExp ? route.path.source.replace(/\\\//g,'/').replace('(\\d+)','1').replace(/^\^|\$$/g,'') : route.path;
+const concrete = route => route.path instanceof RegExp ? route.path.source.replace(/\\\//g,'/').replace('(\\d+)','1').replace('([\\w.-]+)','name').replace(/^\^|\$$/g,'') : route.path;
 const send = (who, route) => app.call(who, route.method, concrete(route), route.method === 'POST' ? {} : undefined);
 
 test('every route declares a known access level', () => {

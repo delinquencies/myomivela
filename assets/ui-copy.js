@@ -630,7 +630,11 @@ export const en = {
   "Tip (USD)": "Tip (USD)",
   "Add tip": "Add tip",
   "Thank you. Your payment is being confirmed; it shows as paid once the payment provider confirms it.": "Thank you. Your payment is being confirmed; it shows as paid once the payment provider confirms it.",
-  "Checkout cancelled. Nothing was charged.": "Checkout cancelled. Nothing was charged."
+  "Checkout cancelled. Nothing was charged.": "Checkout cancelled. Nothing was charged.",
+  "Daily backups are off: no backup destination is set up.": "Daily backups are off: no backup destination is set up.",
+  "The last daily backup failed: {error}": "The last daily backup failed: {error}",
+  "Daily backup: last made {date}. The newest {keep} are kept.": "Daily backup: last made {date}. The newest {keep} are kept.",
+  "Daily backups are on. The first one is made within a day.": "Daily backups are on. The first one is made within a day."
 };
 
 /** @type {Record<keyof typeof en, string>} */
@@ -1264,5 +1268,9 @@ export const es = {
   "Tip (USD)": "Propina (USD)",
   "Add tip": "Agregar propina",
   "Thank you. Your payment is being confirmed; it shows as paid once the payment provider confirms it.": "Gracias. Tu pago se está confirmando; aparecerá como pagado cuando el proveedor de pagos lo confirme.",
-  "Checkout cancelled. Nothing was charged.": "Pago cancelado. No se cobró nada."
+  "Checkout cancelled. Nothing was charged.": "Pago cancelado. No se cobró nada.",
+  "Daily backups are off: no backup destination is set up.": "Las copias diarias están desactivadas: no hay un destino configurado.",
+  "The last daily backup failed: {error}": "La última copia diaria falló: {error}",
+  "Daily backup: last made {date}. The newest {keep} are kept.": "Copia diaria: la última se hizo el {date}. Se guardan las {keep} más recientes.",
+  "Daily backups are on. The first one is made within a day.": "Las copias diarias están activadas. La primera se hará en menos de un día."
 };

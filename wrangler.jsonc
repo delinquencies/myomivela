@@ -12,6 +12,7 @@
   "assets": { "directory": "dist/site", "binding": "ASSETS", "run_worker_first": true },
   "durable_objects": { "bindings": [{ "name": "API", "class_name": "MyoApi" }] },
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["MyoApi"] }],
-  "r2_buckets": [{ "binding": "PHOTOS", "bucket_name": "myo-photos" }],
+  // PHOTOS holds diary photos and vaccine documents; BACKUPS receives the daily scheduled backup (keep it separate).
+  "r2_buckets": [{ "binding": "PHOTOS", "bucket_name": "myo-photos" }, { "binding": "BACKUPS", "bucket_name": "myo-backups" }],
   "observability": { "enabled": true }
 }

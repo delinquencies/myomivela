@@ -10,7 +10,8 @@ const problems = productionProblems();
 if (problems.length) { console.error('Refusing to start in production:\n- ' + problems.join('\n- ')); process.exit(1); }
 
 // Imported after the production check so a misconfigured server exits before touching the database.
-const { nodeStore, fileBlobs } = await import('./lib/stores/node.mjs');
+const { nodeStore, fileBlobs, fileBackups } = await import('./lib/stores/node.mjs');
+const { config } = await import('./lib/config.mjs');
 const { useStorage } = await import('./lib/db.mjs');
 const { ensureAdmin, clientAddress } = await import('./lib/auth.mjs');
 const { handleApi } = await import('./lib/api.mjs');
@@ -18,11 +19,16 @@ const { withSecurityHeaders, errorResponse, decodedPath } = await import('./lib/
 const { serveStatic } = await import('./lib/static.mjs');
 
 const database = resolve(process.env.MYO_DB || '.myo/data.sqlite');
-useStorage(nodeStore(database), fileBlobs(join(dirname(database), 'photos')));
+useStorage(nodeStore(database), fileBlobs(join(dirname(database), 'photos')), config.backupDir ? fileBackups(resolve(config.backupDir)) : null);
 await ensureAdmin();
 // Sends due messages from the outbox every minute (C3.6). The Worker does the same with a Durable Object alarm.
 const { drainOutbox } = await import('./lib/outbox.mjs');
 setInterval(() => drainOutbox().catch(error => console.error('Outbox:', error.message)), 60_000).unref();
+// A daily backup to MYO_BACKUP_DIR, when set: checked a minute after starting and then every hour.
+const { backupIfDue } = await import('./lib/scheduled-backup.mjs');
+const checkBackup = () => backupIfDue().catch(error => console.error('Backup:', error.message));
+setTimeout(checkBackup, 60_000).unref();
+setInterval(checkBackup, 60 * 60_000).unref();
 
 const root = dirname(fileURLToPath(import.meta.url));
 async function handle(request, socketAddress) {

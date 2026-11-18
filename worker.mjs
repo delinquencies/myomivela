@@ -3,10 +3,11 @@
 import { DurableObject } from 'cloudflare:workers';
 import { configure } from './lib/config.mjs';
 import { useStorage } from './lib/db.mjs';
-import { durableStore, r2Blobs } from './lib/stores/durable.mjs';
+import { durableStore, r2Blobs, r2Backups } from './lib/stores/durable.mjs';
 import { ensureAdmin } from './lib/auth.mjs';
 import { handleApi } from './lib/api.mjs';
 import { drainOutbox } from './lib/outbox.mjs';
+import { backupIfDue } from './lib/scheduled-backup.mjs';
 import { withSecurityHeaders, errorResponse, decodedPath } from './lib/headers.mjs';
 import { isPublicPath } from './lib/site.mjs';
 
@@ -16,14 +17,15 @@ export class MyoApi extends DurableObject {
     // Rate limits read CF-Connecting-IP, which Cloudflare sets on every request.
     configure({ ...env, MYO_TRUST_PROXY:'cloudflare' });
     state.blockConcurrencyWhile(async () => {
-      useStorage(durableStore(state.storage), r2Blobs(env.PHOTOS));
+      useStorage(durableStore(state.storage), r2Blobs(env.PHOTOS), env.BACKUPS ? r2Backups(env.BACKUPS) : null);
       await ensureAdmin();
-      // The outbox is drained on an alarm (C3.6): every five minutes while the object exists.
+      // The outbox is drained, and the daily backup checked, on an alarm: every five minutes while the object exists.
       if (!(await state.storage.getAlarm())) await state.storage.setAlarm(Date.now() + 60_000);
     });
   }
   async alarm() {
     try { await drainOutbox(); } catch (error) { console.error('Outbox:', error.message); }
+    try { await backupIfDue(); } catch (error) { console.error('Backup:', error.message); }
     await this.ctx.storage.setAlarm(Date.now() + 5 * 60_000);
   }
   fetch(request) {

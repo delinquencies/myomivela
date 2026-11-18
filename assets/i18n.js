@@ -69,6 +69,7 @@ export const catalogs = {
     "error.series_ended": "This recurring visit has ended.",
     "error.no_package_credit": "You have no package credit for this service that is valid on that date.",
     "error.package_visits_only": "Packages are for walks and drop-in visits.",
+    "error.backups_unconfigured": "Scheduled backups are not set up.",
     ...Object.fromEntries(Object.entries(launchEnglish).map(([key, value]) => ['launch.'+key, value])),
     'status.Requested': 'Waiting for Myomi',
     'status.Confirmed': 'Confirmed',
@@ -133,6 +134,7 @@ export const catalogs = {
     'error.series_ended': 'Esta visita recurrente ya terminó.',
     'error.no_package_credit': 'No tienes créditos de paquete válidos para este servicio en esa fecha.',
     'error.package_visits_only': 'Los paquetes son para paseos y visitas a domicilio.',
+    'error.backups_unconfigured': 'Las copias de seguridad programadas no están configuradas.',
   },
 };
 export const hasKey = (key, language = locale()) => key in (catalogs[language] || {});

@@ -632,7 +632,8 @@ function adminSettings() {
       (s.cancel_fee_percent ? ' · '+t("{percent}% fee inside {hours} h",{ percent:s.cancel_fee_percent, hours:s.cancel_cutoff_hours }) : '')).join('<br>')+'</p>'+
     data.windows.map(s=>form('slots','<p class="appointment-details">'+date(s.starts)+' – '+date(s.ends)+'</p>'+button(t("Remove window"),'secondary','✕'),s.id)).join('')+
     ("<h3>" + t("Backup") + "</h3><p>" + t("Download everything (accounts, pets, bookings, diary updates and photos) as one file. "))+
-    (t("It includes password hashes, so store it somewhere private.") + "</p>")+'<a class="tap-link" href="/api/backup" download>'+emoji('💾')+(t("Download backup") + "</a>");
+    (t("It includes password hashes, so store it somewhere private.") + "</p>")+'<a class="tap-link" href="/api/backup" download>'+emoji('💾')+(t("Download backup") + "</a>")+
+    '<p data-backup-status role="status"></p>';
 }
 function accountSettings() {
   const sessions = data.account?.sessions ?? 1;
@@ -741,6 +742,20 @@ function staffHome(bookings) {
   ];
   return dashboardActions(tasks)+weekCalendar();
 }
+// The daily scheduled backup's state, loaded when Settings opens.
+async function showBackupStatus() {
+  const line = document.querySelector('[data-backup-status]');
+  if (!line || line.dataset.loaded) return;
+  line.dataset.loaded = '1';
+  try {
+    const status = await api('backups');
+    if (!line.isConnected) return;
+    line.textContent = !status.enabled ? t("Daily backups are off: no backup destination is set up.")
+      : status.last_error ? t("The last daily backup failed: {error}",{ error:status.last_error })
+      : status.last_backup ? t("Daily backup: last made {date}. The newest {keep} are kept.",{ date:date(status.last_backup), keep:status.keep })
+      : t("Daily backups are on. The first one is made within a day.");
+  } catch { line.textContent = ''; }
+}
 async function showFinancials() {
   const panel = document.querySelector('#financial-summary');
   if (!panel || panel.dataset.loaded || panel.getAttribute('aria-busy') === 'true') return;
@@ -831,6 +846,7 @@ function showSection(focus = false) {
     else link.removeAttribute('aria-current');
   }
   if (id === 'financials') showFinancials();
+  if (id === 'settings') showBackupStatus();
   if (focus) {
     const heading = document.getElementById(id).querySelector('h2');
     heading.tabIndex = -1;
