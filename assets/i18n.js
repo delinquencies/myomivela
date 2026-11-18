@@ -63,6 +63,8 @@ export const catalogs = {
     'error.feedback_closed': 'Ya no se puede cambiar la opinión sobre esta visita.',
     'error.invalid_locale': 'Elige inglés o español.',
     'error.invalid_subject': 'Elige sobre quién es la nota.',
+    'error.fee_rule_invalid': 'Revisa los datos del cargo.',
+    'error.fee_rule_exists': 'Ya existe un cargo con ese código.',
   },
 };
 export const hasKey = (key, language = locale()) => key in (catalogs[language] || {});
