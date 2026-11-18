@@ -266,6 +266,8 @@ async function loadDiary({ more = false, filter = diaryFilterValue } = {}) {
 }
 const appointmentTime = new Intl.DateTimeFormat('en-US',{timeStyle:'short',timeZone:'America/New_York'});
 const appointmentDay = new Intl.DateTimeFormat('en-US',{weekday:'short',month:'short',day:'numeric',timeZone:'America/New_York'});
+const appointmentHour = new Intl.DateTimeFormat('en-US',{hour:'numeric',hourCycle:'h23',timeZone:'America/New_York'});
+const daysPerPage = 7;
 // A bookable time is a published window id plus a start time inside it.
 const slotKey = slot => slot.id+':'+slot.starts;
 function slotChoices(slots, labelFor = slot => date(slot.starts), { selected } = {}) {
@@ -290,11 +292,17 @@ function bookingForm() {
   ).join('');
   return '<p>Appointment times are shown in Massachusetts time. Myomi reviews each request before confirming.</p>' +
     form('bookings','<div data-booking-inputs><p class="pet-field-error" data-booking-error role="alert" tabindex="-1"></p>'+choiceGroup('Service',serviceOptions)+
+    '<div data-availability hidden><p data-availability-message></p>'+
+    '<button type="button" class="secondary" data-check-availability>'+emoji('🔄')+'Check again</button></div>'+
+    '<p data-availability-status role="status"></p>'+
     choiceGroup('Pets attending',data.pets.map(pet => choice('pets',pet.id,pet.name,{ type:'checkbox', icon:'🐾' })).join(''))+
     '<p class="pet-field-error" data-booking-pet-error role="alert"></p>'+
-    '<div data-booking-days></div><div data-booking-times></div><p data-availability role="status" hidden></p>'+
-    area('Care instructions for this visit','notes','',1500)+
-    '<p data-quote></p>'+button('Review booking','','📅')+'</div><div data-booking-review hidden></div>');
+    '<div data-booking-options hidden><div data-booking-days></div>'+
+    '<div class="booking-date-pages"><button type="button" class="secondary" data-day-page="-1">Earlier</button>'+
+    '<button type="button" class="secondary" data-day-page="1">Later dates</button></div>'+
+    '<div data-booking-times role="group" aria-label="Appointment times"></div>'+
+    area('Care instructions for this visit','notes','',1500)+'</div>'+
+    '<div data-booking-summary hidden><p data-quote></p>'+button('Review booking','','📅')+'</div></div><div data-booking-review hidden></div>');
 }
 function statusForm(booking,status,label) {
   const summary = status === 'Completed' ? '<label>Visit summary<textarea required maxlength="3000" name="summary"></textarea></label>' : '';
@@ -673,7 +681,7 @@ function render() {
     section('account','Account',accountSettings());
   updateQuote();
   drafts.restore(app, {
-    onChoice:(form, input) => { if (form.dataset.action === 'bookings' && ['service','day'].includes(input.name)) updateQuote({ target:input }); },
+    onChoice:(form, input) => { if (form.dataset.action === 'bookings' && ['service','day','slot'].includes(input.name)) updateQuote({ target:input }); },
     onFile:(form, input, file) => showPhotoSelection(form, file),
     onStep:(form, step) => showPetCard(form, step),
   });
@@ -719,30 +727,88 @@ document.addEventListener('keydown', event => {
     portalMenu.querySelector('summary').focus();
   }
 });
-function updateQuote(event) {
+function showBookingDayPage(booking, page) {
+  const dates = [...booking.querySelectorAll('[name="day"]')];
+  const start = page * daysPerPage;
+  // Keep off-page radios in the form so the selected day remains available to draft capture and restore.
+  dates.forEach((input,index) => { input.closest('label').hidden = index < start || index >= start + daysPerPage; });
+  booking.dataset.bookingDayPage = page;
+  booking.querySelector('[data-day-page="-1"]').disabled = page === 0;
+  booking.querySelector('[data-day-page="1"]').disabled = start + daysPerPage >= dates.length;
+}
+function updateQuote(event, keepDay = false) {
   const booking = app.querySelector('[data-action="bookings"]');
   if (!booking) return;
   const service = find(data.services,Number(booking.querySelector('[name="service"]:checked')?.value));
   const slots = service ? availableSlots(service.minutes,service.id) : [];
   const days = new Map(slots.map(slot => [day(slot.starts),appointmentDay.format(slot.starts)]));
-  const chosenDay = event?.target.name === 'day' ? event.target.value : days.keys().next().value;
-  if (event?.target.name !== 'day') {
-    booking.querySelector('[data-booking-days]').innerHTML = days.size
-      ? choiceGroup('Available day',[...days].map(([key,label]) => choice('day',key,label,{ checked:key === chosenDay, required:true })).join(''))
-      : '';
+  const changed = event?.target.name;
+  const previousDay = booking.querySelector('[name="day"]:checked')?.value;
+  const previousTime = booking.querySelector('[name="slot"]:checked')?.value;
+  const dayKeys = [...days.keys()];
+  const chosenDay = (keepDay || changed === 'day' || changed === 'slot') && days.has(previousDay) ? previousDay : dayKeys[0];
+  if (!['day','slot'].includes(changed)) {
+    booking.querySelector('[data-booking-days]').innerHTML = choiceGroup('Available day',
+      [...days].map(([key,label]) => choice('day',key,label,{ checked:key === dayKeys[0], required:true })).join(''));
+    if (chosenDay) booking.querySelectorAll('[name="day"]')[dayKeys.indexOf(chosenDay)].checked = true;
   }
+  if (changed !== 'slot') showBookingDayPage(booking,Math.floor(Math.max(0,dayKeys.indexOf(chosenDay))/daysPerPage));
   const appointments = slots.filter(slot => day(slot.starts) === chosenDay);
-  booking.querySelector('[data-booking-times]').innerHTML = appointments.length
-    ? choiceGroup('Appointment',slotChoices(appointments,slot => appointmentTime.format(slot.starts),{ selected:slotKey(appointments[0]) }))
-    : '';
+  if (changed !== 'slot') {
+    const groups = new Map([['Morning',[]],['Midday',[]],['Evening',[]]]);
+    for (const slot of appointments) {
+      const hour = Number(appointmentHour.format(slot.starts));
+      groups.get(hour < 12 ? 'Morning' : hour < 16 ? 'Midday' : 'Evening').push(slot);
+    }
+    const firstTime = appointments[0] && slotKey(appointments[0]);
+    booking.querySelector('[data-booking-times]').innerHTML = [...groups].filter(([,times]) => times.length)
+      .map(([label,times]) => choiceGroup(label,slotChoices(times,slot => appointmentTime.format(slot.starts),{ selected:firstTime }))).join('');
+    if (keepDay) {
+      const restored = [...booking.querySelectorAll('[name="slot"]')].find(input => input.value === previousTime);
+      if (restored) restored.checked = true;
+    }
+  }
+  const selectedTime = booking.querySelector('[name="slot"]:checked')?.value;
+  const appointment = appointments.find(slot => slotKey(slot) === selectedTime);
   const availability = booking.querySelector('[data-availability]');
   availability.hidden = slots.length > 0;
   const name = requestedService();
-  availability.textContent = service
-    ? 'No times are available for this service right now. Try another service or check back later.'
+  booking.querySelector('[data-availability-message]').textContent = service
+    ? (data.services.length === 1 ? "Myomi hasn't published times for "+service.name+" yet."
+      : 'No times are available for this service right now. Try another service or check back later.')
     : (name || 'This service')+' is unavailable right now. Choose another service or check back later.';
-  booking.querySelector('[data-quote]').textContent = service ? 'Request total: '+money(service.cents)+' · '+service.minutes+' minutes.' : '';
-  booking.querySelector('button[type="submit"]').disabled = appointments.length === 0;
+  booking.querySelector('[data-check-availability]').hidden = !service;
+  booking.querySelector('[data-booking-options]').hidden = !slots.length;
+  booking.querySelector('[data-booking-summary]').hidden = !appointment;
+  booking.querySelector('[data-quote]').textContent = appointment
+    ? [appointmentDay.format(appointment.starts),appointmentTime.format(appointment.starts),money(service.cents)].join(' · ')
+    : '';
+  booking.querySelector('[data-booking-summary] button').disabled = !appointment;
+}
+async function checkAvailability(control) {
+  const booking = control.form;
+  const current = data;
+  const status = booking.querySelector('[data-availability-status]');
+  control.disabled = true;
+  control.textContent = 'Checking…';
+  status.textContent = '';
+  try {
+    const { slots } = await api('portal');
+    if (data !== current || !booking.isConnected) return;
+    const hadButton = !control.closest('[hidden]');
+    data.slots = slots;
+    updateQuote(undefined,true);
+    const found = booking.querySelector('[data-availability]').hidden;
+    status.textContent = found ? 'Available times updated.' : 'Still no times — try again later.';
+    if (found && hadButton && document.activeElement === document.body) {
+      booking.querySelector('[name="day"]:checked')?.focus();
+    }
+  } catch {
+    status.textContent = 'Couldn’t check for times. Try again.';
+  } finally {
+    control.disabled = false;
+    control.innerHTML = emoji('🔄')+'Check again';
+  }
 }
 async function refresh() {
   const user = await api('session');
@@ -794,7 +860,10 @@ app.addEventListener('change', event => {
     if (file) other.value = '';
     showPhotoSelection(form,file || other.files[0]);
   }
-  if (form?.dataset.action === 'bookings' && ['service','day'].includes(name)) updateQuote(event);
+  if (form?.dataset.action === 'bookings' && ['service','day','slot'].includes(name)) {
+    form.querySelector('[data-availability-status]').textContent = '';
+    updateQuote(event);
+  }
   if (form?.dataset.action === 'bookings' && name === 'pets') form.querySelector('[data-booking-pet-error]').textContent = '';
   if (name === 'diary-filter') updateDiaryFilter(event.target);
 });
@@ -855,6 +924,18 @@ app.addEventListener('click', async event => {
     const heading = app.querySelector('[data-action="register"] h2');
     heading.focus({preventScroll:true});
     heading.scrollIntoView({block:'start',behavior:'instant'});
+    return;
+  }
+  const changeDates = event.target.closest('[data-day-page]');
+  if (changeDates) {
+    const booking = changeDates.form;
+    showBookingDayPage(booking,Number(booking.dataset.bookingDayPage)+Number(changeDates.dataset.dayPage));
+    if (changeDates.disabled) booking.querySelector('[data-day-page="'+(-Number(changeDates.dataset.dayPage))+'"]').focus();
+    return;
+  }
+  const availabilityCheck = event.target.closest('[data-check-availability]');
+  if (availabilityCheck) {
+    await checkAvailability(availabilityCheck);
     return;
   }
   const editBooking = event.target.closest('[data-edit-booking]');
