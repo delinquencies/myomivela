@@ -378,6 +378,8 @@ Phase 3  C3.1 Ledger + payments (provider decision) ──▶ X3.1
 ```
 
 ### C2.7: Staff customer records and private notes · Phase 2
+**Status: done** (migration 19, `lib/routes/clients.mjs`, `tests/clients.test.mjs`). Additions: `POST /api/staff-notes/delete`, and the record includes vaccines and the key status. The leak test scans every customer-facing response for note text.
+
 **Why Claude:** new staff-only data that must never leak to customers. It needs access-rule tests and changes `petsFor()` semantics for staff.
 
 **Design**

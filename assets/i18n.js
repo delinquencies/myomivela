@@ -62,6 +62,7 @@ export const catalogs = {
     'error.invalid_score': 'Elige cómo fue la visita.',
     'error.feedback_closed': 'Ya no se puede cambiar la opinión sobre esta visita.',
     'error.invalid_locale': 'Elige inglés o español.',
+    'error.invalid_subject': 'Elige sobre quién es la nota.',
   },
 };
 export const hasKey = (key, language = locale()) => key in (catalogs[language] || {});
