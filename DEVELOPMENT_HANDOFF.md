@@ -170,8 +170,14 @@ Done since the usability report: early start limited to the visit buffer (H1), h
 | M5 | Spanish stops at the portal | Translation review |
 | L1–L7 | Cancel dialog title, generic "Saved.", Bookings→Today label, publish button below the fold, two-tab hold wording, landscape menu height, device monospace digits | No |
 
+### Claude plan status
+- **Done:** Phase 1 (C1.1–C1.4) and Phase 2 (C2.1–C2.7) are built and tested on both runtimes, with server contracts in §3 and status notes in `docs/plans/claude-plan.md`.
+- **Codex next:** the Codex tickets these unblock (X1.6–X1.9, X2.1–X2.9) can start.
+- **Gates are off by default:** vaccine requirements, the agreement and meet-first stay switched off until Myomi turns them on, and they shouldn't be turned on before their UI (X2.1, X2.2) ships.
+- **Phase 3** waits on the payment provider, cancellation policy and email provider decisions.
+
 ### Engineering and verification
-- **First Cloudflare deploy:** never done. It needs the R2 bucket, secrets and a check on the `workers.dev` URL. Use **Workers Paid**: scrypt uses about 40 ms CPU per sign-in, over the Free plan's 10 ms limit.
+- **First Cloudflare deploy:** never done. It needs the R2 bucket, the secrets (`MYO_ADMIN_EMAIL`, `MYO_ADMIN_PASSWORD`, `MYO_VAULT_KEY`) and a check on the `workers.dev` URL. Use **Workers Paid**: scrypt uses about 40 ms CPU per sign-in, over the Free plan's 10 ms limit.
 - **Real devices and browsers:** Safari (macOS and iOS), Firefox, Android Chrome, camera capture, HEIC photos, the software keyboard and screen readers. Only Chromium emulation has been run.
 - **Scheduled off-account backups:** "Download backup" and `scripts/restore.mjs` exist. Still missing are a schedule (a Cron Trigger) writing to a second destination, and a restore rehearsal on the deployed site.
 - **Windows:** two restore-script exit-code assertions fail on Windows (README "Known limitations"). They are not reproducible on Linux or in CI.
