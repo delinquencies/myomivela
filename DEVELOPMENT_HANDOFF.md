@@ -63,23 +63,46 @@ lib/stores/    durable.mjs (ctx.storage.sql + transactionSync, R2)   node.mjs (n
 
 **Not run:** a real Cloudflare deployment, Safari/WebKit, Firefox, real phones and their camera and HEIC photos.
 
-## 5. Open findings and blockers
+## 5. What is still open (as of November 18, 2026)
 
-Open release work includes cancellation and rescheduling rules, required care information, email verification and recovery, outbound confirmations, payment, Spanish in the portal, and production domain and sitemap updates. Visits can start from the visit buffer (default 30 minutes) before their booked time, enforced by `POST /api/status` and shown in the staff portal; `MYO_EARLY_START_MINUTES` overrides it (tests lift it). Payments depend on the provider and payment policy decisions.
+Done since the usability report: early start limited to the visit buffer (H1), hold expiry shown with fresh-time recovery (H2), and abandoned holds released (M1). Details are in [the report](docs/audits/2026-11-18-usability-test.md#fixes-after-this-report).
 
-- **First deploy needs a human check:** R2 bucket creation, secrets, the `workers.dev` URL, then a custom domain. See README.
-- **Plan:** password hashing (scrypt, about 40 ms CPU per sign-in) exceeds the Workers Free plan's 10 ms CPU limit. Use Workers Paid.
-- **Backups:** manual "Download backup" plus 30 days of Durable Object point-in-time recovery for the database. Nothing schedules downloads or copies them off-account yet, and a restore has only been rehearsed in tests, not on a deployed site.
-- **Decisions needed from the owner:** the public domain (then fix `sitemap.xml`/`robots.txt`, O1/P1-8), payment timing and refunds, cancellation and no-show policy, an email provider.
+### Decisions needed from the owner
+| Decision | Unblocks |
+|---|---|
+| Public domain | Custom domain on the Worker; `sitemap.xml` and `robots.txt` still point at GitHub Pages (O1, P1-8) |
+| Rescheduling a confirmed visit: allowed for customers? Needs re-approval? | M3: today it silently returns to "Waiting for Myomi" |
+| Cancellation cutoff, no-shows, refunds | Lifecycle rules (D2, P1-4); cancellation copy |
+| Required care information before approval | Structured profile rules (P1-5) |
+| Email provider and sending domain | Verification, password recovery, request and confirmation emails (S5, P1-6) |
+| Payment provider and payment timing | Checkout, receipts and refunds (P1-7) |
+| Rates, service area, Google review links, launch content | Public site content (see README "Decisions still needed") |
+
+### UX findings still open (from the usability report)
+| ID | Finding | Needs a decision? |
+|---|---|---|
+| H3 | Booking form on phones: "Review booking" about 2,000 px down (4 weeks of days plus every time) | No |
+| M2 | No times published: "Try another service" with one service, no **Check again**, reload needed | No |
+| M3 | Customer reschedule of a confirmed visit silently un-confirms it | Yes (above) |
+| M4 | 200 % text: Book button covers the wordmark, headline clipped | No |
+| M5 | Spanish stops at the portal | Translation review |
+| L1–L7 | Cancel dialog title, generic "Saved.", Bookings→Today label, publish button below the fold, two-tab hold wording, landscape menu height, device monospace digits | No |
+
+### Engineering and verification
+- **First Cloudflare deploy:** never done. It needs the R2 bucket, secrets and a check on the `workers.dev` URL. Use **Workers Paid**: scrypt uses about 40 ms CPU per sign-in, over the Free plan's 10 ms limit.
+- **Real devices and browsers:** Safari (macOS and iOS), Firefox, Android Chrome, camera capture, HEIC photos, the software keyboard and screen readers. Only Chromium emulation has been run.
+- **Scheduled off-account backups:** "Download backup" and `scripts/restore.mjs` exist. Still missing are a schedule (a Cron Trigger) writing to a second destination, and a restore rehearsal on the deployed site.
+- **Windows:** two restore-script exit-code assertions fail on Windows (README "Known limitations"). They are not reproducible on Linux or in CI.
+- **Spanish portal:** account, intake, booking, diary and messages are English only.
+- **Second staff account** and staff roles. Today there is one shared staff account.
 
 ## 6. Recommended next tasks
 
-1. **First Cloudflare deploy and smoke check.** Follow the README steps, then sign in as staff and as a customer on the `workers.dev` URL and run one visit with a photo. Add the custom domain and fix `sitemap.xml`/`robots.txt`.
-2. **Safari and phone verification (N3 remainder).** Safari on macOS and iOS, Android Chrome, camera capture and iPhone HEIC photos.
-3. **Scheduled off-account backups.** Backup download and restore exist. Still to do: a schedule (a Cron Trigger writing the same archive to a second bucket or an off-Cloudflare store, once one is chosen) and a restore rehearsal on the real deployment.
-4. **Lifecycle rules (D2, P1-4)** once the owner decides the policy.
-5. **Accounts, email and payments (S5, N1, P1-6, P1-7).** Email provider, verification and recovery; then Stripe Checkout with signed webhooks (a new `public` route that verifies the signature), a payments table and idempotent handling.
-
+1. **No decisions needed:** shorten the booking form on phones (H3), fix the empty-availability state (M2) and the 200 % text collisions (M4), then the wording items (L1–L3).
+2. **First Cloudflare deploy and smoke check** once the account exists, then the custom domain with `sitemap.xml` and `robots.txt`.
+3. **Real-device pass:** section 4 of the brief in §7 on iPhone Safari and Android Chrome.
+4. **Scheduled backups**, once a destination is chosen.
+5. **Email, then payments**, after the provider and policy decisions above.
 
 ## 7. Usability and UX test for Claude
 

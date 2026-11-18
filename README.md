@@ -167,7 +167,8 @@ None. There is no payment provider, email provider or analytics. Fonts fall back
 - Rate-limit counters live in memory (in the single Durable Object on Cloudflare), so they reset when it restarts.
 - Lockouts: 8 failed passwords per account and address per 15 minutes; 50 per account per hour from devices that have never signed in to it; a device that has signed in before (it holds a `myo_device` cookie) has its own 8-per-15-minutes allowance and ignores the other two. So a guesser locks out only themselves, and a large distributed attack can block new devices for an hour but never the owner's known phone or computer.
 - Staff is a single shared account created from environment variables (its password can be changed in the portal); there is no second staff user.
-- Booking lifecycle policy (no-show, early start, cancellation cutoffs) is undecided and unenforced.
+- Visits can start from the visit buffer (default 30 minutes) before their booked time. Policies for no-shows, cancellation cutoffs and customers rescheduling confirmed visits are undecided and unenforced.
+- The current list of open work, decisions and usability findings is in [DEVELOPMENT_HANDOFF.md §5](DEVELOPMENT_HANDOFF.md#5-what-is-still-open-as-of-november-18-2026).
 - `sitemap.xml` and `robots.txt` still point at GitHub Pages; update them once the Cloudflare domain is chosen.
 
 ## Decisions still needed
