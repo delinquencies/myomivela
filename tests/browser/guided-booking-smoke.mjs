@@ -1,0 +1,86 @@
+import assert from 'node:assert/strict';
+import {createRequire} from 'node:module';
+import {readFileSync} from 'node:fs';
+import {join} from 'node:path';
+import {startServer,adminLogin,password} from '../helpers.mjs';
+import {fillCareIntake} from './intake-steps.mjs';
+const require=createRequire(import.meta.url),{chromium}=require('playwright');
+const axeSource=readFileSync(require.resolve('axe-core/axe.min.js'),'utf8');
+const server=await startServer({MYO_PRICING_MODE:'launch'}),browser=await chromium.launch(),problems=[];
+const post=async(who,path,body)=>{const result=await server.call(who,'POST','/api/'+path,body);assert.equal(result.status,200,JSON.stringify(result.json));return result.json;};
+try {
+ await post('staff','login',adminLogin);
+ for(const name of ['Dog walking','Meet & Greet']) await post('staff','services',{name,minutes:30,cents:name==='Meet & Greet'?0:3000});
+ await post('staff','schedule',{days:[0,1,2,3,4,5,6],opens:'08:00',closes:'18:00',buffer:0});
+ for(const width of [1440,390]) for(const language of ['en','es']) {
+  const context=await browser.newContext({viewport:{width,height:width===390?844:900},reducedMotion:'reduce'});
+  try {
+   await context.addInitScript(value=>localStorage.setItem('myo-language',value),language);
+   const page=await context.newPage();page.on('pageerror',error=>problems.push(error.message));
+   const email='guided-'+width+'-'+language+'@example.test';
+   await page.goto(server.base+'/portal/index.html?service=dog-walking#book');
+   assert.equal(await page.locator('[data-action=login]:visible,[data-action=register]:visible').count(),1);
+   await page.locator('[data-create-account]').click();
+   const registration=page.locator('[data-action=register]');
+   await registration.locator('[name=name]').fill('Camila');await registration.locator('[name=email]').fill(email);await registration.locator('[name=password]').fill(password);
+   await page.locator('[data-auth-mode=login]').click();
+   await page.locator('[data-create-account]').click();
+   assert.equal(await registration.locator('[name=email]').inputValue(),email);
+   const other=language==='en'?'es':'en';await page.locator('[data-language='+other+']').click();await page.locator('[data-language='+language+']').click();
+   await registration.locator('button[type=submit]').click();
+   await page.locator('#book:visible a[href="#pets/new"]').click();
+   const pet=page.locator('[data-action=pets][data-id=""]');
+   await pet.locator('[name=name]').fill('Coco');await pet.locator('[name=species]').fill('Dog');
+   for(let i=0;i<5;i++) await pet.locator('button[type=submit]').click();
+   const booking=page.locator('[data-action=bookings]');await booking.waitFor();
+   assert.equal(await booking.locator('[name=pets]:checked').count(),1);
+   const day=booking.locator('[name=day]').nth(5);await day.locator('xpath=..').click();
+   await booking.locator('[name=notes]').fill('Keep Coco on the quiet path.');
+   const selected=await booking.locator('[name=slot]:checked').inputValue();
+   await page.locator('.booking-journey .tap-link[href="#book/intake/1"]').waitFor();
+   if(process.env.MYO_GUIDED_SCREENSHOTS) await page.screenshot({path:join(process.env.MYO_GUIDED_SCREENSHOTS,language+'-'+width+'-requirements.png'),fullPage:true});
+   await page.locator('.booking-journey .tap-link[href="#book/intake/1"]').click();
+   await page.locator('#care:visible').waitFor();
+   await page.goBack();await page.locator('#book:visible').waitFor();assert.equal(await booking.locator('[name=slot]:checked').inputValue(),selected);
+   await page.goForward();await page.locator('#care:visible').waitFor();
+   await fillCareIntake(page);
+   await page.locator('.booking-journey > .tap-link').click();
+   await page.locator('#book:visible').waitFor();
+   assert.equal(await booking.locator('[name=slot]:checked').inputValue(),selected);assert.equal(await booking.locator('[name=notes]').inputValue(),'Keep Coco on the quiet path.');
+   // Simulate session expiry without using the explicit sign-out action, which discards the task.
+   await page.evaluate(async()=>{await fetch('/api/logout',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});history.replaceState(null,'',location.pathname+'#book/details');});
+   await page.reload();await page.locator('[data-action=login]:visible').waitFor();
+   await page.locator('[data-action=login] [name=email]').fill(email);await page.locator('[data-action=login] [name=password]').fill(password);await page.locator('[data-action=login] button[type=submit]').click();
+   await page.locator('#book:visible').waitFor();assert.equal(await booking.locator('[name=slot]:checked').inputValue(),selected);assert.equal(await booking.locator('[name=notes]').inputValue(),'Keep Coco on the quiet path.');
+   await page.locator('.booking-journey .tap-link[href="?service=meet#book"]').click();
+   await booking.waitFor();await booking.locator('[name=pets]').first().check();
+   await booking.locator('[data-booking-summary] button[type=submit]:not([disabled])').waitFor();
+   await booking.locator('[data-booking-summary] button[type=submit]').click();
+   await booking.locator('[data-booking-review] button[type=submit]').click();
+   await page.locator('#upcoming:visible').waitFor();
+   await page.locator('.booking-journey a').filter({hasText:language==='es'?'Volver a tu solicitud':'Return to your care request'}).click();
+   await booking.waitFor();
+   assert.equal(await booking.locator('[name=slot]:checked').inputValue(),selected);assert.equal(await booking.locator('[name=notes]').inputValue(),'Keep Coco on the quiet path.');
+   await page.locator('.booking-journey .tap-link[href="#upcoming"]').filter({hasText:language==='es'?'programada':'scheduled'}).waitFor();
+   await page.reload();await booking.waitFor();assert.equal(await booking.locator('[name=slot]:checked').inputValue(),selected);
+   await post('fixture-'+width+language,'login',{email,password});
+   const data=(await server.call('fixture-'+width+language,'GET','/api/portal')).json;
+   const meet=data.bookings.find(item=>item.service_kind==='meet');assert.ok(meet);
+   for(const status of ['Confirmed','In Progress']) await post('staff','status',{id:meet.id,status});
+   await post('staff','status',{id:meet.id,status:'Completed',summary:'Coco met Myomi.',secured:true});
+   await page.reload();await booking.waitFor();
+   await booking.locator('[data-booking-summary] button[type=submit]:not([disabled])').waitFor();
+   await page.evaluate(axeSource);const results=await page.evaluate(()=>axe.run(document,{runOnly:{type:'tag',values:['wcag2a','wcag2aa','wcag21aa']}}));assert.deepEqual(results.violations.map(v=>v.id),[]);
+   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+   await booking.locator('[data-booking-summary] button[type=submit]').click();await booking.locator('[name=accept_terms]').check();await booking.locator('[data-booking-review] button[type=submit]').click();
+   await page.locator('#upcoming:visible').waitFor();
+   const done=(await server.call('fixture-'+width+language,'GET','/api/portal')).json.bookings.filter(item=>item.service_kind==='visit');assert.equal(done.length,1);assert.equal(done[0].notes,'Keep Coco on the quiet path.');
+   assert.equal(await page.evaluate(()=>sessionStorage.getItem('myo-booking-intent')),null);
+   await page.locator('.menu-toggle').click();await page.locator('.site-nav a[href="#book"]').click();await booking.locator('[name=pets]').first().check();await booking.locator('[name=notes]').fill('Only Camila should see these choices.');
+   await page.locator('.menu-toggle').click();await page.locator('#logout').click();await page.locator('[data-action=login]:visible').waitFor();
+   assert.equal(await page.evaluate(()=>sessionStorage.getItem('myo-booking-intent')),null);
+   console.log('Guided booking '+language+' '+width+'px passed');
+  } finally {await context.close();}
+ }
+ assert.deepEqual(problems,[]);
+} finally {await browser.close();await server.stop();}

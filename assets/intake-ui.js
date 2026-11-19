@@ -176,6 +176,7 @@ export async function saveIntake(form, context) {
   message.textContent = t('Saving…');
   try {
     const result = await context.api('intake',payload,form.dataset.requestKey);
+    if (!form.isConnected) return;
     delete form.dataset.requestBody;
     delete form.dataset.requestKey;
     context.data.intake = {...context.data.intake,...payload,complete:result.complete,updated:result.updated};
@@ -191,7 +192,7 @@ export async function saveIntake(form, context) {
     form.querySelector('[data-intake-last-saved]').textContent = t('Last saved')+' '+formatDate(result.updated);
     message.textContent = t(result.complete ? 'Your care details are saved.' : 'Section saved. You can come back to finish the rest.');
     context.drafts.capture(form.closest('#app'));
-    if (result.complete) context.notify(t('Saved.'));
+    if (result.complete) {context.onRequirementComplete?.('intake');context.notify(t('Saved.'));}
   } catch (error) {
     controls.forEach(([control,disabled]) => {control.disabled = disabled;});
     if (error.fieldErrors?.length) showIntakeErrors(form,error.fieldErrors);

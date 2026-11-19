@@ -86,6 +86,7 @@ try {
     assert.match(await page.locator('#estimate-result').innerText(), /\$64\.00/);
 
     await page.goto(server.base + '/portal/index.html');
+    await page.locator('[data-create-account]').click();
     await page.locator('[data-action=register]').waitFor();
     const registration = page.locator('[data-action=register]');
     await registration.locator('button').click();
