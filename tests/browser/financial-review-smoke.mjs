@@ -35,6 +35,8 @@ try {
      const page=await context.newPage();
      await page.goto(server.base+'/portal/index.html?service=dog-walking#book');
      const form=page.locator('[data-action=bookings]');
+     // Exercise deposit review independently of a same-day start/hold boundary.
+     await form.locator('[name=day]').nth(4).locator('xpath=..').click();
      await form.locator('[name=pets]').check();
      await form.locator('[data-booking-summary] button[type=submit]:not([disabled])').waitFor();
      await form.locator('[data-booking-summary] button[type=submit]').click();

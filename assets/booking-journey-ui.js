@@ -74,13 +74,16 @@ export function createBookingJourney(app,getData) {
       paint();
     },
     begin() {
+      let returning = false;
       if(getData()?.user && !getData().user.admin) {
         if(meetingReturnPending && new URLSearchParams(location.search).get('service') !== 'meet') {
+          returning = true;
           meetingReturnPending = false;meeting = null;write(returnKey,null);write(meetingKey,null);
         }
         if(intent?.sent) intent = createIntent({userId});
         active = true;
       }
+      return returning;
     },
     restoreForm(form,rebuild) {
       if (!active || !intent) return;
@@ -134,6 +137,7 @@ export function createBookingJourney(app,getData) {
     },
     clear() {active = false;intent = null;meeting = null;meetingReturnPending = false;for(const key of [storageKey,meetingKey,entryKey,returnKey]) write(key,null);paint();},
     get active() {return active;},
+    get meetingDetour() {return Boolean(isMeeting() && new URLSearchParams(location.search).get('service') === 'meet');},
     paint,
   };
 }

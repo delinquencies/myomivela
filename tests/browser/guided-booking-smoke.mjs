@@ -53,7 +53,7 @@ try {
    await page.locator('[data-action=login] [name=email]').fill(email);await page.locator('[data-action=login] [name=password]').fill(password);await page.locator('[data-action=login] button[type=submit]').click();
    await page.locator('#book:visible').waitFor();assert.equal(await booking.locator('[name=slot]:checked').inputValue(),selected);assert.equal(await booking.locator('[name=notes]').inputValue(),'Keep Coco on the quiet path.');
    await page.locator('.booking-journey .tap-link[href="?service=meet#book"]').click();
-   await booking.waitFor();await booking.locator('[name=pets]').first().check();
+   await booking.waitFor();assert.equal(await booking.locator('[name=service]').count(),1,'The separate meeting screen only offers meeting services');await booking.locator('[name=pets]').first().check();
    await booking.locator('[data-booking-summary] button[type=submit]:not([disabled])').waitFor();
    await booking.locator('[data-booking-summary] button[type=submit]').click();
    await booking.locator('[data-booking-review] button[type=submit]').click();

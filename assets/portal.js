@@ -332,7 +332,7 @@ function bookingForm() {
   const preferred = matching.find(service => String(service.id) === requestedRate()) || matching[0];
   const unavailable = serviceName && !preferred;
   const initial = preferred ?? (unavailable ? null : data.services[0]);
-  const serviceOptions = data.services.map(service =>
+  const serviceOptions = (journey.meetingDetour ? data.services.filter(service => service.kind === 'meet') : data.services).map(service =>
     choice('service',service.id,translateLabel(service.name)+' · '+(service.kind === 'overnight' ? t('per night') : service.minutes+' min')+' · '+(service.cents === 0 ? t("Free") : money(service.cents)),{
       checked:service.id === initial?.id, required:true, icon:serviceIcons[service.name],
     })
@@ -976,7 +976,7 @@ function showSection(focus = false) {
     return;
   }
   const bookingRoute = ['book','book-step','book-review','book-intake'].includes(route.id);
-  if (bookingRoute) journey.begin();
+  const returningToCare = bookingRoute && journey.begin();
   const viewIds = {'pet-new':'pets',pet:'pet-'+route.params.pet,visit:'checkout-'+route.params.booking,
     client:'clients','settings-group':'settings','book-step':'book','book-review':'book','book-intake':'care'};
   const id = viewIds[route.id] || route.id;
@@ -1013,7 +1013,10 @@ function showSection(focus = false) {
   }
   if (id === 'book' && !openReview()) {
     const booking = panel.querySelector('[data-action="bookings"]');
-    if (booking) {journey.restoreForm(booking,input => updateQuote(input ? {target:input} : undefined,true));updateTotal(booking);}
+    if (booking) {
+      if (returningToCare) journey.restoreForm(booking,input => updateQuote(input ? {target:input} : undefined,true));
+      updateTotal(booking);
+    }
   }
   if (route.id === 'pet' && journey.active && !panel.querySelector('[data-guided-vaccines]')) {
     const pet = find(data.pets,Number(route.params.pet));
