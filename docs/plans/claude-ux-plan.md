@@ -69,16 +69,17 @@ New modules proposed here have no DOM rendering and no translated prose. Return 
 
 ## CUX-03 — Canonical intake, safe drafts and structured errors
 
-- [ ] **Issues** UX-04, UX-09, UX-19.
-- [ ] **Paths** `assets/drafts.js`; `lib/routes/intake.mjs`, `lib/routes/bookings.mjs`, `lib/care.mjs`, `lib/validate.mjs`, `lib/headers.mjs`; append-only `lib/db.mjs` migrations if a verified data change is necessary; `tests/ux-intake.test.mjs`, `tests/ux-drafts.test.mjs`.
-- [ ] Inventory overlapping fields in pet profile JSON, household intake and public intake. Define ownership, conditional requirements and explicit precedence. Reuse saved pet facts and household contacts without silently replacing a newer answer.
-- [ ] Preserve old plain-text pet details and previous profile versions. Provide a migration/compatibility strategy only after that inventory establishes a real need.
-- [ ] Extend draft form identity to care actions with stable owner/record IDs. Classify fields rather than persisting all care text blindly. Exclude passwords, entry codes, lockbox instructions, tokens, payment information and fields marked `data-no-draft`.
-- [ ] Define whether emergency and medical details may be retained locally before implementing persistence. Use the smallest approved draft set; do not copy sensitive canonical records into browser storage by default. Support explicit discard and account-bound cleanup.
-- [ ] Provide machine-readable validation errors in addition to existing messages, such as `{ code, fieldErrors: [{ field, code, params }] }`. Support partial save semantics only where operationally valid; an incomplete draft must not count as completed intake.
-- [ ] **Handoff contract** Publish field keys, required conditions, saved/draft status, safe-draft allowlist and error payload examples. Keep markup attributes and visible wording with Codex.
-- [ ] **Acceptance** Approved nonsensitive feeding draft survives reload; entry secrets do not appear in storage. Drafts clear on sign-out/account change/discard and expire under the documented policy. Save/validation failures retain recoverable values. Zero spending authorization is valid. Existing profile and intake data survive upgrades. Server blockers distinguish absent, incomplete and outdated records.
+- [x] **Issues** UX-04, UX-09, UX-19.
+- [x] **Paths** `assets/drafts.js`; `lib/routes/intake.mjs`, `lib/routes/bookings.mjs`, `lib/care.mjs`, `lib/validate.mjs`, `lib/headers.mjs`; append-only `lib/db.mjs` migrations if a verified data change is necessary; `tests/ux-intake.test.mjs`, `tests/ux-drafts.test.mjs`.
+- [x] Inventory overlapping fields in pet profile JSON, household intake and public intake. Define ownership, conditional requirements and explicit precedence. Reuse saved pet facts and household contacts without silently replacing a newer answer.
+- [x] Preserve old plain-text pet details and previous profile versions. Provide a migration/compatibility strategy only after that inventory establishes a real need.
+- [x] Extend draft form identity to care actions with stable owner/record IDs. Classify fields rather than persisting all care text blindly. Exclude passwords, entry codes, lockbox instructions, tokens, payment information and fields marked `data-no-draft`.
+- [x] Define whether emergency and medical details may be retained locally before implementing persistence. Use the smallest approved draft set; do not copy sensitive canonical records into browser storage by default. Support explicit discard and account-bound cleanup.
+- [x] Provide machine-readable validation errors in addition to existing messages, such as `{ code, fieldErrors: [{ field, code, params }] }`. Support partial save semantics only where operationally valid; an incomplete draft must not count as completed intake.
+- [x] **Handoff contract** Publish field keys, required conditions, saved/draft status, safe-draft allowlist and error payload examples. Keep markup attributes and visible wording with Codex.
+- [x] **Acceptance** Approved nonsensitive feeding draft survives reload; entry secrets do not appear in storage. Drafts clear on sign-out/account change/discard and expire under the documented policy. Save/validation failures retain recoverable values. Zero spending authorization is valid. Existing profile and intake data survive upgrades. Server blockers distinguish absent, incomplete and outdated records.
 - [ ] **Codex consumer** DUX-05 renders grouped forms, completion and field errors. DUX-04 uses the completion state.
+- **Status (Nov 19, `47c2452`):** done. `assets/intake-model.js` (inventory, groups, draft policy, `validateIntake`, `intakeStatus`), partial saves and `GET /api/intake/status` in `lib/routes/intake.mjs`, care-form drafts in `assets/drafts.js`. Decision taken for the safe-draft set: routine answers (feeding, routines, service) may be kept in tab storage; health and emergency answers are memory-only; secrets never. No data migration was needed: pet-profile JSON and old intakes are read as they are, and the model maps pet-profile keys onto intake fields for prefill.
 
 ## CUX-04 — Financial and eligibility truth shared by every surface
 
@@ -97,40 +98,43 @@ New modules proposed here have no DOM rendering and no translated prose. Return 
 
 ## CUX-05 — Visit state and actionable dashboard summaries
 
-- [ ] **Issues** UX-07, UX-08, UX-17.
-- [ ] **Paths** Proposed `assets/visit-state.js`; `lib/bookings.mjs`, `lib/routes/portal.mjs`, `lib/routes/clients.mjs`, `lib/routes/diary.mjs`, `lib/routes/access.mjs`, `lib/routes/bookings.mjs`; `tests/ux-visit-state.test.mjs`.
-- [ ] Derive customer current care, latest update, next booking, outstanding actions and staff priority work from existing bookings rather than duplicating business state in several views.
-- [ ] Supply a stable selected-visit resource/action descriptor, compatible with CUX-01. Include permitted next actions, relevant pets, latest event, financial state and client/profile links.
-- [ ] Preserve CU8's explicit confirmation contract. Request responses and the access-checked booking resource expose ordered `next_steps`, request reference, timeline and authoritative meeting/deposit deadlines. Queue client receipt and relevant deposit/meeting notifications through the outbox, exposing delivery capability truthfully.
-- [ ] Reuse the current start/completion guards, owner/sitter authorization and home-entry reveal window. Operational actions must retain visit identity across publish and refresh.
+- [x] **Issues** UX-07, UX-08, UX-17.
+- [x] **Paths** Proposed `assets/visit-state.js`; `lib/bookings.mjs`, `lib/routes/portal.mjs`, `lib/routes/clients.mjs`, `lib/routes/diary.mjs`, `lib/routes/access.mjs`, `lib/routes/bookings.mjs`; `tests/ux-visit-state.test.mjs`.
+- [x] Derive customer current care, latest update, next booking, outstanding actions and staff priority work from existing bookings rather than duplicating business state in several views.
+- [x] Supply a stable selected-visit resource/action descriptor, compatible with CUX-01. Include permitted next actions, relevant pets, latest event, financial state and client/profile links.
+- [x] Preserve CU8's explicit confirmation contract. Request responses and the access-checked booking resource expose ordered `next_steps`, request reference, timeline and authoritative meeting/deposit deadlines. Queue client receipt and relevant deposit/meeting notifications through the outbox, exposing delivery capability truthfully.
+- [x] Reuse the current start/completion guards, owner/sitter authorization and home-entry reveal window. Operational actions must retain visit identity across publish and refresh.
 - [ ] Put availability/pricing/policy/team/money/backup route capabilities in CUX-01. This task supplies resource/action data, leaving layout and grouping to Codex.
-- [ ] **Handoff contract** Publish DTOs equivalent to `{ activeCare, latestUpdate, nextActions, workQueue }` and a selected-visit state with `allowedActions`, freshness/revision and relevant links.
-- [ ] **Confirmation acceptance** A sent request can be reopened by its owner through a stable route and gives the same next actions after reload. A customer cannot read another customer's confirmation. Replayed writes queue each client notification once. The response distinguishes queued/delivered/unavailable notification state.
+- [x] **Handoff contract** Publish DTOs equivalent to `{ activeCare, latestUpdate, nextActions, workQueue }` and a selected-visit state with `allowedActions`, freshness/revision and relevant links.
+- [x] **Confirmation acceptance** A sent request can be reopened by its owner through a stable route and gives the same next actions after reload. A customer cannot read another customer's confirmation. Replayed writes queue each client notification once. The response distinguishes queued/delivered/unavailable notification state.
 - [ ] **Acceptance** Two simultaneous active visits cannot receive each other's notes or photos. Owner can approve/cancel; sitter can perform only authorized operational actions. Customer sees only their own care and finances. Stale completion/update requests fail consistently. Summary counts match underlying records and pagination handles more than one page of work.
 - [ ] **Codex consumer** DUX-07 builds active-care summaries, due-work lists and the visit workspace.
+- **Status (Nov 19, `3ed756e`):** done at the API and pure-module level (`assets/visit-state.js`, `GET /api/bookings/:id`, request `next_steps`, client receipt, migration 29). The full Acceptance line needs Codex's visit workspace (DUX-07) for the two-visits-at-once and pagination checks; the server already refuses an update for a pet outside the visit and a visit not in progress (`visit_not_active`).
 
 ## CUX-06 — Bounded diary freshness and request lifecycle
 
-- [ ] **Issues** UX-10, UX-13 and async route recovery.
-- [ ] **Paths** Proposed `assets/diary-sync.js`; `lib/routes/diary.mjs`, `lib/routes/portal.mjs`, `lib/bookings.mjs`; `tests/ux-diary-sync.test.mjs`.
-- [ ] Define an update revision/cursor and a lightweight reconciliation strategy. Reuse paginated diary reads where possible. Avoid repeatedly fetching unrelated account/configuration data for an open diary.
-- [ ] Start refresh only while a relevant screen is visible. Stop on sign-out, account change, hidden tab and route disposal. Coalesce overlapping reads, ignore responses from an earlier user/route generation, and apply bounded backoff.
-- [ ] Propose a visible-screen freshness budget, for example 30 seconds, document its request cost and make it a configurable contract. This is a proposed product budget, not a measured production SLA.
-- [ ] Distinguish idle/current, checking, new data, stale and disconnected outcomes. Preserve loaded pages and filters; return merge information rather than replacing the entire portal.
-- [ ] **Handoff contract** Publish start/stop/refresh and subscription callbacks with `revision`, `checkedAt`, `latestPublishedAt`, `state` and incremental results. No DOM, announcements or scroll operations in this module.
-- [ ] **Acceptance** A new staff update is discoverable within the chosen visible-screen budget. Hidden tabs do not poll. Retry delays are bounded, navigation cancels/discards old responses, and switching accounts never merges data. Older-page/filter selections survive refresh. Document expected Worker requests per active client.
+- [x] **Issues** UX-10, UX-13 and async route recovery.
+- [x] **Paths** Proposed `assets/diary-sync.js`; `lib/routes/diary.mjs`, `lib/routes/portal.mjs`, `lib/bookings.mjs`; `tests/ux-diary-sync.test.mjs`.
+- [x] Define an update revision/cursor and a lightweight reconciliation strategy. Reuse paginated diary reads where possible. Avoid repeatedly fetching unrelated account/configuration data for an open diary.
+- [x] Start refresh only while a relevant screen is visible. Stop on sign-out, account change, hidden tab and route disposal. Coalesce overlapping reads, ignore responses from an earlier user/route generation, and apply bounded backoff.
+- [x] Propose a visible-screen freshness budget, for example 30 seconds, document its request cost and make it a configurable contract. This is a proposed product budget, not a measured production SLA.
+- [x] Distinguish idle/current, checking, new data, stale and disconnected outcomes. Preserve loaded pages and filters; return merge information rather than replacing the entire portal.
+- [x] **Handoff contract** Publish start/stop/refresh and subscription callbacks with `revision`, `checkedAt`, `latestPublishedAt`, `state` and incremental results. No DOM, announcements or scroll operations in this module.
+- [x] **Acceptance** A new staff update is discoverable within the chosen visible-screen budget. Hidden tabs do not poll. Retry delays are bounded, navigation cancels/discards old responses, and switching accounts never merges data. Older-page/filter selections survive refresh. Document expected Worker requests per active client.
 - [ ] **Codex consumer** DUX-08 renders freshness and retry UI. DUX-10 validates the observed update path.
+- **Status (Nov 19, `922deb5`):** done. `GET /api/diary/changes` and `assets/diary-sync.js`. Budget: 30 s while visible, about 120 small requests an hour per open diary tab, none while hidden; errors back off to 5 minutes.
 
 ## CUX-07 — Account recovery capability
 
-- [ ] **Issue** UX-22.
-- [ ] **Paths** `lib/auth.mjs`, `lib/routes/account.mjs`, `lib/outbox.mjs`, `lib/config.mjs`; append-only `lib/db.mjs` migration if necessary; `tests/ux-account-recovery.test.mjs`.
-- [ ] Define whether self-service recovery can be delivered with the configured email driver. Return a capability so the UI can present a truthful alternative while delivery is unavailable.
-- [ ] Implement request/redeem recovery with short-lived, single-use tokens stored as hashes, account/IP rate limits, generic account-discovery-safe responses and appropriate session invalidation after reset.
-- [ ] Use existing account/password validation and outbox delivery boundaries. No token value belongs in an API log, browser draft or human-facing plan.
-- [ ] **Handoff contract** Publish request and redeem endpoints, validation/error codes, delivery capability, expiry behavior and account-session effects.
-- [ ] **Acceptance** Existing and unknown emails receive the same public request response. Expired/replayed tokens fail, concurrent redemption succeeds once, reset enforces password rules, and compromised sessions are handled according to the published policy. Test delivery failure explicitly.
+- [x] **Issue** UX-22.
+- [x] **Paths** `lib/auth.mjs`, `lib/routes/account.mjs`, `lib/outbox.mjs`, `lib/config.mjs`; append-only `lib/db.mjs` migration if necessary; `tests/ux-account-recovery.test.mjs`.
+- [x] Define whether self-service recovery can be delivered with the configured email driver. Return a capability so the UI can present a truthful alternative while delivery is unavailable.
+- [x] Implement request/redeem recovery with short-lived, single-use tokens stored as hashes, account/IP rate limits, generic account-discovery-safe responses and appropriate session invalidation after reset.
+- [x] Use existing account/password validation and outbox delivery boundaries. No token value belongs in an API log, browser draft or human-facing plan.
+- [x] **Handoff contract** Publish request and redeem endpoints, validation/error codes, delivery capability, expiry behavior and account-session effects.
+- [x] **Acceptance** Existing and unknown emails receive the same public request response. Expired/replayed tokens fail, concurrent redemption succeeds once, reset enforces password rules, and compromised sessions are handled according to the published policy. Test delivery failure explicitly.
 - [ ] **Codex consumer** DUX-08 adds recovery entry/form and statuses after capability is available.
+- **Status (Nov 19, `bec3950`):** done. Live delivery still needs an email provider; until then `GET /api/recovery` reports `available:false` with `alternative:'contact_myomi'`.
 
 ## CUX-08 — Guest quote, service area and contact contract
 
@@ -188,6 +192,24 @@ Batch 1 (November 19, 2026): CUX-01, CUX-09 and CUX-08. Node 180 passed; Worker 
 - Connecticut ZIPs inside 15 miles (for example Enfield, 06082) are `in_area` under the radius rule. If Myomi serves Massachusetts only, that is a one-line filter to add.
 
 **Waiting on owner decisions** (unchanged behaviour until recorded): Meet & Greet scope and request-before-meeting (CUX-02), deposit trigger and balance timing, cancellation retention (CUX-04), and the meeting-notice minimum (CUX-09).
+
+Batch 2 (November 19, 2026): CUX-03, CUX-05, CUX-06 and CUX-07. Node 212 passed; Worker 192 passed, 20 Node-only skipped (one Wrangler start-up flake in `cancellation.test.mjs`, which passed on rerun); the full Chromium chain passed at 1440×900 and 390×844, including every DUX-01 role and language check.
+
+**For Codex: new modules and routes**
+- `assets/intake-model.js`: `intakeFields` (key, type, required `always|overnight`, sensitivity, draft policy, `profileKeys` for prefill), `intakeGroups` (`routines`, `health`, `emergency`), `requiredFields(service)`, `validateIntake(data, { partial })` → `{ value, fieldErrors:[{ field, code, params }], missing }`, `intakeStatus()`, `draftPolicy(name)`. Field error codes: `required`, `too_long` (`params.max`), `number_range`, `choose_one`, `acknowledge`, `invalid`.
+- `POST /api/intake` failures keep `code:'invalid_field'` and add `fieldErrors` for every field. `{ partial:true }` saves a group and merges; the response is `{ updated, complete, status }`. `GET /api/intake/status?service=walk|dropIn|overnight` → `{ state:'absent'|'incomplete'|'outdated'|'complete', missing, blocking, groups:[{ id, fields, complete }], updated, service }`. `GET /api/intake` records now include `complete`.
+- Blocker `intake_required` now carries `reason` (`absent` or `incomplete`) and `missing`. An `outdated` intake (pets changed since) doesn't block.
+- `assets/drafts.js` now covers `form[data-care-action]` (identity `care:<action>|<data-id or data-care-id>|`). New `discard(form)` and `status(form)` → `{ saved, memoryOnly, updated }`, so the form can say "these notes are kept until you leave the page". No markup change is required; mark any other secret field `data-no-draft`.
+- `assets/visit-state.js`: `allowedActions(booking, { role, now, earlyStartMinutes, paymentsEnabled })`, `timeline(booking)`, `nextSteps(booking, { intakeState, paymentsEnabled })`, `customerSummary({ bookings, events, now, paymentsEnabled, intakeState, meetStatus })`, `staffWorkQueue({ bookings, role, now, earlyStartMinutes })`, `visitReference(id)`. Next-step codes: `awaiting_review`, `complete_intake`, `book_care_after_meet`, `pay_after_confirmation`, `payment_arranged`, `updates_in_diary`.
+- `GET /api/bookings/<id>` → `{ booking, reference, href, timeline, allowed_actions, next_steps (customers), latest_event, revision }`. `POST /api/bookings` now also returns `reference`, `href:'#book/done/<id>'`, `next_steps`, `timeline` and `notifications:{ client, staff }` (`queued` or `unavailable`). Bookings carry `created`, `confirmed_at` and `cancelled_at`.
+- `GET /api/diary/changes?since=<revision>` and `assets/diary-sync.js` (`createDiarySync({ fetchChanges, onReport })` → `start`, `stop`, `setVisible`, `refresh`, `status`). States: `idle`, `checking`, `current`, `new_data`, `stale`, `disconnected`. Call `stop()` on navigation and sign-out, `setVisible()` from `visibilitychange`.
+- Recovery: `GET /api/recovery` → `{ available, expires_minutes, alternative }`; `POST /api/recovery/request { email }` → `{ accepted, delivery:'email'|'unavailable', expires_minutes }`; `POST /api/recovery/redeem { token, password }` → `{ reset:true }`. The emailed link is `/portal/index.html?reset=<token>#recover` (route `recover` exists in `portal-route-state.js`). After a reset every session ends; send the person to sign in.
+- New error codes with EN/ES text in `assets/i18n.js`: `invalid_transition` (with `status`), `visit_not_active` (with `status`), `invalid_revision`, `invalid_token`, `password_too_short`.
+
+**Behaviour changes to know about**
+- Clients now receive their own request receipt (`request_received_client`) in the outbox; it sends once an email provider is connected.
+- A selected `<select>` no longer counts as always changed in drafts.
+- `MYO_EMAIL=log` is refused in production (Node start-up check).
 
 
 ## Preserved Claude source from b89aa1f
