@@ -1,25 +1,22 @@
-# Development handoff for Codex
+# Development handoff
 
-Updated November 18, 2026 against [`0681457`](https://github.com/delinquencies/myomivela/commit/068145742abb91708e8ac797015fe0a3c49d4bbd) on `main`. Finding IDs in the older remediation notes refer to [MYO_AUDIT.md](MYO_AUDIT.md). Cloudflare has been exercised locally. No live deployment has been verified.
+Updated November 19, 2026 against `b2519ec` on `main`. Finding IDs in the older remediation notes refer to [MYO_AUDIT.md](MYO_AUDIT.md); `UX-nn` IDs refer to the [UX flow audit](docs/ux-flow-audit.md). Cloudflare has been exercised locally only; no live deployment exists.
 
-## Launch iteration update — November 18, 2026
-
-The [current iteration report](docs/audits/2026-11-18-launch-iteration.md) supersedes the older open-work statements below where it records completed work. It covers canonical launch pricing and capacity, saved intake, per-booking Meet & Greet association, reviewed reschedule pricing, vaccine and agreement screens, encrypted home-access screens, report-card inputs, timelines, feedback, staff records and the bilingual portal. Schema version is 27; migrations 20–26 from main are preserved, and migration 27 adds the care-intake fields.
-
-The three Windows failures are repaired. Cloudflare local runtime verification is included in the report. Live staging requires Cloudflare authentication. Payment and email providers have not been configured.
+**Where to look first:** the [UX flow audit](docs/ux-flow-audit.md) and its two execution plans, [Claude's](docs/plans/claude-ux-plan.md) (server rules, data and pure modules; CUX tasks, with handoff notes per batch) and [Codex's](docs/plans/codex-ux-plan.md) (screens, copy and browser tests; DUX tasks). The earlier roadmap is in [claude-plan.md](docs/plans/claude-plan.md) / [codex-plan.md](docs/plans/codex-plan.md) (Phases 1–3, all built), and the [launch iteration report](docs/audits/2026-11-18-launch-iteration.md) records the launch pricing and care integrations.
 
 ## 1. Where things stand
 
 - **Hosting is decided: Cloudflare.** One Worker serves the site and portal as static assets and forwards `/api/` to a single Durable Object (`MyoApi`) that owns the SQLite database. Photos are in R2. The same app also runs on Node for local development and the fast tests. Deploy steps are in the README ("Deploy to Cloudflare").
 - Security hardening, migrations, the 30-minute booking grid, paged history and diary, and the module split are done and tested on both runtimes.
 - The portal passes an end-to-end browser run in Chromium on both runtimes. Safari and real phones are untested.
-- **Backup and restore** exist: staff download one file with everything (`GET /api/backup`, button in the portal); `scripts/restore.mjs` restores it into a new, empty installation. Downloads are manual.
+- **Backup and restore:** owners download one file with everything (`GET /api/backup`), a daily copy goes to a second destination (`MYO_BACKUP_DIR` on Node, the `myo-backups` R2 bucket on Cloudflare), and `scripts/restore.mjs` restores into a new, empty installation.
+- **Launch rules are the default** (`MYO_PRICING_MODE` unset): prices, peak dates and policies come from `assets/myo-config.js`. Owner decisions of November 19, 2026 are enforced: one Meet & Greet per client, booked 24 hours ahead; a 50% deposit due 48 hours after the request; Myomi confirms once the deposit is in; cancelling 7+ days ahead is free, later Myomi keeps 50% of the deposit paid. `MYO_PRICING_MODE=catalog` keeps the earlier staff-set prices and rules (most test fixtures use it).
 
 ### Current booking and UX baseline
 
-- Customers can preview upcoming times and published prices before signing in. Booking review holds a time for up to 10 minutes, shortened if the appointment starts sooner. Sending the request releases the hold and the visit shows **Waiting for Myomi**. Staff approval checks availability again. Checkout payment and outbound confirmation remain open.
-- Staff can set repeating weekly hours in Massachusetts time, visit buffers, date exceptions, and extra windows. The portal has staff and customer dashboard updates, a refresh-on-entry diary, and shared Google review link settings. Both review URLs are still blank.
-- The [sitewide audit](docs/audits/myo-sitewide-audit-and-next-steps.md) and [UX friction log](docs/audits/myo-live-ux-friction-log.md) document earlier local runs. The current code already addresses some of that friction, including the service card scroll, the registration shortcut, optional intake skips, and clearer booking status. Retest these before filing them as defects.
+- **Booking:** the server side of the five-step booking flow is built: guest prices and a ZIP check before sign-in, day-by-day availability with a fee-free default day, holds, requests with deposits and terms, the visit resource with next steps, and a self-refreshing diary feed. The screens are Codex's DUX tasks; DUX-01 (navigation and contrast), DUX-02 (shared shell and routes), DUX-03 (compact booking controls) and DUX-05 (intake stepper) are done, DUX-04 and DUX-06 to DUX-12 are open.
+- **Staff:** weekly hours in Massachusetts time, buffers, date exceptions, extra windows, owner and sitter roles, customer records with private notes, payments and refunds. Both Google review URLs in `assets/review-links.js` are still blank.
+- **Not live:** online payment (no Stripe keys), email (no provider; messages and reset links queue in the outbox), and the custom domain.
 
 ## 2. Architecture in one page
 
@@ -35,7 +32,7 @@ lib/stores/    durable.mjs (ctx.storage.sql + transactionSync, R2)   node.mjs (n
 - **Requests and responses are Fetch-style** (`Request`/`Response`) everywhere in `lib/`. Handlers get `ctx` (`user`, `data`, `url`, `request`, `match`, `clientAddress`, `cookies`) and return data (sent as JSON) or a `Response`.
 - **Adding an endpoint:** add `{ method, path, access, handler }` to a file in `lib/routes/`. `access` is `public`, `user`, `staff` (any staff account) or `owner` (staff with the owner role), enforced before the handler runs. `tests/routes.test.mjs` checks every route's access rule automatically, and `tests/staff.test.mjs` checks that a sitter gets 403 from every `owner` route.
 - **Race-freedom rule:** `transaction(fn)` must be synchronous (it throws on an async callback). Both runtimes process one request's transaction without interleaving: Node is a single process, and on Cloudflare all API traffic goes to one Durable Object instance (`idFromName('myo')`). Do any `await` (R2 upload, password hash) **before** the transaction, then re-check state inside it. `POST /api/events` shows the pattern.
-- **Schema version** is stored in the `meta` table (`schema_version`, now 27; migrations 5–8 add idempotency, trusted devices, checkout holds, then weekly hours and date exceptions; 9–13 add itemised booking lines, change requests, the departure check, service kinds and overnight settings; 14 adds vaccines and agreements; 15 the home-access vault; 16 report-card answers; 17 profile versions and visit feedback; 18 each account's language; 19 staff notes; 20 fee rules and holidays; 21 the money ledger, checkout sessions, webhook events, auto-tip and cancellation fee; 22 cancellation terms per service; 23 recurring visits; 24 packages; 25 the notification outbox; 26 staff roles and switched-off accounts), because Durable Objects forbid `PRAGMA user_version`. Migrations must be safe to re-run. Migration 4 adds `events.photo_key`; the old `photo` BLOB column is no longer read (it only ever held test data).
+- **Schema version** is stored in the `meta` table (`schema_version`, now 31; migrations 5–8 add idempotency, trusted devices, checkout holds, then weekly hours and date exceptions; 9–13 add itemised booking lines, change requests, the departure check, service kinds and overnight settings; 14 adds vaccines and agreements; 15 the home-access vault; 16 report-card answers; 17 profile versions and visit feedback; 18 each account's language; 19 staff notes; 20 fee rules and holidays; 21 the money ledger, checkout sessions, webhook events, auto-tip and cancellation fee; 22 cancellation terms per service; 23 recurring visits; 24 packages; 25 the notification outbox; 26 staff roles and switched-off accounts; 27 care intakes, a booking's Meet & Greet link, primary pet and proposed reschedule price; 28 client phone, address and ZIP; 29 request, confirmation and cancellation times; 30 password-reset tokens; 31 deposits, cancel reasons, accepted terms, and one Meet & Greet per client), because Durable Objects forbid `PRAGMA user_version`. Migrations must be safe to re-run. Migration 4 adds `events.photo_key`; the old `photo` BLOB column is no longer read (it only ever held test data).
 - **Name the columns in every `INSERT`.** Migrations add columns, and a positional `INSERT … VALUES(…)` breaks when they do; this happened twice in Phase 2.
 - **Rate limits** are in memory. On Cloudflare they live in the single Durable Object, keyed by `CF-Connecting-IP`.
 
@@ -91,7 +88,7 @@ lib/stores/    durable.mjs (ctx.storage.sql + transactionSync, R2)   node.mjs (n
 - **Diary:** overnight visits carry `nights:[{ date, event_ids }]`. New activity kinds: `Arrival`, `Evening check-in`, `Morning check-in`, `Departure`.
 - **Minimal UI:** date and time fields on the booking form, and the night checkboxes and grace field in Settings. The full calendar is Codex X2.8.
 
-**Compliance gates (C2.2).** Every gate is **opt-in**: none applies until Myomi sets it up, so existing customers aren't blocked.
+**Compliance gates (C2.2).** In launch mode a complete care intake and a completed Meet & Greet (once per client) are always required before a paid request; the gates below are **opt-in**: none applies until Myomi sets it up, so existing customers aren't blocked.
 - **Vaccines:** `POST /api/vaccine-requirements { species, names }` (staff; an empty list turns the gate off). Species are matched loosely: dog, puppy and canine count as `dog`.
 - **Agreement:** `POST /api/agreements { title, body_en, body_es }` (staff) publishes the next version. Customers read `GET /api/agreement` and accept with `POST /api/agreement/accept { version }`.
 - **Meet first:** applies only while a Meet & Greet service exists.
@@ -146,7 +143,7 @@ lib/stores/    durable.mjs (ctx.storage.sql + transactionSync, R2)   node.mjs (n
 - **Tips:** `POST /api/tips { booking, cents 100–50000 }` (customer, In Progress or Completed) adds a `tip` line and raises the total; `POST /api/auto-tip { percent 0–30 }` adds `Tip (n%)` on completion unless the visit was already tipped. The session user carries `auto_tip_percent`.
 - **Reading:** `GET /api/ledger?booking=` (owner or staff) → `{ entries, payment, payments_enabled }`. `GET /api/financials` adds `received { payments_cents, refunds_cents }` (30 days) and `outstanding { owed_cents, refunds_due_cents }`.
 
-**Cancellation policy (C3.2).** Services carry `cancel_cutoff_hours` (default 24) and `cancel_fee_percent` (default 0; always 0 for a Meet & Greet), set through `POST /api/services`.
+**Cancellation policy (C3.2).** In launch mode the deposit-based terms in `lib/cancellation.mjs` apply instead (free 7+ days ahead, then 50% of the deposit paid; `model:'deposit'`). In catalog mode, services carry `cancel_cutoff_hours` (default 24) and `cancel_fee_percent` (default 0; always 0 for a Meet & Greet), set through `POST /api/services`.
 - A customer cancelling a **Confirmed** booking after the cutoff owes the percentage of the booking (of one night for a stay; tips excluded). The cancellation must send `accept_fee_cents` equal to the fee, else 409 `cancel_fee_changed { fee_cents }`. Requests are free; staff cancellations waive the fee.
 - `GET /api/cancellation-preview?booking=` → `{ cutoff, cutoff_hours, percent, fee_cents, refund_due_cents }`. The cancel dialog shows it.
 
@@ -171,71 +168,65 @@ lib/stores/    durable.mjs (ctx.storage.sql + transactionSync, R2)   node.mjs (n
 - **Owner routes:** `GET /api/backups` → `{ enabled, keep, last_backup, last_error, backups:[{ name, size }] }`, `POST /api/backups/run {}`, and `GET /api/backups/file/<name>` to download one for `scripts/restore.mjs`. Settings shows the last backup or the problem.
 - **Size:** the file is built in memory before upload (R2 needs its length). That suits one sitter's data; a large photo library would need a multipart upload.
 
+**Booking flow (CUX, November 19, 2026).** Full request and response shapes are in the Handoff Notes of [the Claude UX plan](docs/plans/claude-ux-plan.md); in short:
+- Pure modules for the portal: `assets/portal-route-state.js` (routes and roles), `assets/intake-model.js` (intake fields, groups, validation, draft policy), `assets/visit-state.js` (actions, timeline, next steps, dashboards), `assets/diary-sync.js` (diary refresh controller); `assets/drafts.js` keeps drafts by sensitivity.
+- Public: `GET /api/eligibility?zip=`, `POST /api/public-quote`, `GET /api/availability/days?service=`, `GET /api/availability/times?service=&date=`, `GET /api/recovery`, `POST /api/recovery/request`, `POST /api/recovery/redeem`.
+- Signed in: `POST /api/contact`, `GET /api/intake/status`, partial `POST /api/intake`, `GET /api/bookings/<id>`, `GET /api/diary/changes?since=`. Quotes carry deposit, notice, peak and `terms`; requests accept `accept_terms_version` and return `reference`, `next_steps`, `timeline` and `notifications`.
+- Deposits (`lib/deposits.mjs`): requests owe 50% within 48 hours; `deposit_unpaid` blocks confirmation; with online payment on, unpaid requests expire at the deadline (checked every minute on Node, on the Durable Object alarm and on portal reads).
+
 **Booking holds and weekly hours.** `POST /api/checkout-hold` creates a short hold and `POST /api/checkout-release` releases it. The request flow checks the hold and current availability when submitting. Staff set recurring hours with `POST /api/schedule` and individual-date changes with `POST /api/schedule-exception`.
 
 **Configuration.** Cloudflare needs the `MYO_ADMIN_EMAIL`, `MYO_ADMIN_PASSWORD` and `MYO_VAULT_KEY` secrets, plus `MYO_PAYMENTS=stripe`, `MYO_STRIPE_SECRET_KEY` and `MYO_STRIPE_WEBHOOK_SECRET` to switch on online payment, and a second R2 bucket `myo-backups` for scheduled backups. The Node-only variables (`MYO_DB`, `NODE_ENV`, `MYO_ORIGIN`, `MYO_SECURE_COOKIES`, `MYO_TRUST_PROXY`) are listed in the README.
 
 ## 4. Verification
 
-| Command | Runs | Latest result (November 18, 2026, Node v22.23.4) |
+| Command | Runs | Latest result (November 19, 2026, Node v22.23.4) |
 |---|---|---|
-| `npm test` | all suites on Node | 152 passed |
-| `npm run test:worker` | the same suites under `wrangler dev` (Durable Object SQLite, local R2, static assets) | 138 passed, 14 skipped (Node-only: direct database seeding, backup script, legacy upgrade, Node production checks, backups switched off) |
-| `npm run test:browser` | Chromium: the full customer and staff flow, holds, the booking form at 390 and 320 px, Meet & Greet, accessibility (axe), English and Spanish pages, payments with the fake provider, and staff roles; fails on any console or CSP error | clean on Node |
-| `MYO_TARGET=worker npm run test:browser` | the same on the Worker | clean (the database-seeded paging step is skipped) |
-| `npx wrangler deploy --dry-run` | production bundle | about 190 KB, no Node-only modules |
+| `npm test` | all suites on Node | 219 passed |
+| `npm run test:worker` | the same suites under `wrangler dev` (`scripts/test-worker.mjs`) | last full run 192 passed, 20 Node-only skipped; the deposit and Meet & Greet suites passed on the Worker afterwards |
+| `npm run test:browser` | Chromium: portal flow, holds, booking form, Meet & Greet, accessibility (axe), bilingual pages, care, payments, staff roles, navigation, booking ergonomics, and Codex's newer suites; fails on any console or CSP error | clean on Node before Codex's DUX-05 merge; re-run after later merges |
+| `npx wrangler deploy --dry-run` | production bundle | about 190–200 KB, no Node-only modules |
 
-[GitHub CI for `0681457`](https://github.com/delinquencies/myomivela/actions/runs/44227268734) passed on Node 22 and 24 and in the Worker job. The latest local Chromium audit includes the 390 px booking and diary smoke test. The README records a separate Windows run with 48 of 50 tests passing and two restore CLI exit-code failures also seen on the baseline. This workflow does not run the browser or Windows checks.
+These counts predate Codex's DUX-05 merge (`b2519ec`); run the commands again for current numbers. Playwright is not a dev dependency (see the README). CI (`.github/workflows/test.yml`) runs a syntax check and `npm test` on Node 22 and 24, and `npm run test:worker`; it does not run the browser tests. One Worker run hit a Wrangler start-up flake ("Request was cancelled") that passed on rerun.
 
-**Not run:** a real Cloudflare deployment, Safari/WebKit, Firefox, real phones and their camera and HEIC photos.
+**Not run:** a real Cloudflare deployment, Safari/WebKit, Firefox, real phones and their camera and HEIC photos, and Windows since the restore fix.
 
-## 5. What is still open (as of November 18, 2026)
+## 5. What is still open (as of November 19, 2026)
 
-Done since the usability report: early start limited to the visit buffer (H1), hold expiry shown with fresh-time recovery (H2), and abandoned holds released (M1). Details are in [the report](docs/audits/2026-11-18-usability-test.md#fixes-after-this-report).
+### Decided by the owner on November 19, 2026 (enforced in code)
+One Meet & Greet per client (pets have no accounts), booked at least 24 hours ahead; the 48-hour deposit window starts when the request is sent; a late cancellation keeps 50% of the deposit.
 
-### Decisions needed from the owner
+### Decisions still needed from the owner
 | Decision | Unblocks |
 |---|---|
-| Public domain | Custom domain on the Worker; `sitemap.xml` and `robots.txt` still point at GitHub Pages (O1, P1-8) |
-| Rescheduling a confirmed visit: allowed for customers? Needs re-approval? | M3: today it silently returns to "Waiting for Myomi" |
-| Cancellation fee and cutoff per service, no-shows, refund rules | The policy is built (C3.2) with a 24-hour cutoff and **no fee** until Myomi sets one per service in Settings; no-show handling and published policy copy remain (D2, P1-4) |
-| Required care information before approval | Structured profile rules (P1-5) |
-| Email provider and sending domain | Sending the outbox (built, C3.6), verification and password recovery (S5, P1-6) |
-| Payment timing (Stripe is assumed, per the audits) | Today a customer pays a confirmed booking's balance at any time; deposits, pay-at-booking or automatic charges need a decision. Live Stripe keys and a webhook endpoint are needed to switch it on (P1-7) |
-| Rates, service area, Google review links, launch content | Public site content (see README "Decisions still needed") |
+| Public domain | Custom domain on the Worker, the email sending domain, and `sitemap.xml` / `robots.txt` (still pointing at GitHub Pages) |
+| Email provider (Postmark or Resend suggested) | Sending the outbox: receipts, deposit notices and reminders, confirmations, password resets |
+| Stripe live keys and webhook | Online deposit and balance payment, and automatic expiry of unpaid requests |
+| Whether a first request may be sent before the Meet & Greet; whether a new pet needs its own meeting | Linked pending requests in CUX-02 |
+| Balance timing beyond "before the visit", no-shows | Payment reminders and no-show handling |
+| Peak puppy rate ($44 or $53), Christmas 2026 dates, Connecticut ZIPs | Flags in `assets/myo-config.js` and the service-area check |
+| Photo and location consent, data retention, launch content, Google review links | Policy and public copy |
 
-### UX findings still open (from the usability report)
-| ID | Finding | Needs a decision? |
-|---|---|---|
-| H3 | Booking form on phones: "Review booking" about 2,000 px down (4 weeks of days plus every time) | No |
-| M2 | No times published: "Try another service" with one service, no **Check again**, reload needed | No |
-| M3 | Customer reschedule of a confirmed visit silently un-confirms it | Yes (above) |
-| M4 | 200 % text: Book button covers the wordmark, headline clipped | No |
-| M5 | Spanish stopped at the portal: now translated (Codex X2.6); the payment, staff and backup screens added since have Spanish copy but no native-speaker review | Translation review |
-| L1–L7 | Cancel dialog title, generic "Saved.", Bookings→Today label, publish button below the fold, two-tab hold wording, landscape menu height, device monospace digits | No |
-
-### Claude plan status
-- **Done:** Phase 1 (C1.1–C1.4), Phase 2 (C2.1–C2.7) and Phase 3 (C3.1–C3.6) are built and tested on both runtimes, with server contracts in §3 and status notes in `docs/plans/claude-plan.md`.
-- **Codex next:** the Codex tickets these unblock (X1.6–X1.9, X2.1–X2.9, X3.1–X3.6) can start. Phase 3 shipped minimal UI only: payment status, **Pay now**, tips and automatic tip, the cancellation fee in the cancel dialog, staff **Record a payment** and **Refund**, cancellation terms on the service form and a package-credit checkbox. Recurring visits, fee rules, packages and the outbox have no screens yet.
-- **Gates are off by default:** vaccine requirements, the agreement and meet-first stay switched off until Myomi turns them on, and they shouldn't be turned on before their UI (X2.1, X2.2) ships.
-- **Phase 3 assumptions:** Stripe Checkout (named in the audits) behind `MYO_PAYMENTS`; a cancellation fee of 0% until Myomi sets one; no email provider, so the outbox only queues. Each is a setting, not a code change, except adding the email driver.
+### Open engineering work
+- **Claude:** CUX-02's booking-intent controller (`assets/booking-flow-state.js`) and explicit primary-pet pricing (the first pet listed is priced as primary today). See [the Claude UX plan](docs/plans/claude-ux-plan.md).
+- **Codex:** DUX-04 and DUX-06 to DUX-12 (guided first booking, honest pricing and deposit review, dashboards and visit workspace, loading and error states, copy reconciliation, regression suite, landing guest preview, confirmation screen). See [the Codex UX plan](docs/plans/codex-ux-plan.md). The financials intro still says payments aren't tracked (UX-21).
+- **Earlier usability findings:** the [usability report](docs/audits/2026-11-18-usability-test.md) items are folded into the UX audit's UX-nn list; H1, H2 and M1 are fixed, the confirmed-visit reschedule (M3) became change requests (C1.2), and the phone booking length (H3) and 200 % text (M4) are covered by DUX-03 and DUX-01.
 
 ### Engineering and verification
-- **First Cloudflare deploy:** never done. It needs the two R2 buckets (`myo-photos`, `myo-backups`), the secrets (`MYO_ADMIN_EMAIL`, `MYO_ADMIN_PASSWORD`, `MYO_VAULT_KEY`) and a check on the `workers.dev` URL, including a first scheduled backup and a restore rehearsal from it. Use **Workers Paid**: scrypt uses about 40 ms CPU per sign-in, over the Free plan's 10 ms limit.
+- **First Cloudflare deploy:** never done. It needs Workers Paid (scrypt uses about 40 ms CPU per sign-in), a valid API token, the two R2 buckets (`myo-photos`, `myo-backups`), the secrets (`MYO_ADMIN_EMAIL`, `MYO_ADMIN_PASSWORD`, `MYO_VAULT_KEY`) and a check on the `workers.dev` URL, including a first scheduled backup and a restore rehearsal from it.
 - **Real devices and browsers:** Safari (macOS and iOS), Firefox, Android Chrome, camera capture, HEIC photos, the software keyboard and screen readers. Only Chromium emulation has been run.
-- **Windows:** two restore-script exit-code assertions fail on Windows (README "Known limitations"). They are not reproducible on Linux or in CI.
+- **Windows:** the restore-script fix in the launch iteration has not been re-run on Windows.
 
 ## 6. Recommended next tasks
 
-1. **No decisions needed:** shorten the booking form on phones (H3), fix the empty-availability state (M2) and the 200 % text collisions (M4), then the wording items (L1–L3).
-2. **First Cloudflare deploy and smoke check** once the account exists, then the custom domain with `sitemap.xml` and `robots.txt`.
-3. **Real-device pass:** section 4 of the brief in §7 on iPhone Safari and Android Chrome.
-4. **Codex screens for Phase 3:** recurring visits (X3.3), fee rules (X3.4), packages (X3.5) and the outbox (X3.6).
-5. **Email driver and live payments**, after the provider and policy decisions above.
+1. **Owner:** choose the domain and email provider; set up the Cloudflare account and token; decide the open items above.
+2. **Claude:** CUX-02 controller, explicit primary pet, then the email driver once a provider exists.
+3. **Codex:** DUX-04, DUX-06 and DUX-12 first (they carry the deposit and terms the server now enforces), then the rest.
+4. **Together:** first Cloudflare deploy to staging, then a real-device pass (section 4 of the brief below) on iPhone Safari and Android Chrome.
 
 ## 7. Usability and UX test for Claude
 
-**Done 2026-11-18:** see [docs/audits/2026-11-18-usability-test.md](docs/audits/2026-11-18-usability-test.md). Its H1 (early start), H2 (hold expiry) and M1 (abandoned holds) are fixed, with `tests/early-start.test.mjs` and `tests/browser/holds-smoke.mjs`. Physical devices, Safari, Firefox and screen readers were not available and remain to be tested.
+**Done 2026-11-18 and 2026-11-19:** see [the usability test](docs/audits/2026-11-18-usability-test.md) and [the UX flow audit](docs/ux-flow-audit.md). This brief is kept for the real-device pass. Its H1 (early start), H2 (hold expiry) and M1 (abandoned holds) are fixed, with `tests/early-start.test.mjs` and `tests/browser/holds-smoke.mjs`. Physical devices, Safari, Firefox and screen readers were not available and remain to be tested.
 
 Claude, run a fresh customer and staff usability pass against the latest `main` with fictional data and separate authenticated sessions. Use [the previous friction log](docs/audits/myo-live-ux-friction-log.md) as a retest list, then compare notes with the current build.
 

@@ -218,7 +218,7 @@ Stripe Checkout, switched off unless `MYO_PAYMENTS=stripe` and its two secrets a
 - The first staff account (the owner) is created from environment variables. The owner adds sitters and other owners in **Settings → Staff**; sitters run visits but can't change prices, settings or money. Without email, the owner hands over each temporary password.
 - Visits can start from the visit buffer (default 30 minutes) before their booked time. In launch mode the deposit-based cancellation terms apply (free 7+ days ahead, then 50% of the deposit paid); in catalog mode fees are set per service (0% until Myomi sets one). No-shows have no policy yet.
 - The service-area check uses ZIP-code centres, so homes near the 15-mile edge are flagged for Myomi to confirm. Connecticut ZIPs inside the radius count as in the area.
-- The current list of open work, decisions and usability findings is in [DEVELOPMENT_HANDOFF.md §5](DEVELOPMENT_HANDOFF.md#5-what-is-still-open-as-of-november-18-2026).
+- The current list of open work, decisions and usability findings is in [DEVELOPMENT_HANDOFF.md §5](DEVELOPMENT_HANDOFF.md#5-what-is-still-open-as-of-november-19-2026).
 - `sitemap.xml` and `robots.txt` still point at GitHub Pages; update them once the Cloudflare domain is chosen.
 
 ## Decisions still needed
