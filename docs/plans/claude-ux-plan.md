@@ -58,17 +58,18 @@ New modules proposed here have no DOM rendering and no translated prose. Return 
 ## CUX-02 — One booking-intent and prerequisite controller
 
 - [x] **Issues** UX-03, UX-05, UX-18.
-- [ ] **Paths** Proposed `assets/booking-flow-state.js`; `lib/compliance.mjs`, `lib/routes/bookings.mjs`, `lib/routes/portal.mjs`, `lib/idempotency.mjs` if required; `tests/ux-booking-flow.test.mjs`.
-- [ ] Model the selected service, attending pets and explicit primary pet, desired dates/times, quote revision, prerequisites, review hold and final request as one resumable task.
-- [ ] Reuse current quote and blocker rules. Supply ordered prerequisites with stable task IDs, completion state, resolution destination and return intent. Distinguish customer information from a separately scheduled meeting.
+- [x] **Paths** Proposed `assets/booking-flow-state.js`; `lib/compliance.mjs`, `lib/routes/bookings.mjs`, `lib/routes/portal.mjs`, `lib/idempotency.mjs` if required; `tests/ux-booking-flow.test.mjs`.
+- [x] Model the selected service, attending pets and explicit primary pet, desired dates/times, quote revision, prerequisites, review hold and final request as one resumable task.
+- [x] Reuse current quote and blocker rules. Supply ordered prerequisites with stable task IDs, completion state, resolution destination and return intent. Distinguish customer information from a separately scheduled meeting.
 - [ ] After the recorded meeting-policy decision, model linked pending care/meeting requests and expose a machine-readable meeting status. Define cancellation propagation, date reservations and transition guards so neither request can become accidentally confirmed. Preserve the original CU4 cases for new pets, renewal, meeting cancellation and meeting-too-late only when those rules are approved.
-- [ ] Keep a desired time distinct from a reserved time. A prerequisite detour must not imply a hold. Revalidate availability and pricing when returning to review.
-- [ ] Preserve nonsensitive selection across auth, language change, new-pet creation, care save and reload through CUX-03. Invalidate quote/hold only when its actual inputs or expiry change. Ignore stale async quote responses.
-- [ ] **Handoff contract** Publish state equivalent to `{ intentId, revision, selection, steps, currentStep, blockers, quote, hold, resumeLocation, nextAction }`, and documented events for selection change, requirement completion, refresh, review, expiry, send and discard.
+- [x] Keep a desired time distinct from a reserved time. A prerequisite detour must not imply a hold. Revalidate availability and pricing when returning to review.
+- [x] Preserve nonsensitive selection across auth, language change, new-pet creation, care save and reload through CUX-03. Invalidate quote/hold only when its actual inputs or expiry change. Ignore stale async quote responses.
+- [x] **Handoff contract** Publish state equivalent to `{ intentId, revision, selection, steps, currentStep, blockers, quote, hold, resumeLocation, nextAction }`, and documented events for selection change, requirement completion, refresh, review, expiry, send and discard.
 - [ ] **Acceptance** A first parent can resume after each requirement. A returning parent skips already-completed requirements according to the confirmed business policy. A stale quoted amount or taken time cannot submit. Double submits remain idempotent. Another customer's intent is never restored after sign-out.
 - [x] **Decision to expose** The current launch implementation consumes a completed Meet & Greet for each paid booking. Confirm with the owner whether that is intentional. Record the decision and migration impact. Codex must not silently convert it into a once-per-customer rule.
 - [ ] **Codex consumer** DUX-04 supplies step UI and continuation; DUX-03 presents compact blocker/action states.
 - **Status (Nov 19, `f093d4b`):** the owner decided once per client; `availableMeet()`, the blocker (`meet_required` with `status`) and `meet_status` follow it, and the one-meeting-per-booking index is dropped (links kept). The booking-intent controller itself (`assets/booking-flow-state.js`) is still to do; linking a first request to a pending meeting waits for the "request before meeting" decision.
+- **Controller (Nov 19, see the commit below):** `assets/booking-flow-state.js` and `tests/ux-booking-flow.test.mjs` (pure tests plus a first-time client walked through the real server on both runtimes). Linked pending requests stay out until the owner decides whether a first request may precede the Meet & Greet.
 
 ## CUX-03 — Canonical intake, safe drafts and structured errors
 
@@ -98,7 +99,7 @@ New modules proposed here have no DOM rendering and no translated prose. Return 
 - [x] **Handoff contract** Document all financial states, transition triggers, amount fields in cents, deadlines with timezone rules, capability flags, idempotency behavior and error codes. Do not supply a separate UI-only price calculator.
 - [ ] **Acceptance** With a test provider, a request follows the approved deposit/approval order, webhook replay cannot double-charge or double-credit, unpaid expiry runs once, refunds reconcile, and cancel-preview values match the stored terms. Changing current service settings cannot silently rewrite an earlier booking's cancellation terms. Concurrency tests cover expiry versus payment/approval. Node and Worker agree.
 - [ ] **Codex consumer** DUX-06 renders review, estimator wording, deposit deadlines, unavailable-payment states and cancellation truth.
-- **Status (Nov 19, `f093d4b`):** deposit lifecycle, launch cancellation terms and terms acknowledgment are done (`lib/deposits.mjs`, `lib/cancellation.mjs`, `tests/ux-financial-flow.test.mjs`). Late deposit payments after expiry show as `refund_due` for Myomi to refund. Explicit primary-pet ordering is still open.
+- **Status (Nov 19, `f093d4b`):** deposit lifecycle, launch cancellation terms and terms acknowledgment are done (`lib/deposits.mjs`, `lib/cancellation.mjs`, `tests/ux-financial-flow.test.mjs`). Late deposit payments after expiry show as `refund_due` for Myomi to refund. Explicit primary pet: done (`7d83e15`), see batch 4 notes.
 
 ## CUX-05 — Visit state and actionable dashboard summaries
 
@@ -225,6 +226,14 @@ Batch 3 (November 19, 2026): owner decisions applied. Node 219 passed; Worker su
 - `/api/cancellation-preview` in launch mode returns `model:'deposit'`, `cutoff_days`, `deposit_cents`, `received_cents` and `fee_cents` (50% of the paid deposit inside 7 days). Its `percent` is now of the deposit, not the visit.
 - Portal data adds `deposit_collection`, `meet_status` and `terms`. New outbox templates: `deposit_due`, `deposit_reminder`, `deposit_expired`, `deposit_expired_staff`.
 - Copy I changed because it stated the old rule (please review the tone): `meetBody` in `assets/myo-copy.js`, the client-home Meet & Greet line and `blocker.meet_required` in `assets/care-copy.js` (keys unchanged), plus error text for `meet_too_soon`, `terms_changed`, `deposit_unpaid`.
+
+Batch 4 (November 19, 2026): primary pet and the booking-intent controller. Node 225 passed; the new suites passed on the Worker; the full Chromium chain passed before these changes (they add no UI).
+
+**For Codex**
+- Quotes, holds and requests accept `primary_pet` (a pet id among those attending; the guest quote takes an index into its `pets`). Without it the first pet listed is primary. Responses return `primary_pet`. Offer the choice only when a household mixes species or ages, since it changes the price; error `invalid_primary_pet`.
+- `assets/booking-flow-state.js`: `createIntent({ userId, service })`, `reduce(intent, event)`, `flowState(intent)` → `{ intentId, revision, selection, steps:[{ id:'service'|'details'|'requirements'|'review'|'done', href, done, current }], currentStep, prerequisites:[{ id:'account'|'intake'|'meet'|'vaccines'|'agreement', status:'todo'|'scheduled'|'done', href, returnTo, detail? }], blockers, quote, hold, resumeLocation, nextAction:{ code, href } }`, `requestKey(intent)` for the Idempotency-Key, and `serialize`/`restore(text, userId)` (selection only, one day, never another account's).
+- Events: `select { changes }` (a price or time change drops the quote and hold), `quoted { revision, quote, signedIn, meetStatus }` (ignored if `revision` is stale; pass `/api/portal`'s `meet_status`), `requirement_done { id }`, `held { expires }`, `hold_expired`, `signed_in { userId }`, `sent { booking }`, `discard`.
+- `nextAction.code`: `choose_care`, `choose_time`, `refresh_quote`, `resolve_account|intake|meet|vaccines|agreement`, `review`, `send_request`, `view_confirmation`.
 
 
 ## Preserved Claude source from b89aa1f
