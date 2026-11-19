@@ -330,7 +330,7 @@ function bookingForm() {
     form('bookings','<div data-booking-inputs><p class="pet-field-error" data-booking-error role="alert" tabindex="-1"></p>'+choiceGroup(t("Service"),serviceOptions)+
     '<div data-availability hidden><p data-availability-message></p>'+
     '<button type="button" class="secondary" data-check-availability>'+emoji('🔄')+(t("Check again") + "</button></div>")+
-    '<p data-availability-status role="status"></p>'+
+    '<p data-availability-status role="status"></p><p data-capacity-status></p>'+
     (data.pricing_mode==='launch'?'<p>'+text(t('The first attending pet in this list uses the base rate.'))+'</p>':'')+
     choiceGroup(t("Pets attending"),data.pets.map(pet => choice('pets',pet.id,pet.name,{ type:'checkbox', icon:'🐾' })).join(''))+
     '<p class="pet-field-error" data-booking-pet-error role="alert"></p>'+
@@ -339,11 +339,11 @@ function bookingForm() {
     ("<button type=\"button\" class=\"secondary\" data-day-page=\"1\">" + t("Later dates") + "</button></div>")+
     ("<div data-booking-times role=\"group\" aria-label=\"" + t("Appointment times") + "\"></div>")+
     area(t("Care instructions for this visit"),'notes','',1500)+'</div>'+
-    '<div data-booking-summary hidden><p data-quote></p><div data-quote-lines></div>'+
+    '<div data-quote-lines></div>'+
     ("<p data-quote-status role=\"status\"></p><button type=\"button\" class=\"secondary\" data-retry-quote hidden>" + t("Retry price") + "</button>")+
     ((data.package_balances || []).some(balance => !balance.expired && balance.remaining > 0)
       ? '<label class="check-row"><input type="checkbox" name="use_package"> '+t("Use a package credit (covers the base price)")+'</label>' : '')+
-    button(t("Review booking"),'','📅')+'</div></div><div data-booking-review hidden></div>');
+    '<div data-booking-summary hidden><p data-quote></p><p data-booking-next></p>'+button(t("Review booking"),'','📅')+'</div></div><div data-booking-review hidden></div>');
 }
 function statusForm(booking,status,label) {
   // Completing records the departure check (C1.3): secured, or a note saying what wasn't and what was done.
@@ -1034,6 +1034,37 @@ function quoteLines(lines) {
     '</dt><dd>'+money(line.cents)+'</dd></div>').join('')+'</dl>' : '';
 }
 const quoteRequests = new WeakMap();
+const availabilityRequests = new WeakMap();
+function markStayDays(booking, value) {
+  if (!value) return;
+  for (const button of booking.querySelectorAll('[data-stay-date]')) {
+    const info = value.days.find(date => date.date === button.dataset.stayDate);
+    const hints = [info?.peak && t('Peak day'),info?.last_minute && t('Short notice')].filter(Boolean);
+    if (hints.length) {
+      button.setAttribute('aria-label',button.getAttribute('aria-label')+' · '+hints.join(' · '));
+      button.insertAdjacentHTML('beforeend','<small aria-hidden="true">'+(info.peak ? '🔥' : '⏱')+'</small>');
+    }
+  }
+  booking.querySelector('[data-capacity-status]').textContent = t('🔥 Peak day · ⏱ Short notice. Your quote includes any extra fees.');
+}
+function availabilityMetadata(booking, service) {
+  if (!service) return;
+  let entry = availabilityRequests.get(booking);
+  if (entry?.service === service.id) return entry.value;
+  entry = {service:service.id};
+  availabilityRequests.set(booking,entry);
+  api('availability/days?service='+service.id).then(value => {
+    if (!booking.isConnected || availabilityRequests.get(booking) !== entry) return;
+    entry.value = value;
+    // A held review is a snapshot. Late metadata must not redraw its hidden inputs or quote.
+    if (booking.dataset.holdPending || !booking.querySelector('[data-booking-review]').hidden) return;
+    if (service.kind === 'overnight') {
+      markStayDays(booking,value);
+      return;
+    }
+    updateQuote(undefined,Boolean(booking.dataset.explicitDay));
+  }).catch(() => { /* Published times remain usable; Check again retries metadata. */ });
+}
 function updateTotal(booking, message = '') {
   syncStayCalendar(booking);
   clearTimeout(quoteRequests.get(booking)?.timer);
@@ -1051,6 +1082,8 @@ function updateTotal(booking, message = '') {
   const status = booking.querySelector('[data-quote-status]');
   const retry = booking.querySelector('[data-retry-quote]');
   const review = booking.querySelector('[data-booking-summary] button[type="submit"]');
+  const next = booking.querySelector('[data-booking-next]');
+  next.textContent = '';
   const showTotal = cents => {
     summary.textContent = !start ? '' : overnight ? [money(cents),t('booking.nights', {count:nights})].join(' · ')
       : [appointmentDay.format(start),appointmentTime.format(start),money(cents)].join(' · ');
@@ -1063,6 +1096,7 @@ function updateTotal(booking, message = '') {
   if (!service || !slot) { summary.textContent = ''; return; }
   showTotal(bookingTotal(service,pets.length,nights || 1));
   if (!pets.length) return;
+  status.textContent = t('Checking your price…');
   request.timer = setTimeout(async () => {
     if (!booking.isConnected || quoteRequests.get(booking) !== request) return;
     try {
@@ -1073,6 +1107,7 @@ function updateTotal(booking, message = '') {
       lines.innerHTML = quoteLines(quote.lines);
       const blocked = quote.blockers || [];
       status.innerHTML = blockerHtml(blocked,data);
+      next.textContent = blocked.length ? t('Complete the care details above to continue.') : '';
       review.disabled = blocked.length > 0;
     } catch (error) {
       if (!booking.isConnected || quoteRequests.get(booking) !== request) return;
@@ -1109,24 +1144,34 @@ function stayFields(booking) {
     input(t("Pickup date"),'stay_end','type="date" required min="'+first+'" max="'+lastPickup+'"')+
     input(t("Pickup time"),'pick_time','type="time" step="1800" required value="10:00"')+'</fieldset>' : '';
   booking.querySelector('[data-booking-times]').innerHTML = '';
+  markStayDays(booking,availabilityRequests.get(booking)?.value);
   updateTotal(booking);
 }
 function updateQuote(event, keepDay = false) {
   const booking = app.querySelector('[data-action="bookings"]');
   if (!booking) return;
   const service = find(data.services,Number(booking.querySelector('[name="service"]:checked')?.value));
+  const changed = event?.target.name;
+  if (changed === 'service') delete booking.dataset.explicitDay;
+  if (changed === 'day' || changed === 'slot') booking.dataset.explicitDay = '1';
+  const metadata = availabilityMetadata(booking,service);
   if (service?.kind === 'overnight') { stayFields(booking); return; }
   booking.querySelector('.booking-date-pages').hidden = false;
-  const slots = service ? availableSlots(service.minutes,service.id) : [];
+  const slots = service ? availableSlots(service.minutes,service.id).filter(slot =>
+    metadata?.days.find(date => date.date === day(slot.starts))?.open !== false) : [];
   const days = new Map(slots.map(slot => [day(slot.starts),appointmentDay.format(slot.starts)]));
-  const changed = event?.target.name;
   const previousDay = booking.querySelector('[name="day"]:checked')?.value;
   const previousTime = booking.querySelector('[name="slot"]:checked')?.value;
   const dayKeys = [...days.keys()];
-  const chosenDay = (keepDay || changed === 'day' || changed === 'slot') && days.has(previousDay) ? previousDay : dayKeys[0];
+  const defaultDay = days.has(metadata?.default_day) ? metadata.default_day : dayKeys[0];
+  const chosenDay = (keepDay || changed === 'day' || changed === 'slot') && days.has(previousDay) ? previousDay : defaultDay;
   if (!['day','slot'].includes(changed)) {
     booking.querySelector('[data-booking-days]').innerHTML = choiceGroup(t("Available day"),
-      [...days].map(([key,label]) => choice('day',key,label,{ checked:key === dayKeys[0], required:true })).join(''));
+      [...days].map(([key,label]) => {
+        const info = metadata?.days.find(date => date.date === key);
+        const hints = [info?.peak && t('Peak day'), info?.last_minute && t('Short notice')].filter(Boolean);
+        return choice('day',key,[label,...hints].join(' · '),{checked:key === chosenDay,required:true});
+      }).join(''));
     if (chosenDay) booking.querySelectorAll('[name="day"]')[dayKeys.indexOf(chosenDay)].checked = true;
   }
   if (changed !== 'slot') showBookingDayPage(booking,Math.floor(Math.max(0,dayKeys.indexOf(chosenDay))/daysPerPage));
@@ -1139,7 +1184,12 @@ function updateQuote(event, keepDay = false) {
     }
     const firstTime = appointments[0] && slotKey(appointments[0]);
     booking.querySelector('[data-booking-times]').innerHTML = [...groups].filter(([,times]) => times.length)
-      .map(([label,times]) => choiceGroup(label,slotChoices(times,slot => appointmentTime.format(slot.starts),{ selected:firstTime }))).join('');
+      .map(([label,times]) => {
+        const selected = keepDay && times.some(slot => slotKey(slot) === previousTime) ? previousTime : firstTime;
+        const render = values => slotChoices(values,slot => appointmentTime.format(slot.starts),{selected});
+        return choiceGroup(label,render(times.slice(0,4))+(times.length > 4
+          ? '<details class="more-times"'+(times.slice(4).some(slot => slotKey(slot) === selected) ? ' open' : '')+'><summary>'+text(t('More times'))+'</summary><div>'+render(times.slice(4))+'</div></details>' : ''));
+      }).join('');
     if (keepDay) {
       const restored = [...booking.querySelectorAll('[name="slot"]')].find(input => input.value === previousTime);
       if (restored) restored.checked = true;
@@ -1157,6 +1207,8 @@ function updateQuote(event, keepDay = false) {
   booking.querySelector('[data-check-availability]').hidden = !service;
   booking.querySelector('[data-booking-options]').hidden = !slots.length;
   booking.querySelector('[data-booking-summary]').hidden = !appointment;
+  booking.querySelector('[data-capacity-status]').textContent = metadata?.days.some(date => date.full)
+    ? t('Some days are fully booked. Please choose another available date.') : '';
   updateTotal(booking);
 }
 async function checkAvailability(control) {
@@ -1171,6 +1223,7 @@ async function checkAvailability(control) {
     if (data !== current || !booking.isConnected) return;
     const hadButton = !control.closest('[hidden]');
     data.slots = slots;
+    availabilityRequests.delete(booking);
     updateQuote(undefined,true);
     const found = booking.querySelector('[data-availability]').hidden;
     status.textContent = found ? t("Available times updated.") : t("Still no times — try again later.");
@@ -1539,7 +1592,11 @@ app.addEventListener('submit',async event => {
       if (form.dataset.quotedCents === undefined) throw new Error(t("Wait for the updated price before reviewing your booking."));
       payload.cents = Number(form.dataset.quotedCents);
       if (!review.dataset.expires) {
-        const hold = await api('checkout-hold',payload,requestKey(form,'checkout-hold\n'+JSON.stringify(payload)));
+        let hold;
+        form.dataset.holdPending = '1';
+        try {
+          hold = await api('checkout-hold',payload,requestKey(form,'checkout-hold\n'+JSON.stringify(payload)));
+        } finally { delete form.dataset.holdPending; }
         pendingKeys.delete(form);
         review.dataset.expires = hold.expires;
         heldBooking = {

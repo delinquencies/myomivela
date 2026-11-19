@@ -130,12 +130,25 @@ try {
     await booking.locator('[data-booking-inputs] button[type=submit]').click();
     await booking.locator('[data-booking-review] .checkout-card').waitFor();
     const expires = await booking.locator('[data-booking-review]').getAttribute('data-expires');
+    // Metadata can arrive after a language redraw restores the held review.
+    // It must leave the held price and hidden input snapshot intact.
+    let releaseMetadata;
+    const metadataGate = new Promise(resolve => { releaseMetadata = resolve; });
+    await page.route('**/api/availability/days?*',async route => {
+      const response = await route.fetch();
+      await metadataGate;
+      await route.fulfill({response});
+    });
     await change(page, 'en');
     assert.equal(await booking.locator('[data-booking-review]').getAttribute('data-expires'), expires);
     assert.equal(await booking.locator('[name=notes]').inputValue(), 'Please keep my notes verbatim.');
     await change(page, 'es');
     await layout(page, 'Spanish booking review');
     assert.equal(await booking.locator('[data-booking-review]').getAttribute('data-expires'), expires);
+    releaseMetadata();
+    await page.waitForLoadState('networkidle');
+    assert.equal(await booking.getAttribute('data-quoted-cents'),'3000');
+    await page.unroute('**/api/availability/days?*');
     await booking.locator('[data-booking-review] button[type=submit]').click();
     await page.locator('#feedback').filter({hasText:/Solicitud enviada/}).waitFor();
     await layout(page, 'Spanish bookings');
