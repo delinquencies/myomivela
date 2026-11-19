@@ -4,15 +4,15 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#faeee3">
-  <title>MYO</title>
+  <title data-i18n="Services &amp; rates | myo.">Services &amp; rates | myo.</title>
   <link rel="stylesheet" href="../../assets/home.css?v=shared-shell">
-  <link rel="stylesheet" href="../../assets/myo-launch.css">
-  <script type="module" src="../../assets/myo-launch.js"></script>
+  <link rel="stylesheet" href="../../assets/myo-launch.css?v=compact-rates">
+  <script type="module" src="../../assets/myo-launch.js?v=compact-rates"></script>
   <script type="module" src="../../assets/home.js"></script>
   <script type="module" src="../../assets/public-i18n.js"></script>
 </head>
 <body class="launch">
-  <a class="skip" href="#main" data-copy="skip"></a>
+  <a class="skip" href="#main" data-i18n="Skip to content">Skip to content</a>
   <header class="site-header site-header--sticky">
     <a class="wordmark" href="../../index.html" aria-label="myo.">myo<span class="wordmark-mark" aria-hidden="true"><svg class="wordmark-shape" viewBox="0 0 24 24"><path fill="currentColor" d="M 12 8 C 14.2 8 16 9.8 16 12 16 14.2 14.2 16 12 16 9.8 16 8 14.2 8 12 8 9.8 9.8 8 12 8 Z"/></svg><span class="wordmark-burst"><span>♥</span><span>♥</span><span>♥</span><span>♥</span></span></span></a>
     <div class="header-actions">
@@ -31,9 +31,9 @@
         <div class="menu-panel">
           <nav class="site-nav" aria-label="Main navigation" data-i18n-aria-label="Main navigation">
             <a href="../../index.html#services" data-i18n="Services">Services</a>
-            <a href="../../myo/launch/index.html" data-i18n="Rates &amp; Policies">Rates &amp; Policies</a>
+            <a href="../../myo/launch/index.html" data-i18n="Rates">Rates</a>
             <a href="../../myo/about/index.html" data-i18n="About">About</a>
-            <a href="../../myo/safety_first_faq/index.html" data-i18n="FAQ">FAQ</a>
+            <a href="../../myo/safety_first_faq/index.html" data-i18n="Policies &amp; FAQ">Policies &amp; FAQ</a>
             <a href="../../portal/index.html" data-i18n="Client Portal">Client Portal</a>
             <a href="../../portal/index.html?staff=1#diary" data-i18n="Staff sign-in">Staff sign-in</a>
           </nav>
@@ -43,26 +43,35 @@
   </header>
   <main class="launch-main" id="main" tabindex="-1">
     <div class="launch-intro">
-      <h1 data-copy="heading"></h1>
-      <p data-copy="intro"></p>
-      <a class="button" href="../../portal/index.html?service=meet#book" data-copy="meetLink"></a>
-      <nav class="launch-nav" data-label="title">
-        <a href="#rates" data-copy="ratesNav"></a>
-        <a href="#peak" data-copy="peakNav"></a>
-        <a href="#policies" data-copy="policiesNav"></a>
-        <a href="#intake" data-copy="intakeNav"></a>
-      </nav>
-    </div>
-    <section id="rates">
-      <h2 data-copy="ratesTitle"></h2>
+      <p class="eyebrow" data-i18n="A little care. A lot of love.">A little care. A lot of love.</p>
+      <h1 data-i18n="Services &amp; rates">Services &amp; rates</h1>
       <p data-copy="ratesIntro"></p>
-      <div id="rate-cards" class="launch-grid"></div>
-      <div class="launch-card launch-excluded">
-        <h3 data-copy="excludedTitle"></h3>
-        <ul id="excluded-services"></ul>
+    </div>
+    <section id="rates" aria-labelledby="rates-title">
+      <h2 id="rates-title" data-i18n="Choose their care.">Choose their care.</h2>
+      <div id="rate-cards" class="rate-stack"></div>
+      <div class="rates-actions">
+        <button class="button estimate-trigger" type="button" data-open-estimate aria-haspopup="dialog"><span aria-hidden="true">🧮</span> <span data-i18n="Get a quick estimate">Get a quick estimate</span></button>
+        <a class="button button-secondary" href="../safety_first_faq/index.html#policies" data-i18n="Policies &amp; FAQ">Policies &amp; FAQ</a>
       </div>
-      <div class="launch-card launch-estimate">
-        <h3 data-copy="estimateTitle"></h3>
+      <details class="launch-excluded">
+        <summary data-copy="excludedTitle"></summary>
+        <ul id="excluded-services"></ul>
+      </details>
+    </section>
+    <section id="peak" aria-labelledby="peak-heading">
+      <details class="peak-calendar">
+        <summary id="peak-heading"><span data-i18n="Peak dates at a glance">Peak dates at a glance</span></summary>
+        <p data-copy="peakIntro"></p>
+        <ul class="launch-dates" id="peak-dates"></ul>
+      </details>
+    </section>
+    <dialog class="estimate-dialog" id="estimate-dialog" aria-labelledby="estimate-title" aria-describedby="estimate-hint">
+      <header class="estimate-dialog-head">
+        <h2 id="estimate-title" tabindex="-1" data-copy="estimateTitle"></h2>
+        <button type="button" class="estimate-close" data-close-estimate aria-label="Close estimate" data-i18n-aria-label="Close estimate">✕</button>
+      </header>
+      <div class="estimate-dialog-body">
         <p id="estimate-hint" data-copy="estimateHint"></p>
         <form id="estimate-form" aria-describedby="estimate-hint" novalidate>
           <div class="launch-fields" id="estimate-fields"></div>
@@ -70,26 +79,7 @@
           <div id="estimate-result" role="status"></div>
         </form>
       </div>
-    </section>
-    <section id="peak">
-      <h2 data-copy="peakTitle"></h2>
-      <p data-copy="peakIntro"></p>
-      <ul class="launch-grid launch-dates" id="peak-dates"></ul>
-    </section>
-    <section id="policies">
-      <h2 data-copy="policiesTitle"></h2>
-      <div id="policy-list"></div>
-    </section>
-    <section id="intake">
-      <h2 data-copy="intakeFormTitle"></h2>
-      <p id="intake-hint" data-copy="intakeHint"></p>
-      <a class="button" href="../../portal/index.html#care" data-copy="portalIntakeLink"></a>
-      <form id="intake-form" class="launch-card" aria-describedby="intake-hint" novalidate>
-        <div class="launch-fields" id="intake-fields"></div>
-        <button class="button" type="submit" data-copy="intakeButton"></button>
-        <p id="intake-result" role="status"></p>
-      </form>
-    </section>
+    </dialog>
   </main>
 </body>
 </html>

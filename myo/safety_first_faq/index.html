@@ -3,9 +3,11 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title data-i18n="Pet Care FAQ | myo.">Pet Care FAQ | myo.</title>
+  <title data-i18n="Policies &amp; FAQ | myo.">Policies &amp; FAQ | myo.</title>
   <meta name="description" content="Questions to discuss with Myomi before booking pet care in Massachusetts." data-i18n-content="Questions to discuss with Myomi before booking pet care in Massachusetts.">
   <link rel="stylesheet" href="../../assets/home.css?v=shared-shell">
+  <link rel="stylesheet" href="../../assets/public-policies.css">
+  <script type="module" src="../../assets/public-policies.js"></script>
   <script src="../../assets/home.js" type="module"></script>
   <script type="module" src="../../assets/public-i18n.js"></script>
 </head>
@@ -29,9 +31,9 @@
         <div class="menu-panel">
           <nav class="site-nav" aria-label="Main navigation" data-i18n-aria-label="Main navigation">
             <a href="../../index.html#services" data-i18n="Services">Services</a>
-            <a href="../../myo/launch/index.html" data-i18n="Rates &amp; Policies">Rates &amp; Policies</a>
+            <a href="../../myo/launch/index.html" data-i18n="Rates">Rates</a>
             <a href="../../myo/about/index.html" data-i18n="About">About</a>
-            <a href="../../myo/safety_first_faq/index.html" data-i18n="FAQ">FAQ</a>
+            <a href="../../myo/safety_first_faq/index.html" data-i18n="Policies &amp; FAQ">Policies &amp; FAQ</a>
             <a href="../../portal/index.html" data-i18n="Client Portal">Client Portal</a>
             <a href="../../portal/index.html?staff=1#diary" data-i18n="Staff sign-in">Staff sign-in</a>
           </nav>
@@ -43,11 +45,18 @@
   <main id="main" tabindex="-1">
     <section class="section-wrap split faq-intro">
       <div>
-        <p class="eyebrow" data-i18n="Pet Care FAQ">Pet Care FAQ</p>
+        <p class="eyebrow" data-i18n="Policies &amp; FAQ">Policies &amp; FAQ</p>
         <h1 data-i18n="Before the first visit.">Before the first visit.</h1>
         <p data-i18n="A few things to talk through before you and your pet meet Myomi.">A few things to talk through before you and your pet meet Myomi.</p>
       </div>
       <img src="../../assets/home/walking-editorial.jpg" alt="A golden retriever running along a woodland path" data-i18n-alt="A golden retriever running along a woodland path" width="1000" height="800">
+    </section>
+    <section class="faq-answers policy-topics" id="policies" aria-labelledby="policies-title">
+      <div class="section-wrap how">
+        <h2 id="policies-title" data-i18n="Care &amp; booking policies">Care &amp; booking policies</h2>
+        <p data-i18n="Find the details you need, one topic at a time.">Find the details you need, one topic at a time.</p>
+        <div id="policy-list"></div>
+      </div>
     </section>
     <section class="faq-answers" aria-labelledby="questions">
       <div class="section-wrap how">
