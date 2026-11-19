@@ -2,11 +2,12 @@
 // forwards /api/ to a single Durable Object, which owns the SQLite database and runs the same app as Node.
 import { DurableObject } from 'cloudflare:workers';
 import { configure } from './lib/config.mjs';
-import { useStorage } from './lib/db.mjs';
+import { useStorage, transaction } from './lib/db.mjs';
 import { durableStore, r2Blobs, r2Backups } from './lib/stores/durable.mjs';
 import { ensureAdmin } from './lib/auth.mjs';
 import { handleApi } from './lib/api.mjs';
 import { drainOutbox } from './lib/outbox.mjs';
+import { enforceDeposits } from './lib/deposits.mjs';
 import { backupIfDue } from './lib/scheduled-backup.mjs';
 import { withSecurityHeaders, errorResponse, decodedPath } from './lib/headers.mjs';
 import { isPublicPath } from './lib/site.mjs';
@@ -24,6 +25,7 @@ export class MyoApi extends DurableObject {
     });
   }
   async alarm() {
+    try { transaction(() => enforceDeposits()); } catch (error) { console.error('Deposits:', error.message); }
     try { await drainOutbox(); } catch (error) { console.error('Outbox:', error.message); }
     try { await backupIfDue(); } catch (error) { console.error('Backup:', error.message); }
     await this.ctx.storage.setAlarm(Date.now() + 5 * 60_000);

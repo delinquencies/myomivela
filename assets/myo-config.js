@@ -4,7 +4,7 @@ const flags = {
   christmas2026Range: /** @type {const} */ (['2026-12-30','2027-01-02']),
   peakPuppyRate: 44, // Confirm 44 vs 53.
   overnightAdditionalPetRates: {dog:21,cat:13},
-  lateCancellationDepositRetentionRatio: .5, // Confirm 0.5 vs 1.0 of the original deposit.
+  lateCancellationDepositRetentionRatio: .5, // Owner decision, Nov 19 2026: a late cancellation keeps 50% of the deposit.
   smallExoticPetRate: {base:30,additional:13,requiresCustomQuote:false},
   autoApplyLastMinuteFee: true,
 };
@@ -14,7 +14,11 @@ export const myoConfig = {
   business: {brand:'MYO',contact:'Myomi Velazquez',city:'Springfield',state:'MA',zip:'01108',radiusMiles:15,opens:'06:00',closes:'22:00',capacity:10,timeZone:'America/New_York'},
   excluded: /** @type {const} */ (['boarding','daycare','transport']),
   rates: {visitMinutes:30,longVisitMinutes:60,visit:30,peakVisit:44,extension:20,puppy:39,additionalDog:21,additionalCat:13,overnight:95,overnightPeakSurcharge:44,lastMinute:15},
-  booking: {visitNoticeDays:3,overnightNoticeDays:7,depositRatio:.5,depositHours:48,meetAndGreet:0,cancellationDays:7,aloneHoursMin:4,aloneHoursMax:6,dogWeightMin:0,dogWeightMax:100,puppyAgeYears:1},
+  booking: {visitNoticeDays:3,overnightNoticeDays:7,depositRatio:.5,depositHours:48,meetAndGreet:0,cancellationDays:7,
+    // Owner decisions, Nov 19 2026: one Meet & Greet per client (not per booking), booked at least 24 hours ahead; the
+    // 48-hour deposit window starts when the request is sent.
+    meetScope:'client',meetNoticeHours:24,depositClock:'request',
+    aloneHoursMin:4,aloneHoursMax:6,dogWeightMin:0,dogWeightMax:100,puppyAgeYears:1},
   peakPeriods: /** @type {const} */ ([
     ['thanksgiving26','2026-11-25','2026-11-30'],
     ['christmas26',...flags.christmas2026Range],
