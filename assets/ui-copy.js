@@ -1,6 +1,16 @@
 // @ts-check
 // Shared customer-facing copy. English phrases are stable translation keys.
 export const en = {
+  "Checking your price…": "Checking your price…",
+  "Complete the care details above to continue.": "Complete the care details above to continue.",
+  "Update {vaccine} record": "Update {vaccine} record",
+  "Review the service agreement": "Review the service agreement",
+  "Update care details": "Update care details",
+  "Peak day": "Peak day",
+  "Short notice": "Short notice",
+  "More times": "More times",
+  "Some days are fully booked. Please choose another available date.": "Some days are fully booked. Please choose another available date.",
+  "🔥 Peak day · ⏱ Short notice. Your quote includes any extra fees.": "🔥 Peak day · ⏱ Short notice. Your quote includes any extra fees.",
   "This page isn’t part of your account.": "This page isn’t part of your account.",
   "Let’s get you back to your next step.": "Let’s get you back to your next step.",
   "We couldn’t find that page.": "We couldn’t find that page.",
@@ -661,6 +671,16 @@ export const en = {
 
 /** @type {Record<keyof typeof en, string>} */
 export const es = {
+  "Checking your price…": "Calculando tu precio…",
+  "Complete the care details above to continue.": "Completa los datos de cuidado de arriba para continuar.",
+  "Update {vaccine} record": "Actualizar registro de {vaccine}",
+  "Review the service agreement": "Revisar el acuerdo de servicio",
+  "Update care details": "Actualizar datos de cuidado",
+  "Peak day": "Temporada alta",
+  "Short notice": "Poca anticipación",
+  "More times": "Más horarios",
+  "Some days are fully booked. Please choose another available date.": "Algunos días ya están completos. Elige otra fecha disponible.",
+  "🔥 Peak day · ⏱ Short notice. Your quote includes any extra fees.": "🔥 Temporada alta · ⏱ Poca anticipación. Tu cotización incluye los recargos que correspondan.",
   "This page isn’t part of your account.": "Esta página no está disponible para tu cuenta.",
   "Let’s get you back to your next step.": "Volvamos al siguiente paso.",
   "We couldn’t find that page.": "No encontramos esa página.",

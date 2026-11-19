@@ -422,13 +422,16 @@ export function blockerHtml(blockers = [], data) {
         : item.code === 'meet_required'
           ? '?service=meet#book'
           : '#care';
+      const action = item.code.startsWith('vaccine_') ? t('Update {vaccine} record',params)
+        : item.code === 'meet_required' ? t('Book a free Meet & Greet')
+        : item.code === 'agreement_required' ? t('Review the service agreement') : t('Update care details');
       return (
         '<p>' +
         text(label) +
-        ' <a class="text-link" href="' +
+        ' <a class="tap-link" href="' +
         href +
         '">' +
-        text(t('Resolve this requirement')) +
+        text(action) +
         '</a></p>'
       );
     })

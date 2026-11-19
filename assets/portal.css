@@ -109,6 +109,21 @@
 }
 .portal [data-booking-summary] p { margin: 0 0 .35rem; font-variant-numeric: tabular-nums; }
 .portal [data-booking-summary] [data-quote-status]:empty { margin: 0; }
+.portal [data-booking-next]:empty { display: none; }
+.portal [data-booking-next] { font-size: .9rem; }
+.portal [data-action="bookings"] { container-type: inline-size; padding: clamp(.6rem,2vw,1.5rem); }
+.more-times { grid-column: 1 / -1; }
+.more-times > div { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,8rem),1fr)); gap: .45rem; margin-top: .45rem; }
+.portal .stay-fields { min-width: 0; padding-inline: 0; border: 0; }
+@container (max-width: 319px) {
+  .portal .stay-calendar-months, .portal [data-stay-calendar-status] { display: none; }
+}
+@container (max-width: 20rem) {
+  .portal [data-booking-summary] { position: static; }
+}
+@media (max-height: 600px) {
+  .portal [data-booking-summary] { position: static; }
+}
 .portal .quote-lines { margin-block: .35rem; font-size: .9rem; }
 .portal .quote-lines div { display: flex; justify-content: space-between; gap: .65rem; }
 .portal .quote-lines dd { margin: 0; white-space: nowrap; font-variant-numeric: tabular-nums; }
@@ -174,8 +189,9 @@
 .portal .pet-field-tip > summary {
   display: grid;
   place-items: center;
-  width: 32px;
-  min-height: 32px;
+  width: 44px;
+  min-width: 44px;
+  min-height: 44px;
   padding: 0;
   border-radius: 50%;
 }
@@ -334,9 +350,9 @@
 .portal [data-care-action] :is(input[type=checkbox],input[type=radio]) { width: 1.2rem; height: 1.2rem; }
 .portal :is(.care-vaccines,[data-entry-details],[data-timeline],[data-client-record]) { overflow-wrap: anywhere; min-width: 0; }
 .portal [data-entry-details] { white-space: pre-wrap; }
-.stay-calendar-months { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,16rem),1fr)); gap: 1rem; }
+.stay-calendar-months { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,20rem),1fr)); gap: 1rem; }
 .stay-weekdays,.stay-day-grid { display: grid; grid-template-columns: repeat(7,minmax(0,1fr)); gap: 2px; text-align: center; }
-.portal .stay-day-grid button { min-height: 44px; min-width: 24px; padding: .2rem; margin: 0; width: 100%; font-size: 1rem; }
+.portal .stay-day-grid button { min-height: 44px; min-width: 44px; padding: .2rem; margin: 0; width: 100%; font-size: 1rem; }
 .portal .stay-day-grid button.is-stay-range { background: var(--peach); }
 .portal .stay-day-grid button[aria-pressed=true] { color: var(--cream); background: var(--ink); border-color: var(--ink); }
 .portal [data-care-action] :is(input[type=checkbox],input[type=radio]) { min-width: 24px; min-height: 24px; }
