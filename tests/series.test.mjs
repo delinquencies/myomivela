@@ -88,6 +88,15 @@ test('a confirmed date inside the cancellation cutoff needs the fee accepted to 
   await call('staff','POST','/api/services',{ name:'Dog walking', minutes:30, cents:3000, cancel_fee_percent:0 });
 });
 
+test('a sitter can read recurring visits but not pause, skip or end them', async () => {
+  await call('staff','POST','/api/staff',{ name:'Sam', email:'sam@example.test', password:'sitter-pass-123456', role:'sitter' });
+  await call('sam','POST','/api/login',{ email:'sam@example.test', password:'sitter-pass-123456' });
+  assert.equal((await call('sam','GET','/api/series')).status, 200);
+  for (const [path, body] of [['/api/series/pause',{ id:mine.id, paused:true }],['/api/series/skip',{ id:mine.id, day:expectedDays()[2] }],['/api/series/end',{ id:mine.id }]]) {
+    assert.equal((await call('sam','POST',path,body)).json.code, 'owner_only', path);
+  }
+});
+
 test('pausing keeps booked visits; ending cancels the upcoming requests and stops the series', async () => {
   const paused = await call('ann','POST','/api/series/pause',{ id:mine.id, paused:true });
   assert.equal(paused.json.series.paused, true);
