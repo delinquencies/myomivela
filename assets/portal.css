@@ -370,7 +370,7 @@
 .portal .review-terms { margin-block: 1rem; padding: 1rem; background: var(--peach); border-radius: 1rem; }
 .portal .review-terms h4 { margin-top: 0; }
 .portal .review-acceptance { display: flex; align-items: flex-start; gap: .75rem; min-height: 52px; padding: .8rem; border: 1px solid #b89079; border-radius: 1rem; background: var(--cream); }
-.portal .review-acceptance input { flex-shrink: 0; width: 24px; min-width: 24px; height: 24px; min-height: 24px; margin: .2rem 0 0; }
+.portal .review-acceptance input { flex-shrink: 0; width: 24px; min-width: 24px; height: 24px; min-height: 24px; margin: .2rem 0 0; accent-color: var(--tomato); }
 .portal [data-care-action] { min-width: 0; }
 .portal [data-care-action] label { display: block; margin-block: .65rem; }
 .portal [data-care-action] small { display: block; font-weight: normal; }
