@@ -206,11 +206,11 @@ if (priceTags.length) {
       for (const tag of priceTags) {
         const rates = rows.filter(row => row.name === tag.dataset.servicePrice).sort((a,b) => a.cents-b.cents);
         if (!rates.length) continue;
-        const {cents,minutes} = rates[0];
+        const {cents,minutes,kind} = rates[0];
         const price = new Intl.NumberFormat(spanish ? 'es-US' : 'en-US',{
           style:'currency',currency:'USD',minimumFractionDigits:cents % 100 ? 2 : 0,
         }).format(cents/100);
-        tag.textContent = rates.length > 1 ? t('From {price}', {price}) : t('{price} / {minutes} min', {price, minutes});
+        tag.textContent = kind === 'overnight' ? t('From {price} per night',{price}) : t('From {price} / {minutes} min',{price,minutes});
         tag.hidden = false;
       }
     };

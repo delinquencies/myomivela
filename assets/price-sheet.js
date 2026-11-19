@@ -20,7 +20,19 @@ export async function showPriceSheet(container, { service, rate } = {}) {
     list.className = 'rate-list';
     for (const row of rows) {
       const item = document.createElement('li');
-      item.append(element('strong',translateLabel(row.name)),element('p',row.minutes+' min · '+formatMoney(row.cents)));
+      const price = formatMoney(row.cents);
+      item.append(element('strong',translateLabel(row.name)),element('p',row.kind === 'overnight'
+        ? t('From {price} per night',{price}) : t('From {price} / {minutes} min',{price,minutes:row.minutes})));
+      if (row.kind === 'overnight') {
+        item.append(element('p',t(row.nights?.length ? 'Next available nights' : 'Check stay dates in booking for overnight availability.')));
+        if (row.nights?.length) {
+          const nights = document.createElement('ul');
+          for (const night of row.nights) nights.append(element('li',formatDate(Date.parse(night+'T12:00:00Z'),'date')));
+          item.append(nights);
+        }
+        list.append(item);
+        continue;
+      }
       item.append(element('p',row.times.length ? t("Next available times") : t("No available times in the next two weeks.")));
       if (row.times.length) {
         const times = document.createElement('ul');
@@ -29,7 +41,7 @@ export async function showPriceSheet(container, { service, rate } = {}) {
       }
       list.append(item);
     }
-    container.replaceChildren(list);
+    container.replaceChildren(element('p',t('Starting prices. Peak dates, short notice and extra pets may change your quote.')),list);
   } catch {
     container.replaceChildren(element('p',t("Rates and times are unavailable right now.")));
   }
