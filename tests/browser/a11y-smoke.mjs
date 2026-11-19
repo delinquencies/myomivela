@@ -103,6 +103,111 @@ async function openPortalSection(page, hash, ready = '#'+hash+' h2') {
   await page.goto(server.base+portal+'#'+hash);
   await page.locator(ready).waitFor();
 }
+async function checkRepairContrast(page, label) {
+  await page.evaluate(axeSource);
+  const violations = await page.evaluate(async () => {
+    const { violations } = await window.axe.run(document,{runOnly:['color-contrast']});
+    return violations.map(rule => rule.nodes.map(node => node.target.join(' > ')).join(', '));
+  });
+  assert.deepEqual(violations,[],label+' has a contrast failure');
+}
+async function checkRepairMenu(page, role) {
+  const toggle = page.locator('.portal-menu summary');
+  await toggle.click();
+  const menu = page.locator('.portal-menu nav');
+  assert.equal(await menu.locator('a[href="#care"]:visible').count(),role === 'customer' ? 1 : 0);
+  assert.equal(await page.locator('#account-link').isVisible(),role !== 'public');
+  const destinations = await menu.locator('a[href^="#"]:visible').evaluateAll(links => links.map(link => link.hash));
+  assert.equal(new Set(destinations).size,destinations.length,'Menu destinations must be unique');
+  await page.keyboard.press('Escape');
+  assert.equal(await toggle.evaluate(element => element === document.activeElement),true);
+  for (const destination of destinations) {
+    await toggle.click();
+    await menu.locator('a[href="'+destination+'"]').click();
+    await page.locator(destination).waitFor();
+    await page.locator(destination+' > h2:focus').waitFor();
+  }
+}
+async function checkUxRepairs(petId, visitId) {
+  const sitter = {name:'Sam',email:'a11y-sitter@example.test',password,role:'sitter'};
+  await post('staff','staff',sitter);
+  await post('sitter','login',{email:sitter.email,password});
+  await post('staff','events',{
+    id:visitId,pet:petId,kind:'Walk completed',notes:'A gentle walk.',data:{pee:true,poop:false,minutes:25},
+  });
+  await post('staff','services',{name:'Overnight pet sitting',minutes:720,cents:9500});
+  await post('staff','schedule',{days:[0,1,2,3,4,5,6],opens:'08:00',closes:'18:00',buffer:0,overnight_days:[0,1,2,3,4,5,6]});
+  for (const viewport of [{width:1440,height:900},phone]) {
+    for (const language of ['en','es']) {
+      for (const role of ['public','customer','staff','sitter']) {
+        const context = await browser.newContext({
+          viewport,isMobile:viewport.width === 390,hasTouch:viewport.width === 390,
+          timezoneId:'America/New_York',reducedMotion:'reduce',
+        });
+        try {
+          if (role !== 'public') {
+            await context.addCookies([...server.cookies(role)].map(([name,value]) => ({name,value,url:server.base})));
+          }
+          const page = await context.newPage();
+          const problems = [];
+          page.on('pageerror',error => problems.push(error.message));
+          page.on('console',message => { if (message.type() === 'error') problems.push(message.text()); });
+          await page.goto(server.base+portal);
+          await page.locator(role === 'public' ? '[data-action=login]' : '#portal-links a').first()
+            .waitFor({state:role === 'public' ? 'visible' : 'attached'});
+          await page.locator('[data-language="'+language+'"]').click();
+          await checkRepairMenu(page,role);
+          if (role === 'customer') {
+            await page.goto(server.base+portal+'#care');
+            const intake = page.locator('[data-care-action=intake]');
+            await intake.locator('[name=service][value=walk]').check();
+            for (const field of await intake.locator('textarea').all()) {
+              if (await field.isEnabled()) await field.fill('Audit care instructions');
+            }
+            for (const name of ['pets','vet','emergency','decisionMakers']) {
+              await intake.locator('[name="'+name+'"]').fill('Audit '+name);
+            }
+            await intake.locator('[name=vetAuthorization]').selectOption('no');
+            await intake.locator('[name=spendingLimit]').fill('0');
+            await intake.locator('button[type=submit]').click();
+            await page.locator('.portal-feedback.is-notice #feedback')
+              .filter({hasText:language === 'es' ? 'Guardado.' : 'Saved.'}).waitFor();
+            // The success notice stays present while the real menu and language control are used.
+            await page.locator('.portal-menu summary').click({timeout:5000});
+            await page.keyboard.press('Escape');
+            const nextLanguage = language === 'es' ? 'en' : 'es';
+            await page.locator('[data-language="'+nextLanguage+'"]').click({timeout:5000});
+            assert.equal(await page.locator('html').getAttribute('lang'),nextLanguage);
+            await page.locator('[data-language="'+language+'"]').click();
+            await page.goto(server.base+portal+'?service=pet-sitting#book');
+            const dates = page.locator('[data-stay-date]:not([disabled])');
+            await dates.first().waitFor();
+            await dates.nth(3).click();
+            await dates.nth(5).click();
+            assert.equal(await page.locator('[data-stay-date][aria-pressed=true]').count(),2);
+            await checkRepairContrast(page,'Selected stay dates '+viewport.width+' '+language);
+            await page.goto(server.base+portal+'#diary');
+            await page.locator('.diary-visit').waitFor();
+            assert.equal(await page.locator('.diary-field-hidden').count(),0,'Clients must not see staff-only answers');
+          }
+          if (['staff','sitter'].includes(role)) {
+            await page.goto(server.base+portal+'#diary');
+            const hiddenAnswer = page.locator('.diary-field-hidden').first();
+            await hiddenAnswer.waitFor();
+            assert.match(await hiddenAnswer.textContent(),language === 'es' ? /Oculto para el cliente/ : /Hidden from the client/);
+            assert.equal(await hiddenAnswer.evaluate(element => getComputedStyle(element).opacity),'1');
+            await checkRepairContrast(page,'Staff-only answers '+viewport.width+' '+language);
+          }
+          assert.deepEqual(problems,[],role+' browser errors');
+          assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth),true);
+          console.log('DUX-01 '+role+' '+language+' '+viewport.width+'px passed');
+        } finally {
+          await context.close();
+        }
+      }
+    }
+  }
+}
 
 try {
   const publicPage = await openPhone();
@@ -170,6 +275,7 @@ try {
     await openPortalSection(staff,section,ready);
     await checkScreen(staff,name);
   }
+  await checkUxRepairs(pets[0].id,visit.id);
   assert.deepEqual(failures,[],failures.join('\n'));
   console.log('Accessibility and layout checks passed');
 } finally {

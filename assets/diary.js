@@ -20,13 +20,14 @@ function departureLine(check) {
 export function renderDiaryVisits(visits, eventsByVisit, petName, photoFor, afterVisit = () => '') {
   if (!visits.length) return ("<p>" + t("No diary visits for this selection yet.") + "</p>");
 
-  // Report-card answers as short chips; staff see answers hidden from the customer, greyed out.
+  // Staff can read every report-card answer and see which answers are hidden from the customer.
   function renderFields(fields = []) {
     if (!fields.length) return '';
     return '<ul class="diary-fields">'+fields.map(field => {
       const text = field.type === 'yesno' ? (field.value ? '✓ ' : '✗ ')+translateLabel(field.label)
         : translateLabel(field.label)+': '+(field.type === 'choice' ? translateLabel(field.value) : field.value);
-      return '<li'+(field.hidden ? ' class="diary-field-hidden" title="'+escapeHtml(t('Hidden from the client'))+'"' : '')+'>'+escapeHtml(text)+'</li>';
+      const visibility = field.hidden ? ' <span class="diary-field-note">'+escapeHtml(t('Hidden from the client'))+'</span>' : '';
+      return '<li'+(field.hidden ? ' class="diary-field-hidden"' : '')+'>'+escapeHtml(text)+visibility+'</li>';
     }).join('')+'</ul>';
   }
   function renderEntry(event) {

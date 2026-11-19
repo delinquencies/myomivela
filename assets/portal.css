@@ -78,9 +78,10 @@
 .departure-secured, .check-row { display: flex; gap: .5rem; align-items: center; min-height: 44px; }
 .diary-departure { margin: .5rem 0; font-weight: 600; }
 .diary-departure-warning { color: #a13013; }
-.diary-fields { display: flex; flex-wrap: wrap; gap: .35rem; list-style: none; padding: 0; margin: .4rem 0; }
+.diary-fields { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem; list-style: none; padding: 0; margin: .4rem 0; }
 .diary-fields li { padding: .15rem .55rem; border-radius: 999px; background: #f6dfd1; font-size: .9rem; }
-.diary-fields .diary-field-hidden { opacity: .55; text-decoration: line-through; }
+.diary-fields .diary-field-hidden { color: var(--ink); background: var(--paper); border: 1px dashed #b89079; }
+.diary-field-note { display: block; font-size: .8rem; font-weight: 600; }
 .start-note { margin: .25rem 0 .5rem; font-size: .9rem; color: #6b3d2c; }
 .checkout-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
 .portal form:is([data-action="login"], [data-action="register"]) > button[type="submit"] {
@@ -216,19 +217,16 @@
 .portal article img { max-height: 25rem; width: auto; border-radius: .75rem; margin-top: .75rem; }
 #feedback:not(:empty) { margin-top: .65rem; color: #732b17; font-weight: 700; }
 .portal-feedback.is-notice {
-  position: fixed;
-  z-index: 12;
-  inset-block-start: max(.75rem, env(safe-area-inset-top));
-  inset-inline-end: max(.75rem, env(safe-area-inset-right));
   display: flex;
   align-items: center;
   gap: .7rem;
-  width: max-content;
-  max-width: min(28rem, calc(100% - 1.5rem));
+  width: fit-content;
+  max-width: 100%;
+  margin-block: .75rem;
   padding: .55rem .65rem .55rem 1rem;
   border: 1px solid #b89079;
   border-radius: .85rem;
-  background: var(--cream);
+  background: var(--peach);
   box-shadow: 0 5px 20px #6d301830;
 }
 .portal-feedback.is-notice #feedback { margin: 0; }
@@ -337,8 +335,8 @@
 .stay-calendar-months { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,16rem),1fr)); gap: 1rem; }
 .stay-weekdays,.stay-day-grid { display: grid; grid-template-columns: repeat(7,minmax(0,1fr)); gap: 2px; text-align: center; }
 .portal .stay-day-grid button { min-height: 44px; min-width: 24px; padding: .2rem; margin: 0; width: 100%; font-size: 1rem; }
-.portal .stay-day-grid button[aria-pressed=true] { color: white; background: var(--tomato); }
 .portal .stay-day-grid button.is-stay-range { background: var(--peach); }
+.portal .stay-day-grid button[aria-pressed=true] { color: var(--cream); background: var(--ink); border-color: var(--ink); }
 .portal [data-care-action] :is(input[type=checkbox],input[type=radio]) { min-width: 24px; min-height: 24px; }
 
 /* Staff accounts in Settings */
