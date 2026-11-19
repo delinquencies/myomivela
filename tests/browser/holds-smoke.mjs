@@ -23,7 +23,11 @@ function watch(page, who, expected = []) {
   page.on('pageerror', e => problems.push(`[${who}] ${e.message}`));
   page.on('console', m => { if (m.type() === 'error' && !expected.some(pattern => pattern.test(m.text()))) problems.push(`[${who}] console: ${m.text()}`); });
 }
-const tapLabel = locator => locator.locator('xpath=..').tap();
+const tapLabel = async locator => {
+  const more = locator.locator('xpath=ancestor::details[contains(@class,"more-times")]');
+  if (await more.count() && await more.getAttribute('open') === null) await more.locator('summary').tap();
+  await locator.locator('xpath=..').tap();
+};
 // Times the server offers this customer right now, as "window:start" keys.
 const serverTimes = page => page.evaluate(() => fetch('/api/portal').then(r => r.json()).then(d => d.slots.map(s => s.id + ':' + s.starts)));
 
