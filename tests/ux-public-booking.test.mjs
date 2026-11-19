@@ -92,6 +92,26 @@ test('the guest quote matches the signed-in quote for the same facts, and holds 
   assert.ok(Array.isArray(signedIn.blockers), 'only the signed-in quote reports blockers');
 });
 
+test('the client can name the primary pet; guest and signed-in quotes agree on it', async () => {
+  const start = defaultDay.first_start;
+  const household = [{ kind:'dog', age_years:4 }, { kind:'cat', age_years:2 }];
+  const dogFirst = (await quote({ service:dropIn.id, pets:household, start })).json;
+  const catPrimary = (await quote({ service:dropIn.id, pets:household, start, primary_pet:1 })).json;
+  assert.equal(dogFirst.primary_pet, 0);
+  assert.equal(catPrimary.primary_pet, 1);
+  assert.ok(dogFirst.lines.some(line => line.code === 'extraPets' && line.cents === myoConfig.rates.additionalCat * 100), 'dog primary: the cat is the additional pet');
+  assert.ok(catPrimary.lines.some(line => line.code === 'extraPets' && line.cents === myoConfig.rates.additionalDog * 100), 'cat primary: the dog is the additional pet');
+  for (const bad of [2, -1, 'x']) assert.equal((await quote({ service:dropIn.id, pets:household, start, primary_pet:bad })).json.code, 'invalid_primary_pet');
+  const portal = (await call('ann','GET','/api/portal')).json;
+  const [rex, mia] = ['Rex','Mia'].map(name => portal.pets.find(p => p.name === name).id);
+  const slot = portal.slots.find(row => row.starts === start);
+  const signedIn = (await call('ann','POST','/api/quote',{ service:dropIn.id, pets:[rex, mia], primary_pet:mia, slot:slot.id, start })).json;
+  assert.equal(signedIn.primary_pet, mia);
+  assert.equal(signedIn.total_cents, catPrimary.total_cents, 'same facts, same price');
+  const other = await call('ann','POST','/api/quote',{ service:dropIn.id, pets:[rex], primary_pet:mia, slot:slot.id, start });
+  assert.equal(other.json.code, 'invalid_primary_pet', 'the primary pet must be one of those attending');
+});
+
 test('contact details are optional at registration, required at the contact step, and shown to the customer only', async () => {
   const made = await call('bob','POST','/api/register',{ name:'Bob', email:'bob@example.test', password, phone:'(413) 555-0100', address:'12 Maple St, Springfield, MA', zip:'01108' });
   assert.equal(made.status, 200, JSON.stringify(made.json));
