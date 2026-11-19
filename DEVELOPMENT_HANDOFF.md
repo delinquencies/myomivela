@@ -105,7 +105,7 @@ lib/stores/    durable.mjs (ctx.storage.sql + transactionSync, R2)   node.mjs (n
 - **Staff reveal:** `GET /api/home-access/booking/:id` works only for an In Progress visit, or a Confirmed one inside the early-start window (otherwise 403 `access_not_yet` with `available_from`). Every reveal is logged in `home_access_log`.
 - **Keys:** `POST /api/keys { owner, key_status:'with_client'|'with_myomi'|'returned' }`.
 - **Staff portal:** each booking carries `home_access: { method, key_status }` (never the instructions), plus `keys_to_return` for keys held with no booking ahead.
-- **Configuration and errors:** a missing key returns 503 `vault_unconfigured`; Node in production refuses to start without it. Rotate with `MYO_VAULT_KEY_PREVIOUS`; a key that can't open a record gives 500 `vault_decrypt_failed`.
+- **Configuration and errors:** a missing key returns 503 `vault_unconfigured`; Node in production refuses to start without it, and the Worker refuses the API (503 `not_configured`, except `GET /api/session`) until it is set. Rotate with `MYO_VAULT_KEY_PREVIOUS`; a key that can't open a record gives 500 `vault_decrypt_failed`.
 
 **Report cards (C2.4).**
 - **Templates:** `reportFields` in `lib/domain.mjs` defines structured answers per service kind and activity (`yesno`, `count` or `choice`), sent to the portal as `reportFields`.
@@ -136,7 +136,7 @@ lib/stores/    durable.mjs (ctx.storage.sql + transactionSync, R2)   node.mjs (n
 - **Booked prices never change** when rules change; rescheduling keeps the original lines. Both tables start empty.
 
 **Money (C3.1).** Every payment, refund and credit is a row in `ledger_entries`, and a booking's `payment` is derived on each read (`lib/ledger.mjs`): `{ status:'none'|'due'|'pending'|'partial'|'paid'|'refund_due'|'refunded', due_cents, paid_cents, refunded_cents, credit_cents, balance_cents }`. A request owes nothing; a cancelled booking owes its `cancel_fee_cents`.
-- **Online payment** is off unless `MYO_PAYMENTS=stripe` with `MYO_STRIPE_SECRET_KEY` and `MYO_STRIPE_WEBHOOK_SECRET` (`MYO_PAYMENTS=fake` is for tests and refused in production). The portal carries `payments_enabled`.
+- **Online payment** is off unless `MYO_PAYMENTS=stripe` with `MYO_STRIPE_SECRET_KEY` and `MYO_STRIPE_WEBHOOK_SECRET` (`MYO_PAYMENTS=fake` is for tests: Node in production refuses to start with it, and the Worker refuses the API unless the test harness sets `MYO_TEST_SETTINGS=1`). The portal carries `payments_enabled`.
 - **Checkout:** `POST /api/payments/start { booking }` (customer) → `{ redirect_url }` for Stripe Checkout for the balance; an open session for the same amount is reused. The return URL proves nothing: the portal says the payment is being confirmed.
 - **Webhook:** `POST /api/payments/webhook` (public, raw body) verifies Stripe's `t=`/`v1=` signature within five minutes, stores the event id (replays are `duplicate`) and records `payment` lines from `checkout.session.completed`/`async_payment_succeeded` when paid. `expired` and `async_payment_failed` close the session. `refund.created`/`refund.updated` record dashboard refunds once. Point Stripe at `https://<origin>/api/payments/webhook` with those event types.
 - **Staff:** `POST /api/payments/record { booking, cents, method:'cash'|'check'|'other', note? }` and `POST /api/refunds { booking, cents, method:'card'|'cash'|'check'|'other', note? }`. Card refunds go through Stripe, split across card payments newest first, with idempotency keys fixed by what is already refunded. Both work with online payment off (except card refunds).

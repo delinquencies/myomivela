@@ -25,7 +25,7 @@ export const nodeOnly = target === 'worker' ? 'needs the Node runtime (direct da
 // Most suites start visits booked days ahead, so they lift the early-start limit. Pass
 // { MYO_EARLY_START_MINUTES:'' } to test the real rule (the visit buffer).
 // Tests also get a fixed vault key (base64 of 32 bytes) for home-access details.
-const testDefaults = { MYO_PRICING_MODE:'catalog', MYO_EARLY_START_MINUTES:'1000000', MYO_VAULT_KEY:Buffer.from('test-vault-key-0123456789abcdef!').toString('base64') };
+const testDefaults = { MYO_TEST_SETTINGS:'1', MYO_PRICING_MODE:'catalog', MYO_EARLY_START_MINUTES:'1000000', MYO_VAULT_KEY:Buffer.from('test-vault-key-0123456789abcdef!').toString('base64') };
 
 function spawnTarget(dir, port, env, dbPath, inspectorPort) {
   if (target === 'worker') {
