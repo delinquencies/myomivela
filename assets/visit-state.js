@@ -7,9 +7,9 @@ import { hrefFor } from './portal-route-state.js';
 
 /** @typedef {'customer'|'owner'|'sitter'} Role */
 /**
- * @typedef {{ id:number, status:string, starts:number, ends:number, cents:number, service_kind?:string, created?:number|null,
+ * @typedef {{ id:number, status:string, starts:number, ends:number, cents:number, service_kind?:string, created?:number|null, deposit_cents?:number, deposit_due_at?:number|null,
  *   confirmed_at?:number|null, cancelled_at?:number|null, arrived?:number|null, departed?:number|null,
- *   pending_change?:object|null, payment?:{ status:string, balance_cents:number }|null }} BookingLike
+ *   pending_change?:object|null, payment?:{ status:string, balance_cents:number, deposit_paid?:boolean }|null }} BookingLike
  */
 
 export const visitReference = (/** @type {number} */ id) => 'MYO-' + String(id).padStart(5, '0');
@@ -29,7 +29,8 @@ export function allowedActions(booking, { role, now = Date.now(), earlyStartMinu
   if (role === 'customer') {
     if (['Requested','Confirmed'].includes(status) && upcoming) actions.push('cancel', status === 'Confirmed' ? 'request_change' : 'reschedule');
     if (booking.pending_change) actions.push('withdraw_change');
-    if (paymentsEnabled && (booking.payment?.balance_cents ?? 0) > 0 && status !== 'Requested') actions.push('pay');
+    // A request can be paid only for its deposit; anything accepted can be paid in full.
+    if (paymentsEnabled && (booking.payment?.balance_cents ?? 0) > 0 && (status !== 'Requested' || (booking.deposit_cents ?? 0) > 0)) actions.push('pay');
     if (['In Progress','Completed'].includes(status)) actions.push('tip');
     if (status === 'Completed' && booking.departed && now - booking.departed < 7 * 86_400_000) actions.push('feedback');
     if (status === 'Completed') actions.push('book_again');
@@ -70,7 +71,8 @@ export function timeline(booking) {
 
 /**
  * What the customer should do or expect next, in order. Codes: awaiting_review, complete_intake, book_care_after_meet,
- * pay_after_confirmation, payment_arranged, updates_in_diary. Each has an href (portal hash) and `done`.
+ * pay_deposit / deposit_arranged (with due_at and amount_cents), pay_balance, pay_after_confirmation, payment_arranged,
+ * updates_in_diary. Each has an href (portal hash) and `done`.
  * @param {BookingLike} booking
  * @param {{ intakeState?:'absent'|'incomplete'|'outdated'|'complete', paymentsEnabled?:boolean }} context
  */
@@ -81,10 +83,17 @@ export function nextSteps(booking, { intakeState = 'complete', paymentsEnabled =
   if (intakeState !== 'complete') steps.push({ code:'complete_intake', href:hrefFor('care'), done:false, reason:intakeState });
   if (booking.service_kind === 'meet') steps.push({ code:'book_care_after_meet', href:hrefFor('book'), done:booking.status === 'Completed' });
   else if (booking.cents > 0) {
-    // The deposit lifecycle (CUX-04) is not built yet, so nothing here promises a deposit.
-    const paid = booking.payment?.status === 'paid';
-    steps.push(paymentsEnabled ? { code:'pay_after_confirmation', href:hrefFor('visit', { booking:booking.id }), done:paid }
-      : { code:'payment_arranged', href:null, done:paid });
+    const href = hrefFor('visit', { booking:booking.id });
+    const paidInFull = booking.payment?.status === 'paid' && booking.status !== 'Requested';
+    if ((booking.deposit_cents ?? 0) > 0) {
+      // Launch terms: a 50% deposit within 48 hours of the request, then the balance before the visit.
+      const depositPaid = Boolean(booking.payment?.deposit_paid);
+      steps.push(paymentsEnabled ? { code:'pay_deposit', href, due_at:booking.deposit_due_at ?? null, amount_cents:booking.deposit_cents, done:depositPaid }
+        : { code:'deposit_arranged', href:null, due_at:booking.deposit_due_at ?? null, amount_cents:booking.deposit_cents, done:depositPaid });
+      steps.push(paymentsEnabled ? { code:'pay_balance', href, due_at:booking.starts, done:paidInFull } : { code:'payment_arranged', href:null, done:paidInFull });
+    } else {
+      steps.push(paymentsEnabled ? { code:'pay_after_confirmation', href, done:paidInFull } : { code:'payment_arranged', href:null, done:paidInFull });
+    }
   }
   steps.push({ code:'updates_in_diary', href:hrefFor('diary'), done:booking.status === 'Completed' });
   return steps;

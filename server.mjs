@@ -23,7 +23,13 @@ useStorage(nodeStore(database), fileBlobs(join(dirname(database), 'photos')), co
 await ensureAdmin();
 // Sends due messages from the outbox every minute (C3.6). The Worker does the same with a Durable Object alarm.
 const { drainOutbox } = await import('./lib/outbox.mjs');
-setInterval(() => drainOutbox().catch(error => console.error('Outbox:', error.message)), 60_000).unref();
+// Deposit deadlines (CUX-04) are checked on the same minute timer.
+const { enforceDeposits } = await import('./lib/deposits.mjs');
+const { transaction } = await import('./lib/db.mjs');
+setInterval(() => {
+  try { transaction(() => enforceDeposits()); } catch (error) { console.error('Deposits:', error.message); }
+  drainOutbox().catch(error => console.error('Outbox:', error.message));
+}, 60_000).unref();
 // A daily backup to MYO_BACKUP_DIR, when set: checked a minute after starting and then every hour.
 const { backupIfDue } = await import('./lib/scheduled-backup.mjs');
 const checkBackup = () => backupIfDue().catch(error => console.error('Backup:', error.message));

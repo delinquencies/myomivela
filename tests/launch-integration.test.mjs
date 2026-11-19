@@ -108,7 +108,7 @@ test('all intake fields are saved for the owner and staff, backed up, and protec
   );
   assert.equal((await app.call('b', 'GET', '/api/clients/' + owner)).status, 403);
 });
-test('a completed Meet & Greet belongs to one booking, and moves require review of the new peak price', async () => {
+test('one completed Meet & Greet covers the client’s bookings, and moves require review of the new peak price', async () => {
   await app.call('staff', 'POST', '/api/services', { name: 'Meet & Greet', minutes: 30, cents: 0 });
   const meet = (await app.call('a', 'GET', '/api/catalog')).json.find((service) => service.kind === 'meet');
   const request = await app.call('a', 'POST', '/api/bookings', { ...selection, service: meet.id, cents: 0 });
@@ -131,8 +131,8 @@ test('a completed Meet & Greet belongs to one booking, and moves require review 
     start: selection.start + hours(1),
     cents: 4300,
   });
-  assert.equal(second.status, 409);
-  assert.ok(second.json.blockers.some((item) => item.code === 'meet_required'));
+  // Owner decision (Nov 19, 2026): the Meet & Greet is once per client, so a second booking needs no new meeting.
+  assert.equal(second.status, 200, JSON.stringify(second.json));
   const peakDay = myoConfig.peakPeriods.find(
     ([, start]) => Date.parse(start + 'T15:00:00Z') > Date.now() + hours(72)
   )?.[1];

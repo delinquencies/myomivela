@@ -38,7 +38,7 @@ export const en = {
   'blocker.vaccine_expired': '{pet}’s {vaccine} vaccination expired on {date}.',
   'blocker.vaccine_expires_during': '{pet}’s {vaccine} vaccination expires on {date}, during this booking.',
   'blocker.agreement_required': 'Read and accept the service agreement before continuing.',
-  'blocker.meet_required': 'Complete a complimentary Meet & Greet for this new booking.',
+  'blocker.meet_required': 'Meet Myomi first: your free Meet & Greet comes before your first booking.',
   'Resolve this requirement': 'Resolve this requirement',
   'Complete the booking requirements below.': 'Complete the booking requirements below.',
   'Show entry details': 'Show entry details',
@@ -115,7 +115,7 @@ export const en = {
   'blocker.intake_required': 'Complete your care intake before requesting this service.',
   'Proposed total {amount}': 'Proposed total {amount}',
   'A complimentary Meet & Greet is required for each new booking.':
-    'A complimentary Meet & Greet is required for each new booking.',
+    'Your first booking starts with a free Meet & Greet. After that, you can book directly.',
   'Save real care details in your portal': 'Save real care details in your portal',
   'Approved launch rates apply automatically.': 'Approved launch rates apply automatically.',
   'The first attending pet in this list uses the base rate.':
@@ -163,7 +163,7 @@ export const es = {
   'blocker.vaccine_expires_during': 'La vacuna {vaccine} de {pet} vence el {date}, durante esta reserva.',
   'blocker.agreement_required': 'Lee y acepta el acuerdo de servicio antes de continuar.',
   'blocker.meet_required':
-    'Completa una Visita de Presentación Gratuita (Meet & Greet) para esta reserva nueva.',
+    'Conoce a Myomi primero: tu Visita de Presentación Gratuita (Meet & Greet) va antes de tu primera reserva.',
   'Resolve this requirement': 'Completar este requisito',
   'Complete the booking requirements below.':
     'Completa los requisitos de reserva que aparecen a continuación.',
@@ -244,7 +244,7 @@ export const es = {
   'blocker.intake_required': 'Completa tus datos de cuidado antes de solicitar este servicio.',
   'Proposed total {amount}': 'Nuevo total propuesto {amount}',
   'A complimentary Meet & Greet is required for each new booking.':
-    'Cada reserva nueva requiere una Visita de Presentación Gratuita (Meet & Greet).',
+    'Tu primera reserva comienza con una Visita de Presentación Gratuita (Meet & Greet). Después puedes reservar directamente.',
   'Save real care details in your portal': 'Guardar tus datos de cuidado en el portal',
   'Approved launch rates apply automatically.':
     'Las tarifas de lanzamiento aprobadas se aplican automáticamente.',

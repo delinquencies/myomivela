@@ -50,7 +50,8 @@ test('a request owes nothing; a confirmed booking is due and the portal says pay
   assert.equal((await bookingOf('ann', requested.json.id)).payment.status, 'none');
   assert.equal((await call('ann','POST','/api/payments/start',{ booking:requested.json.id })).json.code, 'nothing_due');
   const id = await confirmedBooking();
-  assert.deepEqual((await bookingOf('ann', id)).payment, { status:'due', due_cents:3000, paid_cents:0, refunded_cents:0, credit_cents:0, balance_cents:3000 });
+  assert.deepEqual((await bookingOf('ann', id)).payment, { status:'due', due_cents:3000, paid_cents:0, refunded_cents:0, credit_cents:0, balance_cents:3000,
+    deposit_cents:0, deposit_paid:false, deposit_due_at:null, stage:'total' });
 });
 
 test('only a correctly signed, recent webhook is accepted, and the redirect alone records nothing', async () => {
