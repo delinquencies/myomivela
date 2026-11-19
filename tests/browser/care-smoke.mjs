@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import {fillCareIntake} from './intake-steps.mjs';
 import { chromium } from 'playwright';
 import { startServer, adminLogin, password, iso, hours } from '../helpers.mjs';
 import { readFileSync } from 'node:fs';
@@ -106,14 +107,7 @@ try {
     await agreement.locator('[name=accepted]').check();
     await agreement.locator('button').click();
     await saved(page);
-    const intake = page.locator('[data-care-action=intake]');
-    await intake.locator('[name=service][value=walk]').check();
-    for (const field of await intake.locator('textarea').all()) {
-      if (await field.isEnabled()) await field.fill('Sample care details');
-    }
-    await intake.locator('[name=vetAuthorization]').selectOption('yes');
-    await intake.locator('[name=spendingLimit]').fill('100');
-    await intake.locator('button').click();
+    await fillCareIntake(page,{authorization:'yes',spendingLimit:'100'});
     await saved(page);
     assert.equal((await server.call(who, 'GET', '/api/intake')).json.spendingLimit, 100);
     await page.locator('[data-load-access]').click();

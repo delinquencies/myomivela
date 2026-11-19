@@ -210,6 +210,30 @@
 .portal .pet-field [aria-invalid="true"] { border-color: #a13013; }
 .pet-field-error { color: #a13013; font-size: .9rem; margin-top: .25rem; }
 .pet-field-error:empty { margin: 0; }
+.intake-progress { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: .5rem; padding: 0; list-style: none; margin: 1rem 0; }
+.portal [data-care-action="intake"] { container-type: inline-size; }
+@container (max-width: 18rem) {
+  .intake-progress { grid-template-columns: 1fr; }
+}
+.portal .intake-progress button { width: 100%; height: 100%; margin: 0; text-align: start; border-radius: 1rem; white-space: normal; }
+.intake-progress small { display: block; font-weight: 500; }
+.portal .intake-progress [aria-current="step"] { color: var(--ink); background: var(--peach); border-color: #a13013; box-shadow: inset 0 0 0 1px #a13013; }
+.portal .intake-step { min-inline-size: 0; padding: 1rem 0; border: 0; }
+.intake-step > legend { font-family: var(--display); font-size: 1.5rem; font-weight: 900; line-height: 1.2; scroll-margin-top: 7rem; }
+.intake-service-summary { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .6rem; margin-block: .75rem; }
+.portal .intake-service-summary button { max-width: 100%; margin: 0; }
+.intake-fields { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,20rem),1fr)); gap: 1rem; }
+.intake-field { min-width: 0; }
+.intake-field > label { display: block; font-weight: 600; }
+.intake-field small, .intake-draft-note { font-size: .9rem; color: #6b3d2c; }
+.intake-field [aria-invalid="true"] { outline: 2px solid #a13013; outline-offset: 2px; }
+.intake-actions { display: flex; flex-wrap: wrap; gap: .65rem; justify-content: space-between; }
+.portal .intake-actions button { min-height: 48px; margin: 0; }
+.portal .intake-actions button[type="submit"] { margin-inline-start: auto; }
+@media (max-width: 580px) {
+  .portal .intake-progress button { padding-inline: .4rem; }
+  .intake-actions button { flex: 1 1 100%; }
+}
 .pet-optional { margin-top: .65rem; }
 .pet-optional[open] > summary { margin-bottom: .55rem; }
 .pet-step-count, .pet-draft-note { font-size: .9rem; color: #73594b; }

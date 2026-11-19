@@ -3,6 +3,7 @@ import { escapeHtml as text } from './diary.js';
 import { myoConfig } from './myo-config.js';
 import { policyText } from './policy-copy.js';
 import {hrefFor} from './portal-route-state.js';
+import {intakeForm,syncIntake,saveIntake,intakeChanged} from './intake-ui.js';
 
 const copy = (key) =>
   t('launch.' + key, {
@@ -180,157 +181,10 @@ export function staffComplianceSettings(data) {
   );
 }
 
-function intakeDefaults(data) {
-  if (data.intake) return data.intake;
-  const saved = data.pets.map((pet) => {
-    try {
-      return { pet, profile: JSON.parse(pet.details || '{}') };
-    } catch {
-      return { pet, profile: { notes: pet.details } };
-    }
-  });
-  const combined = (keys) =>
-    saved
-      .map(({ pet, profile }) => {
-        const values = keys.map((key) => profile[key]).filter(Boolean);
-        return values.length ? pet.name + ' — ' + values.join(' · ') : '';
-      })
-      .filter(Boolean)
-      .join('\n');
-  return {
-    pets: saved
-      .map(({ pet, profile }) => [pet.name, profile.age, pet.species].filter(Boolean).join(', '))
-      .join('\n'),
-    feeding: combined(['food', 'portion', 'feeding', 'restrictions']),
-    health: combined(['health', 'allergies']),
-    medication: combined(['medication']),
-    behavior: combined(['behavior', 'notes']),
-    vaccines: combined(['vaccinations']),
-    vet: combined(['vet', 'vetPhone']),
-    emergency: combined(['contact', 'contactPhone']),
-  };
-}
 export function careSettings(data) {
-  const saved = intakeDefaults(data);
-  const services = ['walk', 'dropIn', 'overnight']
-    .map(
-      (service) =>
-        '<label><input required type="radio" name="service" value="' +
-        service +
-        '"' +
-        (saved.service === service ? ' checked' : '') +
-        '><span>' +
-        text(copy(service)) +
-        '</span></label>'
-    )
-    .join('');
-  const fields = myoConfig.intakeFields.map(([key, type]) => {
-    const label = text(copy(key));
-    let control;
-    if (type === 'select')
-      control =
-        '<select required name="' +
-        key +
-        '">' +
-        [
-          ['', 'selectOne'],
-          ['yes', 'yes'],
-          ['no', 'no'],
-        ]
-          .map(
-            ([value, key]) =>
-              '<option value="' +
-              value +
-              '"' +
-              (saved.vetAuthorization === value ? ' selected' : '') +
-              '>' +
-              text(copy(key)) +
-              '</option>'
-          )
-          .join('') +
-        '</select>';
-    else if (type === 'number')
-      control =
-        '<input required type="number" min="0" max="1000000" step=".01" name="' +
-        key +
-        '" value="' +
-        text(saved[key] ?? '') +
-        '">';
-    else
-      control =
-        '<textarea required name="' +
-        key +
-        '" maxlength="' +
-        myoConfig.intakeMaxLength +
-        '">' +
-        text(saved[key] || '') +
-        '</textarea>';
-    return '<label>' + label + control + '<small>' + text(copy(key + 'Hint')) + '</small></label>';
-  });
-  const groups = [
-    ['Your pets and routines', fields.slice(0, 5)],
-    ['Health and emergency contacts', fields.slice(5, 9)],
-    ['Emergency authorization', fields.slice(9)],
-  ]
-    .map(
-      ([title, fields]) =>
-        '<details open><summary>' + text(t(title)) + '</summary>' + fields.join('') + '</details>'
-    )
-    .join('');
-  const overnight =
-    '<div data-care-overnight' +
-    (saved.service === 'overnight' ? '' : ' hidden') +
-    '>' +
-    ['overnightAlone', 'overnightBehavior']
-      .map(
-        (key) =>
-          '<label>' +
-          text(copy(key)) +
-          '<textarea maxlength="' +
-          myoConfig.intakeMaxLength +
-          '" name="' +
-          key +
-          '"' +
-          (saved.service === 'overnight' ? ' required' : ' disabled') +
-          '>' +
-          text(saved[key] || '') +
-          '</textarea></label>'
-      )
-      .join('') +
-    '<label><input type="checkbox" name="overnightAcknowledgment"' +
-    (saved.overnightAcknowledgment ? ' checked' : '') +
-    (saved.service === 'overnight' ? ' required' : ' disabled') +
-    '>' +
-    text(copy('overnightAcknowledgment')) +
-    '</label></div>';
-  return (
-    agreementPanel(data.agreement) +
-    '<h3>' +
-    text(t('Care intake')) +
-    '</h3><p>' +
-    text(t('Save your care and emergency details here. Myomi can review them in your customer record.')) +
-    '</p>' +
-    form(
-      'intake',
-      '<fieldset class="tap-choices"><legend>' +
-        text(copy('service')) +
-        '</legend><div>' +
-        services +
-        '</div></fieldset>' +
-        groups +
-        overnight +
-        (data.intake ? '<p>' + text(t('Last saved')) + ' ' + formatDate(data.intake.updated) + '</p>' : '') +
-        button('Save care intake')
-    ) +
-    '<h3>' +
-    text(t('Home access')) +
-    '</h3><p>' +
-    text(t('Entry instructions are encrypted and available to Myomi only around your visit.')) +
-    '</p>' +
-    '<button type="button" class="secondary" data-load-access>' +
-    text(t('Open entry instructions')) +
-    '</button><div data-access-editor></div>'
-  );
+  return agreementPanel(data.agreement)+'<h3>'+text(t('Care intake'))+'</h3>'+intakeForm(data)+
+    '<h3>'+text(t('Home access'))+'</h3><p>'+text(t('Entry instructions are encrypted and available to Myomi only around your visit.'))+'</p>'+
+    '<button type="button" class="secondary" data-load-access>'+text(t('Open entry instructions'))+'</button><div data-access-editor></div>';
 }
 function agreementPanel(agreement) {
   if (!agreement) return '';
@@ -928,6 +782,7 @@ export function configureCareUi(next) {
 }
 export function bindCareUi(root) {
   root.addEventListener('input', (event) => {
+    if (event.target.form?.dataset.careAction === 'intake') intakeChanged(event.target.form,event.target,context.data.intake);
     if (event.target.form?.dataset.careAction !== 'search-clients') return;
     clearTimeout(searchTimer);
     const query = event.target.value;
@@ -949,19 +804,15 @@ export function bindCareUi(root) {
     }
     const form = event.target.closest('[data-care-action="intake"]');
     if (!form || event.target.name !== 'service') return;
-    const overnight = event.target.value === 'overnight';
-    const panel = form.querySelector('[data-care-overnight]');
-    panel.hidden = !overnight;
-    panel.querySelectorAll('input,textarea').forEach((input) => {
-      input.disabled = !overnight;
-      input.required = overnight;
-    });
+    syncIntake(form);
+    intakeChanged(form,event.target,context.data.intake);
   });
   root.addEventListener('submit', async (event) => {
     const form = event.target.closest('[data-care-action]');
     if (!form) return;
     event.preventDefault();
     const action = form.dataset.careAction;
+    if (action === 'intake') {await saveIntake(form,context);return;}
     const control = event.submitter;
     const message = form.querySelector('[data-care-status]');
     control.disabled = true;
@@ -988,10 +839,6 @@ export function bindCareUi(root) {
         payload.subject_type = type;
         payload.subject_id = Number(id);
         delete payload.subject;
-      }
-      if (action === 'intake') {
-        payload.spendingLimit = Number(values.spendingLimit);
-        payload.overnightAcknowledgment = values.overnightAcknowledgment === 'on';
       }
       if (action === 'agreement/accept') payload.version = Number(values.version);
       if (['vaccines', 'vaccines/verify', 'feedback', 'keys', 'staff-notes'].includes(action)) {
@@ -1036,6 +883,13 @@ export function bindCareUi(root) {
     }
   });
   root.addEventListener('click', async (event) => {
+    const stepControl = event.target.closest('[data-intake-go],[data-intake-back]');
+    if (stepControl) {
+      const intake = stepControl.form;
+      syncIntake(intake,stepControl.hasAttribute('data-intake-back') ? Number(intake.dataset.draftStep)-1 : Number(stepControl.dataset.intakeGo),true);
+      context.drafts.capture(root);
+      return;
+    }
     const control = event.target.closest(
       '[data-load-access],[data-reveal-access],[data-more-timeline],[data-client],[data-more-clients],[data-delete-note],[data-profile-version],[data-stay-date]'
     );

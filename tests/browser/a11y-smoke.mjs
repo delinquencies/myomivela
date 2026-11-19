@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import {fillCareIntake} from './intake-steps.mjs';
 import { execSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
@@ -159,17 +160,7 @@ async function checkUxRepairs(petId, visitId) {
           await checkRepairMenu(page,role);
           if (role === 'customer') {
             await page.goto(server.base+portal+'#care');
-            const intake = page.locator('[data-care-action=intake]');
-            await intake.locator('[name=service][value=walk]').check();
-            for (const field of await intake.locator('textarea').all()) {
-              if (await field.isEnabled()) await field.fill('Audit care instructions');
-            }
-            for (const name of ['pets','vet','emergency','decisionMakers']) {
-              await intake.locator('[name="'+name+'"]').fill('Audit '+name);
-            }
-            await intake.locator('[name=vetAuthorization]').selectOption('no');
-            await intake.locator('[name=spendingLimit]').fill('0');
-            await intake.locator('button[type=submit]').click();
+            await fillCareIntake(page,{notes:'Audit care instructions'});
             await page.locator('.portal-feedback.is-notice #feedback')
               .filter({hasText:language === 'es' ? 'Guardado.' : 'Saved.'}).waitFor();
             // The success notice stays present while the real menu and language control are used.

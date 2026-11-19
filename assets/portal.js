@@ -6,6 +6,7 @@ import { locale, t, hasKey, formatDate, formatMoney, translateLabel, catalogs } 
 import {careSettings,staffComplianceSettings,stayCalendar,syncStayCalendar,vaccineTools,blockerHtml,staffCareTools,feedbackTool,reportInputs,reportPayload,timelineSection,clientSection,configureCareUi,bindCareUi,loadCareSection,clearEntryDetails} from './care-portal.js';
 import {myoConfig} from './myo-config.js';
 import {routesFor,resolveLocation,roleOf,homeFor,hrefFor} from './portal-route-state.js';
+import {syncIntake,updateIntakeProgress,showIntakeErrors} from './intake-ui.js';
 const uiLocale = locale;
 const checkoutReturn = new URLSearchParams(location.search).get('payment');
 
@@ -91,7 +92,7 @@ async function api(path, payload, key) {
       ? t('error.'+result.code, {}, uiLocale())
       : hasKey(result?.error) ? t(result.error)
       : uiLocale() === 'en' && result?.error ? result.error : t('Please try again.');
-    throw Object.assign(new Error(message || t("Please try again.")), { status:response.status, code:result?.code, blockers:result?.blockers });
+    throw Object.assign(new Error(message || t("Please try again.")), { status:response.status, code:result?.code, blockers:result?.blockers,fieldErrors:result?.fieldErrors });
   }
   return result;
 }
@@ -844,7 +845,7 @@ async function showFinancials() {
 let changingLanguage = false;
 let heldBooking;
 function render() {
-  configureCareUi({data,api,refresh,notify:showPublicationFeedback});
+  configureCareUi({data,api,refresh,drafts,notify:showPublicationFeedback});
   logout.hidden = accountLink.hidden = !data?.user;
   if (!data?.user) {
     portalLinks.replaceChildren();
@@ -902,8 +903,12 @@ function render() {
       if (input.name === 'pets') updateTotal(form);
     },
     onFile:(form, input, file) => showPhotoSelection(form, file),
-    onStep:(form, step) => showPetCard(form, step),
+    onStep:(form, step) => form.dataset.careAction === 'intake' ? syncIntake(form,step) : showPetCard(form, step),
   });
+  for (const form of app.querySelectorAll('[data-care-action="intake"]')) {
+    syncIntake(form);
+    updateIntakeProgress(form,data.intake);
+  }
   for (const form of app.querySelectorAll('form[data-action="status"]')) updateDepartureCheck(form); // after drafts are restored
   if (!admin && location.hash === '#book') applyRepeatBooking();
   showSection();
@@ -1784,6 +1789,7 @@ window.addEventListener('myo:languagechange', () => {
     })),
     details: [...form.querySelectorAll('details')].map(detail => detail.open),
     step: Number(form.dataset.draftStep || 0),
+    intakeErrors: [...form.querySelectorAll('[data-error-code]')].map(wrapper => ({field:wrapper.dataset.intakeField,code:wrapper.dataset.errorCode,params:JSON.parse(wrapper.dataset.errorParams || '{}')})),
   }));
   const heldReview = openReview();
   const heldState = heldReview && {
@@ -1817,6 +1823,8 @@ window.addEventListener('myo:languagechange', () => {
         if (details) details.open = open;
       });
       if (form.querySelector('[data-pet-card]')) showPetCard(form, saved.step);
+      if (form.dataset.careAction === 'intake') {syncIntake(form,saved.step);updateIntakeProgress(form,data.intake);}
+      if (saved.intakeErrors.length) showIntakeErrors(form,saved.intakeErrors,false);
       if (form.dataset.action === 'bookings') updateTotal(form);
     });
     if (heldState && heldBooking) {
