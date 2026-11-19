@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { startServer, adminLogin, password, iso, hours } from './helpers.mjs';
+import { DatabaseSync } from 'node:sqlite';
+import { startServer, adminLogin, password, iso, hours, nodeOnly } from './helpers.mjs';
 
 // Staff accounts and roles: the owner adds a sitter, who can run visits but not change prices, settings, money or
 // accounts; accounts can be switched off and given a new password. Both runtimes.
@@ -88,4 +89,27 @@ test('promoting a sitter takes effect at their next sign-in; the owner can set a
   assert.equal(reset.status, 200);
   assert.equal((await call('sam','GET','/api/portal')).status, 401);
   assert.equal((await call('sam','POST','/api/login',{ email:sitter.email, password:'a-brand-new-pass-1' })).status, 200);
+});
+
+// Step-up (audit F5): the widest-reaching owner actions need a password entered in the last 15 minutes.
+test('re-entering the password: wrong is refused, right is accepted', async () => {
+  const wrong = await call('owner','POST','/api/reauth',{ password:'not-the-password-1' });
+  assert.equal(wrong.status, 401);
+  assert.equal(wrong.json.code, 'reauth_failed');
+  const right = await call('owner','POST','/api/reauth',{ password:adminLogin.password });
+  assert.equal(right.status, 200);
+  assert.ok(right.json.verified_until > Date.now() + 14 * 60_000);
+});
+
+test('an owner session whose password check is over 15 minutes old must re-enter it for staff, backup and refund actions', { skip:nodeOnly }, async () => {
+  const age = () => { const db = new DatabaseSync(app.dbPath); db.prepare('UPDATE sessions SET verified=?').run(Date.now() - 16 * 60_000); db.close(); };
+  age();
+  for (const [method, path, body] of [['POST','/api/staff/password',{ id:1, password:'whatever-12345678' }], ['GET','/api/backup'], ['POST','/api/refunds',{ booking, cents:100 }], ['POST','/api/restore',{}]]) {
+    const refused = await call('owner', method, path, body);
+    assert.equal(refused.status, 403, path);
+    assert.equal(refused.json.code, 'reauth_required', path);
+  }
+  assert.equal((await call('owner','GET','/api/staff')).status, 200, 'reading is not a step-up action');
+  assert.equal((await call('owner','POST','/api/reauth',{ password:adminLogin.password })).status, 200);
+  assert.equal((await call('owner','GET','/api/backup')).status, 200);
 });

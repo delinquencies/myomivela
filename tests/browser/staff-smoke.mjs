@@ -3,6 +3,7 @@
 import { execSync } from 'node:child_process';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { DatabaseSync } from 'node:sqlite';
 import { startServer, adminLogin, password, target } from '../helpers.mjs';
 
 async function loadPlaywright() {
@@ -35,7 +36,7 @@ const sitter = { email:'sam@example.test', password:'sitter-pass-123456' };
 
 try {
   const owner = await (await phone()).newPage();
-  watch(owner, 'owner');
+  watch(owner, 'owner', [/status of 40[13]/]); // the step-up check refuses once and a wrong password is refused
   await signIn(owner, adminLogin);
   await post(owner, 'schedule', { days:[0,1,2,3,4,5,6], opens:'08:00', closes:'18:00', buffer:0 });
   await post(owner, 'services', { name:'Dog walking', minutes:30, cents:3000 });
@@ -82,9 +83,27 @@ try {
   check(await sam.locator('summary', { hasText:'Record a payment' }).count() === 0, 'a sitter is not offered payment forms');
   check(await sam.getByRole('button', { name:/Start visit/ }).count() === 1, 'a sitter can start the visit');
 
-  // Switching Sam off signs them out.
+  // Switching Sam off signs them out. On Node, the owner's password check is first made 16 minutes old, so the
+  // portal asks for the password again (step-up) before the change goes through.
   await owner.reload();
+  await owner.locator('.staff-list li', { hasText:'Sam' }).waitFor(); // let the panel finish loading before the database is touched
+  if (target === 'node') {
+    const db = new DatabaseSync(server.dbPath);
+    db.prepare('UPDATE sessions SET verified=?').run(Date.now() - 16 * 60_000);
+    db.close();
+  }
   await owner.locator('.staff-list li', { hasText:'Sam' }).getByRole('button', { name:'Switch off' }).tap();
+  if (target === 'node') {
+    const dialog = owner.locator('#reauth');
+    await dialog.waitFor();
+    check(await dialog.evaluate(element => element.open), 'an old password check makes the portal ask for the password again');
+    await dialog.locator('[name=password]').fill('not-the-password-1');
+    await dialog.getByRole('button', { name:'Continue' }).tap();
+    await dialog.locator('[data-reauth-error]').filter({ hasText:'incorrect' }).waitFor();
+    check(true, 'a wrong password is refused inside the dialog');
+    await dialog.locator('[name=password]').fill(adminLogin.password);
+    await dialog.getByRole('button', { name:'Continue' }).tap();
+  }
   await owner.locator('#feedback').filter({ hasText:'Staff accounts saved.' }).waitFor();
   check((await sam.evaluate(() => fetch('/api/portal').then(r => r.status))) === 401, 'switching the sitter off ends their session');
 

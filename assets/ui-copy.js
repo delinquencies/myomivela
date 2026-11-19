@@ -1,6 +1,10 @@
 // @ts-check
 // Shared customer-facing copy. English phrases are stable translation keys.
 export const en = {
+  "Enter your password again": "Enter your password again",
+  "Cancel": "Cancel",
+  "Continue": "Continue",
+  "For your clients’ safety, staff, backup and refund changes need your password once every 15 minutes.": "For your clients’ safety, staff, backup and refund changes need your password once every 15 minutes.",
   "Deposit due {amount}": "Deposit due {amount}",
   "Deposit due by {date}.": "Deposit due by {date}.",
   "Pay deposit {amount}": "Pay deposit {amount}",
@@ -724,6 +728,10 @@ export const en = {
 
 /** @type {Record<keyof typeof en, string>} */
 export const es = {
+  "Enter your password again": "Vuelve a escribir tu contraseña",
+  "Cancel": "Cancelar",
+  "Continue": "Continuar",
+  "For your clients’ safety, staff, backup and refund changes need your password once every 15 minutes.": "Para proteger a tus clientes, los cambios de personal, copias de seguridad y reembolsos piden tu contraseña una vez cada 15 minutos.",
   "Deposit due {amount}": "Depósito pendiente: {amount}",
   "Deposit due by {date}.": "El depósito vence el {date}.",
   "Pay deposit {amount}": "Pagar depósito de {amount}",

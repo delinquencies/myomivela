@@ -54,6 +54,16 @@
         <button type="submit" value="confirm"><span class="control-icon" aria-hidden="true">✕</span> <span data-cancel-label>Cancel visit</span></button>
       </form>
     </dialog>
+    <dialog class="booking-confirmation" id="reauth" aria-labelledby="reauth-title">
+      <h3 id="reauth-title" data-i18n="Enter your password again">Enter your password again</h3>
+      <p data-i18n="For your clients’ safety, staff, backup and refund changes need your password once every 15 minutes.">For your clients’ safety, staff, backup and refund changes need your password once every 15 minutes.</p>
+      <form method="dialog">
+        <label><span data-i18n="Password">Password</span> <input type="password" name="password" autocomplete="current-password" required></label>
+        <p data-reauth-error role="alert"></p>
+        <button type="submit" value="cancel" class="secondary" formnovalidate data-i18n="Cancel">Cancel</button>
+        <button type="submit" value="confirm" data-i18n="Continue">Continue</button>
+      </form>
+    </dialog>
     <noscript data-i18n="Enable JavaScript to use the care portal.">Enable JavaScript to use the care portal.</noscript>
   </main>
 </body>

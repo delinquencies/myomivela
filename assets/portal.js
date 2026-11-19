@@ -24,6 +24,7 @@ const accountLink = document.querySelector('#account-link');
 const portalMenu = document.querySelector('.portal-menu');
 const portalLinks = document.querySelector('#portal-links');
 const cancelDialog = document.querySelector('#cancel-booking');
+const reauthDialog = document.querySelector('#reauth');
 const staffVisitsLabel = () => t('Today & upcoming');
 const find = (rows,id) => rows.find(row => row.id === id);
 const money = cents => formatMoney(cents, uiLocale());
@@ -86,6 +87,8 @@ async function api(path, payload, key) {
     }
   }
   const result = await response.json();
+  // Staff, backup and refund actions need the password re-entered every 15 minutes (step-up); ask, then try once more.
+  if (response.status === 403 && result?.code === 'reauth_required' && await askPassword()) return api(path, payload, key);
   if (!response.ok) {
     // In Spanish, show the catalog's message for the error code; in English the server's message is the most specific.
     const message = result?.code && hasKey('error.'+result.code, uiLocale())
@@ -96,6 +99,46 @@ async function api(path, payload, key) {
   }
   return result;
 }
+// Asks for the signed-in account's password (step-up). Resolves true once the server accepted it, false if cancelled.
+function askPassword() {
+  const form = reauthDialog.querySelector('form');
+  const input = form.elements.namedItem('password');
+  const error = reauthDialog.querySelector('[data-reauth-error]');
+  input.value = ''; error.textContent = '';
+  reauthDialog.showModal();
+  return new Promise(resolve => {
+    const finish = verified => { form.removeEventListener('submit', submit); reauthDialog.removeEventListener('cancel', cancel); if (reauthDialog.open) reauthDialog.close(); resolve(verified); };
+    const cancel = () => finish(false);
+    async function submit(event) {
+      if (event.submitter?.value === 'cancel') return finish(false);
+      event.preventDefault();
+      try { await api('reauth', { password:input.value }); finish(true); }
+      catch (failure) { error.textContent = failure.message; input.select(); }
+    }
+    form.addEventListener('submit', submit);
+    reauthDialog.addEventListener('cancel', cancel);
+  });
+}
+// Downloads a file from a step-up route (the backup), asking for the password first if the server wants it.
+async function downloadFile(path) {
+  let response = await fetch(path);
+  if (response.status === 403 && (await response.clone().json().catch(() => null))?.code === 'reauth_required') {
+    if (!await askPassword()) return;
+    response = await fetch(path);
+  }
+  if (!response.ok) { (feedback.textContent = t("Please try again.")); return; }
+  const name = response.headers.get('content-disposition')?.match(/filename="([^"]+)"/)?.[1] || 'myo-backup.json.gz';
+  const link = Object.assign(document.createElement('a'), { href:URL.createObjectURL(await response.blob()), download:name });
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(link.href), 10_000);
+}
+app.addEventListener('click', event => {
+  const link = event.target.closest?.('a[href="/api/backup"]');
+  if (!link) return;
+  event.preventDefault();
+  downloadFile('/api/backup').catch(() => (feedback.textContent = t("Please try again.")));
+});
+
 // One key per form submission. It survives a dropped connection (so tapping again replays rather than repeats)
 // and is replaced when the form's content changes or the server has answered.
 const pendingKeys = new WeakMap();
