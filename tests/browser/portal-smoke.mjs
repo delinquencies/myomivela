@@ -85,6 +85,7 @@ if (!(await pub.locator('[data-auth-price-sheet]').innerText()).includes('$25.00
 const cust = await (await ctx()).newPage(); watch(cust,'customer');
 await cust.goto(server.base + '/portal/index.html');
 const reg = cust.locator('[data-action=register]');
+await cust.locator('[data-create-account]').click();
 await reg.locator('[name=name]').fill('Casey');
 await reg.locator('[name=email]').fill('casey@example.test');
 await reg.locator('[name=password]').fill(password);

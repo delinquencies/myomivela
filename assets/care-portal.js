@@ -856,6 +856,8 @@ export function bindCareUi(root) {
       if (form.dataset.requestBody !== requestBody) form.dataset.requestKey = crypto.randomUUID();
       form.dataset.requestBody = requestBody;
       const savedResult = await context.api(action, payload, form.dataset.requestKey);
+      if (!form.isConnected) return;
+      if (action === 'agreement/accept') context.onRequirementComplete?.('agreement');
       delete form.dataset.requestKey;
       delete form.dataset.requestBody;
       if (action === 'vaccines' && file?.size) {
