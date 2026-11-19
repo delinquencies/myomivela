@@ -50,6 +50,9 @@ await staff.fill('[name=email]', adminLogin.email);
 await staff.fill('[name=password]', adminLogin.password);
 await staff.click('button:has-text("Sign in")');
 await staff.locator('h1', { hasText:'Welcome,' }).waitFor();
+// Sign-in now returns to the requested route; open home to test its calendar.
+await section(staff,'staff-home');
+await staff.locator('#staff-home').waitFor();
 if (await staff.locator('#staff-home .week-day').count() !== 7) throw new Error('Staff home needs seven calendar days');
 await staff.getByRole('button',{name:'Next day'}).click();
 await staff.getByText('Day 2 of 7',{exact:true}).waitFor();

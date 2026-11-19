@@ -2,6 +2,7 @@ import { t, translateLabel, formatDate, formatMoney, locale } from './i18n.js';
 import { escapeHtml as text } from './diary.js';
 import { myoConfig } from './myo-config.js';
 import { policyText } from './policy-copy.js';
+import {hrefFor} from './portal-route-state.js';
 
 const copy = (key) =>
   t('launch.' + key, {
@@ -37,6 +38,7 @@ let context;
 let revealTimers = [];
 let entryGeneration = 0;
 let clientSearchGeneration = 0;
+let clientRecordGeneration = 0;
 let searchTimer;
 export function stayCalendar(nights) {
   const available = new Set(nights.map((night) => night.date));
@@ -780,10 +782,12 @@ async function clients(query = '', cursor = '', append = false) {
   panel.dataset.loaded = '1';
 }
 async function clientRecord(id) {
+  const generation = ++clientRecordGeneration;
   const panel = document.querySelector('[data-client-record]');
   const result = await context.api('clients/' + id);
-  if (!panel?.isConnected) return;
+  if (!panel?.isConnected || generation !== clientRecordGeneration || panel.closest('section').hidden) return;
   const { client, pets, intake, notes } = result;
+  document.title = client.name+' · '+t('Clients')+' | myo.';
   panel.innerHTML =
     '<h3>' +
     text(client.name) +
@@ -900,7 +904,7 @@ export function clearEntryDetails() {
   for (const panel of document.querySelectorAll('[data-entry-details],[data-access-editor]'))
     panel.replaceChildren();
 }
-export function loadCareSection(id) {
+export function loadCareSection(id,params = {}) {
   clearEntryDetails();
   const timeline = document.querySelector('#' + CSS.escape(id) + ' [data-timeline]');
   if (timeline && !timeline.dataset.loaded) loadTimeline(timeline);
@@ -909,6 +913,12 @@ export function loadCareSection(id) {
     clients().catch((error) => {
       list.textContent = error.message;
     });
+  if (id === 'clients' && params.client) {
+    clientRecord(params.client).catch(error => {
+      const panel = document.querySelector('[data-client-record]');
+      if (panel) panel.textContent = error.message;
+    });
+  }
 }
 export function configureCareUi(next) {
   context = next;
@@ -1104,8 +1114,9 @@ export function bindCareUi(root) {
       } else if (control.matches('[data-more-timeline]'))
         await loadTimeline(control.closest('[data-timeline]'), true);
       else if (control.dataset.client) {
-        location.hash = 'clients';
-        await clientRecord(control.dataset.client);
+        const destination = hrefFor('client',{client:control.dataset.client});
+        if (location.hash === destination) await clientRecord(control.dataset.client);
+        else location.hash = destination;
       } else if (control.dataset.deleteNote) {
         await context.api('staff-notes/delete', { id: Number(control.dataset.deleteNote) });
         await clientRecord(control.dataset.clientOwner);
