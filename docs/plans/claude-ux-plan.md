@@ -43,14 +43,15 @@ New modules proposed here have no DOM rendering and no translated prose. Return 
 
 ## CUX-01 — Canonical routes and role capabilities
 
-- [ ] **Issues** UX-02, UX-08, UX-14, UX-17, UX-20.
-- [ ] **Paths** Proposed `assets/portal-route-state.js`; authorization checks in `lib/api.mjs` and `lib/routes/staff.mjs` only if needed; public-module registration in `lib/site.mjs`; `tests/ux-routing.test.mjs`.
-- [ ] Define one route descriptor registry with stable IDs, canonical locations, label keys, parent routes and allowed roles for signed-out, customer, owner and sitter states.
-- [ ] Resolve existing hashes, legacy aliases, visit/client/pet identifiers and invalid/forbidden destinations deterministically. Separate route authorization from menu visibility. Keep supported deep links recoverable.
-- [ ] Supply canonical routes for a selected visit, client record and bounded settings groups. Preserve browser history semantics and the booking return target. Do not manipulate the browser or render headings in this module.
-- [ ] **Handoff contract** Publish functions equivalent to `routesFor(session)` and `resolveLocation(location, session)`, returning `{ id, params, parent, canonical, outcome }`. Enumerate `ready`, `sign_in_required`, `forbidden`, and `not_found` outcomes. Include legacy-link examples.
-- [ ] **Acceptance** Customers have one Care details descriptor; owner/sitter sets exclude it. A sitter cannot access owner-only API resources. Invalid hashes produce an explicit result. Query service intent, visit/client IDs and Back/Forward history are preserved through canonicalization. Pure tests cover signed-out, all signed-in roles and invalid IDs.
+- [x] **Issues** UX-02, UX-08, UX-14, UX-17, UX-20.
+- [x] **Paths** Proposed `assets/portal-route-state.js`; authorization checks in `lib/api.mjs` and `lib/routes/staff.mjs` only if needed; public-module registration in `lib/site.mjs`; `tests/ux-routing.test.mjs`.
+- [x] Define one route descriptor registry with stable IDs, canonical locations, label keys, parent routes and allowed roles for signed-out, customer, owner and sitter states.
+- [x] Resolve existing hashes, legacy aliases, visit/client/pet identifiers and invalid/forbidden destinations deterministically. Separate route authorization from menu visibility. Keep supported deep links recoverable.
+- [x] Supply canonical routes for a selected visit, client record and bounded settings groups. Preserve browser history semantics and the booking return target. Do not manipulate the browser or render headings in this module.
+- [x] **Handoff contract** Publish functions equivalent to `routesFor(session)` and `resolveLocation(location, session)`, returning `{ id, params, parent, canonical, outcome }`. Enumerate `ready`, `sign_in_required`, `forbidden`, and `not_found` outcomes. Include legacy-link examples.
+- [x] **Acceptance** Customers have one Care details descriptor; owner/sitter sets exclude it. A sitter cannot access owner-only API resources. Invalid hashes produce an explicit result. Query service intent, visit/client IDs and Back/Forward history are preserved through canonicalization. Pure tests cover signed-out, all signed-in roles and invalid IDs.
 - [ ] **Codex consumer** DUX-02 renders navigation and recovery; DUX-07 renders visit and settings destinations.
+- **Status (Nov 19, `013f65d`):** done. `assets/portal-route-state.js` and `tests/ux-routing.test.mjs`. No `lib/site.mjs` change was needed: `assets/*.js` is already public. Browser history writes stay with Codex (DUX-02).
 
 ## CUX-02 — One booking-intent and prerequisite controller
 
@@ -133,26 +134,28 @@ New modules proposed here have no DOM rendering and no translated prose. Return 
 
 ## CUX-08 — Guest quote, service area and contact contract
 
-- [ ] **Issues** UX-26, UX-27. Preserves Claude CU1/2.
-- [ ] **Paths** Proposed `lib/service-area.mjs` and `lib/routes/public.mjs`; `lib/pricing.mjs`, `lib/routes/bookings.mjs`, `lib/routes/account.mjs`, `lib/routes/intake.mjs`, `lib/config.mjs`, `assets/myo-config.js`; CUX-02's pure intent controller; append-only `lib/db.mjs` migration if required; `tests/ux-public-booking.test.mjs`.
-- [ ] Reuse server pricing for a public quote accepting provisional species/age/count and service/date data. It creates no hold or booking and returns no customer-specific records or blockers. Rate-limit and bound inputs.
-- [ ] Supply a public eligibility result for a ZIP/location with an explicit confidence/manual-review outcome. If ZIP-centroid data is used, preserve source/date and acknowledge boundary uncertainty. Collect a structured service address and client phone at the account/contact step and recheck actual eligibility according to an approved area rule.
+- [x] **Issues** UX-26, UX-27. Preserves Claude CU1/2.
+- [x] **Paths** Proposed `lib/service-area.mjs` and `lib/routes/public.mjs`; `lib/pricing.mjs`, `lib/routes/bookings.mjs`, `lib/routes/account.mjs`, `lib/routes/intake.mjs`, `lib/config.mjs`, `assets/myo-config.js`; CUX-02's pure intent controller; append-only `lib/db.mjs` migration if required; `tests/ux-public-booking.test.mjs`.
+- [x] Reuse server pricing for a public quote accepting provisional species/age/count and service/date data. It creates no hold or booking and returns no customer-specific records or blockers. Rate-limit and bound inputs.
+- [x] Supply a public eligibility result for a ZIP/location with an explicit confidence/manual-review outcome. If ZIP-centroid data is used, preserve source/date and acknowledge boundary uncertainty. Collect a structured service address and client phone at the account/contact step and recheck actual eligibility according to an approved area rule.
 - [ ] Revalidate the guest estimate against authenticated pet records before creating a hold or request. Keep intent through register, email-already-exists, sign-in and a time becoming unavailable.
 - [ ] Coordinate client phone/address field ownership with CUX-03. Keep legacy registration valid for existing callers or provide a documented compatibility path. Do not require an unconfigured email-link login as the only way to continue.
-- [ ] **Handoff contract** Document endpoints equivalent to `GET /api/eligibility?zip=` and `POST /api/public-quote`, quote revision/units/expiry semantics, supported contact fields, area confidence and machine-readable failure codes. Use CUX-04 financial fields and CUX-09 day/night metadata.
+- [x] **Handoff contract** Document endpoints equivalent to `GET /api/eligibility?zip=` and `POST /api/public-quote`, quote revision/units/expiry semantics, supported contact fields, area confidence and machine-readable failure codes. Use CUX-04 financial fields and CUX-09 day/night metadata.
 - [ ] **Acceptance** A signed-out visitor can see a real-date estimate without account creation. Unknown/boundary ZIPs receive an explicit review outcome. Malformed/out-of-area inputs are handled according to the approved service-area policy. The guest and signed-in quotes match for equivalent facts, and a changed actual price requires review. No public response leaks client, pet or sensitive occupancy information.
 - [ ] **Codex consumer** DUX-11 renders eligibility/guest preview; DUX-04 integrates account continuation.
+- **Status (Nov 19, `f2b4717`):** endpoints, area data, contact fields and parity tests are done. Still open: keeping intent through register / sign-in / taken time (needs the CUX-02 controller) and the phone/address ownership split with CUX-03's intake inventory. The existing hold and request already re-price from saved pets and refuse a changed total (`price_changed`), which covers revalidation.
 
 ## CUX-09 — Availability metadata and predictable defaults
 
-- [ ] **Issues** UX-15, UX-16, UX-28. Preserves Claude CU7.
-- [ ] **Paths** `lib/scheduling.mjs::bookableStarts()/overnightNights()`, `lib/pricing.mjs`, `lib/routes/portal.mjs`, `lib/routes/bookings.mjs`, `assets/myo-config.js`, CUX-02's selection controller; `tests/ux-availability.test.mjs`.
-- [ ] Supply day metadata for capacity, peak period, short notice and next eligible start, together with next available overnight nights. Use the same capacity and timezone calculations as quote/confirmation.
-- [ ] Define a server-backed default to a notice-free eligible day when available. Keep short-notice choices available when allowed, with surcharge metadata. Never replace an explicit restored date silently. If no notice-free day exists, expose that fact and the available alternatives.
+- [x] **Issues** UX-15, UX-16, UX-28. Preserves Claude CU7.
+- [x] **Paths** `lib/scheduling.mjs::bookableStarts()/overnightNights()`, `lib/pricing.mjs`, `lib/routes/portal.mjs`, `lib/routes/bookings.mjs`, `assets/myo-config.js`, CUX-02's selection controller; `tests/ux-availability.test.mjs`.
+- [x] Supply day metadata for capacity, peak period, short notice and next eligible start, together with next available overnight nights. Use the same capacity and timezone calculations as quote/confirmation.
+- [x] Define a server-backed default to a notice-free eligible day when available. Keep short-notice choices available when allowed, with surcharge metadata. Never replace an explicit restored date silently. If no notice-free day exists, expose that fact and the available alternatives.
 - [ ] Exclude or label full days consistently and recheck capacity at hold/confirmation under concurrency. Enforce the owner-approved meeting-notice rule at quote, hold and request.
-- [ ] **Handoff contract** Publish `days:[{ date, full, peak, last_minute, first_start }]`, `overnight_nights`, notice-free threshold, service units and distinct unavailable/notice error codes. Maintain existing API callers through additive fields or a versioned transition.
+- [x] **Handoff contract** Publish `days:[{ date, full, peak, last_minute, first_start }]`, `overnight_nights`, notice-free threshold, service units and distinct unavailable/notice error codes. Maintain existing API callers through additive fields or a versioned transition.
 - [ ] **Acceptance** Seed a full day and peak day; availability agrees with quote rejection and shows the next valid alternative. Overnight availability never depends on visit-grid start times. Default selection avoids a short-notice charge when a valid fee-free alternative exists. Restored dates remain explicit choices. Node and Worker tests cover Massachusetts day boundaries, DST and concurrent capacity changes.
 - [ ] **Codex consumer** DUX-03/06 render chips, short lists and stay units; DUX-11 uses metadata in guest discovery.
+- **Status (Nov 19, `9ed0be8`):** done except the meeting-notice rule, which waits for the owner decision above. Full days are excluded from start times and nights and still rechecked at quote, hold and approval. DST is covered by the shared Eastern-day helpers; there is no DST change inside today's 28-day window to test against, so the midnight-crossing case is tested instead.
 
 ## Merge and handoff sequence
 
@@ -165,6 +168,27 @@ New modules proposed here have no DOM rendering and no translated prose. Return 
 Do not mark an end-to-end issue complete solely because its API exists. Completion requires the corresponding Codex acceptance criteria and the combined customer/admin journey to pass.
 
 ---
+
+## Handoff Notes
+
+Batch 1 (November 19, 2026): CUX-01, CUX-09 and CUX-08. Node 180 passed; Worker 164 passed, 16 Node-only skipped; the full Chromium chain passed at 1440×900 and 390×844 (care-smoke ran via a local link to the global Playwright, because `tests/browser/care-smoke.mjs` imports `playwright` directly and it is not in `devDependencies`).
+
+**For Codex: new modules and routes**
+- `assets/portal-route-state.js`: `routes`, `routesFor(session)` → `[{ id, labelKey, href }]`, `resolveLocation(location, session)` → `{ id, params, parent, canonical, outcome:'ready'|'sign_in_required'|'forbidden'|'not_found', legacy, query, requested, returnTo? }`, `roleOf(session)`, `homeFor(role)`, `hrefFor(id, params)`. New canonical hashes: `#visit/<id>` (was `#checkout-<id>`), `#pet/<id>` (was `#pet-<id>`), `#pets/new` (was `#pet-intake`), `#client/<id>`, `#settings/<hours|services|policies|team|backups>`, and the flow steps `#book/<service|details|about>`, `#book/intake/<1-3>`, `#book/review`, `#book/done/<id>`. Legacy hashes resolve with `legacy:true`; replace them with `canonical` via `history.replaceState`.
+- `GET /api/availability/days?service=` (public): `{ service, kind, days:[{ date, open, full, peak, last_minute, first_start, starts }], notice:{ days }|{ hours }|null, notice_free_from, default_day, default_reason:'notice_free'|'earliest_available'|'none', overnight_nights }`. Preselect `default_day`; label `peak` and `last_minute`; don't offer days with `open:false`.
+- `GET /api/availability/times?service=&date=` (public): `{ date, times:[{ slot, start }] }` for visits and Meet & Greets.
+- `GET /api/eligibility?zip=` (public): `{ zip, listed, outcome:'in_area'|'boundary'|'outside', confidence:'high'|'low', distance_miles, place, state, radius_miles, by_arrangement }`. Suggested reading: in_area → welcome; boundary → "Myomi will confirm your address"; outside → "outside the 15-mile area, by special arrangement".
+- `POST /api/public-quote` (public): `{ service, pets:[{ kind:'dog'|'cat'|'exotic', age_years? }], start, slot? }` or `{ service, pets, arrive, depart }`, plus optional `zip`. Returns `{ estimate:true, service, starts, ends, lines, total_cents, units:{ kind:'visit'|'night'|'meeting', quantity, minutes }, deposit_cents, balance_cents, deposit_ratio, deposit_due_hours, notice:{ last_minute, days, fee_free_from }, peak:{ is_peak, peak_days }, revision, valid_until, eligibility? }`. The signed-in `POST /api/quote` now returns the same fields plus `blockers`. Deposit fields are `null` in catalog mode; the deposit *lifecycle* is still CUX-04 and the review must not promise collection yet.
+- `POST /api/register` accepts optional `phone`, `address`, `zip`; `POST /api/contact { phone, address, zip }` (all required); customer sessions carry `contact:{ phone, address, zip, area }`.
+- New error codes (EN/ES entries added to `assets/i18n.js` only to keep `tests/i18n.test.mjs` green; Codex owns the wording): `invalid_service`, `invalid_zip`, `invalid_pets`, `contact_required` (with `field`), `invalid_phone`, and `pet_ineligible` (pre-existing code the test pattern missed).
+
+**Behaviour changes to know about**
+- Days at capacity (launch mode) no longer appear in `slots`, `/api/availability` times or overnight nights.
+- The first pet in a quote's `pets` list is priced as the primary pet. Saved pets come back sorted by name, so the form's pet order changes the price for mixed households (dog + cat). CUX-04 will make the primary pet explicit; until then, send the pet the client marks as primary first.
+- Connecticut ZIPs inside 15 miles (for example Enfield, 06082) are `in_area` under the radius rule. If Myomi serves Massachusetts only, that is a one-line filter to add.
+
+**Waiting on owner decisions** (unchanged behaviour until recorded): Meet & Greet scope and request-before-meeting (CUX-02), deposit trigger and balance timing, cancellation retention (CUX-04), and the meeting-notice minimum (CUX-09).
+
 
 ## Preserved Claude source from b89aa1f
 
