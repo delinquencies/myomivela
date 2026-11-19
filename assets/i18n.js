@@ -79,6 +79,11 @@ export const catalogs = {
     "error.staff_self": "You can’t change your own staff account here.",
     "error.last_owner": "Keep at least one active owner.",
     "error.invalid_service": "Please choose one of Myomi’s services.",
+    "error.invalid_zip": "Enter a five-digit ZIP code.",
+    "error.invalid_pets": "Tell us about each pet: dog, cat or another small pet, and their age if you know it.",
+    "error.contact_required": "Add your phone, the address where Myomi will care for your pet, and your ZIP code.",
+    "error.invalid_phone": "Enter a phone number with area code.",
+    "error.pet_ineligible": "Dog walks are just for dogs. Try a drop-in visit for other pets.",
     ...Object.fromEntries(Object.entries(launchEnglish).map(([key, value]) => ['launch.'+key, value])),
     'status.Requested': 'Waiting for Myomi',
     'status.Confirmed': 'Confirmed',
@@ -152,6 +157,11 @@ export const catalogs = {
     'error.staff_self': 'No puedes cambiar tu propia cuenta del equipo aquí.',
     'error.last_owner': 'Debe quedar al menos una cuenta de administración activa.',
     'error.invalid_service': 'Elige uno de los servicios de Myomi.',
+    'error.invalid_zip': 'Escribe un código postal de cinco dígitos.',
+    'error.invalid_pets': 'Cuéntanos de cada mascota: perro, gato u otra mascota pequeña, y su edad si la sabes.',
+    'error.contact_required': 'Agrega tu teléfono, la dirección donde Myomi cuidará a tu mascota y tu código postal.',
+    'error.invalid_phone': 'Escribe un número de teléfono con código de área.',
+    'error.pet_ineligible': 'Los paseos son solo para perros. Para otras mascotas, prueba una visita a domicilio.',
   },
 };
 export const hasKey = (key, language = locale()) => key in (catalogs[language] || {});
