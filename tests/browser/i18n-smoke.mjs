@@ -70,16 +70,11 @@ try {
         await menu.evaluate(node => { node.open = false; });
       }
     }
-    // Intake validation, conditional overnight acknowledgment, and answer preservation.
-    await page.locator('#intake-fields-service').selectOption('overnight');
-    await page.locator('#intake-form button').click();
-    assert.equal(await page.locator('#intake-fields [aria-invalid=true]').count(), 14);
-    await page.locator('#intake-fields-pets').fill('Water, dog, 3 years');
-    await change(page, 'en');
-    assert.equal(await page.locator('#intake-fields-pets').inputValue(), 'Water, dog, 3 years');
-    await change(page, 'es');
-    assert.equal(await page.locator('#peak-dates li').count(), 11);
-    assert.equal(await page.locator('#policy-list details').count(), 16);
+    // The public intake is retired; real intake is covered in the private portal suites.
+    assert.equal(await page.locator('#intake-form').count(),0);
+    assert.equal(await page.locator('#peak-dates li').count(),11);
+    assert.equal(await page.locator('#policy-list').count(),0);
+    await page.locator('[data-open-estimate]').click();
     await page.locator('#estimate-fields-date').fill('2027-07-05');
     await page.locator('#estimate-fields-duration').selectOption('60');
     await page.locator('#estimate-form button').click();

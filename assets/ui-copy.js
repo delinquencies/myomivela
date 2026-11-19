@@ -1,6 +1,26 @@
 // @ts-check
 // Shared customer-facing copy. English phrases are stable translation keys.
 export const en = {
+  "Rates": "Rates",
+  "Services & rates": "Services & rates",
+  "Services & rates | myo.": "Services & rates | myo.",
+  "Policies & FAQ": "Policies & FAQ",
+  "Policies & FAQ | myo.": "Policies & FAQ | myo.",
+  "A little care. A lot of love.": "A little care. A lot of love.",
+  "Choose their care.": "Choose their care.",
+  "Get a quick estimate": "Get a quick estimate",
+  "Close estimate": "Close estimate",
+  "Peak dates at a glance": "Peak dates at a glance",
+  "Choose this service": "Choose this service",
+  "Care & booking policies": "Care & booking policies",
+  "Find the details you need, one topic at a time.": "Find the details you need, one topic at a time.",
+  "Booking, deposits & cancellations": "Booking, deposits & cancellations",
+  "Care, safety & emergencies": "Care, safety & emergencies",
+  "Home access & privacy": "Home access & privacy",
+  "Service area & contact": "Service area & contact",
+  "Open care details in your portal": "Open care details in your portal",
+  "See peak dates": "See peak dates",
+
   "Choose how to sign in": "Choose how to sign in",
   "Your booking, one step at a time": "Your booking, one step at a time",
   "Booking progress": "Booking progress",
@@ -748,6 +768,26 @@ export const en = {
 
 /** @type {Record<keyof typeof en, string>} */
 export const es = {
+  "Rates": "Precios",
+  "Services & rates": "Servicios y precios",
+  "Services & rates | myo.": "Servicios y precios | myo.",
+  "Policies & FAQ": "Políticas y preguntas",
+  "Policies & FAQ | myo.": "Políticas y preguntas | myo.",
+  "A little care. A lot of love.": "Un poco de cuidado. Mucho cariño.",
+  "Choose their care.": "Elige su cuidado.",
+  "Get a quick estimate": "Calcula una estimación",
+  "Close estimate": "Cerrar estimación",
+  "Peak dates at a glance": "Fechas de temporada alta",
+  "Choose this service": "Elegir este servicio",
+  "Care & booking policies": "Políticas de cuidado y reservas",
+  "Find the details you need, one topic at a time.": "Encuentra lo que necesitas, un tema a la vez.",
+  "Booking, deposits & cancellations": "Reservas, depósitos y cancelaciones",
+  "Care, safety & emergencies": "Cuidado, seguridad y emergencias",
+  "Home access & privacy": "Acceso al hogar y privacidad",
+  "Service area & contact": "Zona de servicio y contacto",
+  "Open care details in your portal": "Abrir datos de cuidado en tu portal",
+  "See peak dates": "Ver fechas de temporada alta",
+
   "Choose how to sign in": "Elige cómo acceder",
   "Your booking, one step at a time": "Tu reserva, paso a paso",
   "Booking progress": "Progreso de tu reserva",

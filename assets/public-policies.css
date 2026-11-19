@@ -1,0 +1,15 @@
+.policy-topics { scroll-margin-top: 6rem; }
+.policy-topics .how { padding-block: 2rem; }
+.policy-topics .how > p { margin-bottom: 1rem; }
+.policy-topics #policy-list { text-align: left; }
+.policy-topics .policy-group { background: var(--paper); }
+.policy-group-contents { padding: 0 .65rem .65rem; }
+.policy-topics .policy-detail > summary { font: 600 1.05rem/1.4 var(--sans); }
+.policy-topics details { scroll-margin-top: 6rem; }
+.policy-topics .policy-detail > .button { margin: 0 1rem 1rem; min-height: 48px; }
+.policy-topics p { overflow-wrap: anywhere; }
+.policy-topics summary { overflow-wrap: anywhere; }
+@media (max-width: 600px) {
+  .policy-topics .policy-group > summary { font-size: 1.3rem; }
+  .policy-group-contents { padding-inline: .4rem; }
+}

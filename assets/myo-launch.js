@@ -1,3 +1,4 @@
+import './public-i18n.js';
 import {policyParameters} from './policy-copy.js';
 import { calculateEstimate, myoConfig } from './myo-config.js';
 import { locale as selectedLanguage, setLocale, t } from './i18n.js';
@@ -8,7 +9,6 @@ const services = ['walk', 'dropIn', 'overnight'];
 const petKinds = ['dog', 'cat', 'exotic'];
 let language = 'en';
 let submittedEstimate = false;
-let submittedIntake = false;
 
 function element(tag, text) {
   const node = document.createElement(tag);
@@ -52,21 +52,14 @@ function field(parent, key, type, options = [], value = '') {
     wrapper.append(label, control, error);
     control.value = value;
   }
-  if (parent.id === 'intake-fields') {
-    const hint = element('small');
-    hint.id = control.id + '-hint';
-    hint.dataset.copy = key + 'Hint';
-    control.setAttribute('aria-describedby', hint.id + ' ' + error.id);
-    wrapper.append(hint);
-  }
   parent.append(wrapper);
   return control;
 }
 
 const estimateForm = byId('estimate-form');
 const estimateFields = byId('estimate-fields');
-const intakeForm = byId('intake-form');
-const intakeFields = byId('intake-fields');
+
+
 const options = keys => keys.map(key => [key, key]);
 field(estimateFields, 'service', 'select', options(services), 'walk');
 field(estimateFields, 'date', 'date').required = true;
@@ -79,25 +72,6 @@ for (const key of ['extraDogCount', 'extraCatCount', 'extraExoticCount']) {
   field(estimateFields, key, 'number', [], '0').max = '30';
 }
 field(estimateFields, 'puppyLabel', 'checkbox');
-
-field(intakeFields, 'service', 'select', [['', 'selectOne'], ...options(services)]).required = true;
-for (const [key, type] of myoConfig.intakeFields) {
-  const choices = type === 'select' ? [['', 'selectOne'], ...options(['yes', 'no'])] : [];
-  field(intakeFields, key, type, choices).required = true;
-}
-for (const key of ['overnightAlone', 'overnightBehavior']) field(intakeFields, key, 'textarea');
-field(intakeFields, 'overnightAcknowledgment', 'checkbox');
-
-const policyList = byId('policy-list');
-for (const key of myoConfig.policyKeys) {
-  const details = element('details');
-  const summary = element('summary');
-  const body = element('p');
-  summary.dataset.copy = key === 'peak' ? 'peakTitlePolicy' : key + 'Title';
-  body.dataset.copy = key + 'Body';
-  details.append(summary, body);
-  policyList.append(details);
-}
 
 function locale() {
   return language === 'es' ? 'es-US' : 'en-US';
@@ -114,18 +88,25 @@ function copy(key, values = {}) {
 const policyValues = () => policyParameters(language);
 
 function renderRates() {
+  const open = new Set([...byId('rate-cards').querySelectorAll('details[open]')].map(card => card.dataset.service));
   const cards = services.map(service => {
-    const card = element('article');
-    card.className = 'launch-card';
-    card.append(element('h3', copy(service)));
+    const card = element('details');
+    card.dataset.service = service;card.open = open.has(service);
+    const summary = element('summary');
+    const title = element('span');title.className = 'rate-summary-title';
+    const icon = element('span',{walk:'🐾',dropIn:'🏡',overnight:'🌙'}[service]);icon.setAttribute('aria-hidden','true');
+    title.append(icon,element('strong',copy(service)));
+    const price = element('span',service === 'overnight' ? t('From {price} per night',{price:money(rates.overnight)}) : t('From {price} / {minutes} min',{price:money(rates.visit),minutes:rates.visitMinutes}));
+    price.className = 'rate-summary-price';summary.append(title,price);
+    const body = element('div');body.className = 'rate-details';
     if (service === 'overnight') {
-      card.append(element('p', copy('overnightRate', {
+      body.append(element('p', copy('overnightRate', {
         regular: money(rates.overnight), peak: money(rates.overnight + rates.overnightPeakSurcharge),
       })), element('p', copy('overnightAddons', {
         nightDog: money(flags.overnightAdditionalPetRates.dog), nightCat: money(flags.overnightAdditionalPetRates.cat),
       })));
     } else {
-      card.append(element('p', copy('visitRate', {
+      body.append(element('p', copy('visitRate', {
         minutes: rates.visitMinutes, regular: money(rates.visit), peak: money(rates.peakVisit),
       })), element('p', copy('longVisitRate', {
         minutes: rates.longVisitMinutes, regular: money(rates.visit + rates.extension), peak: money(rates.peakVisit + rates.extension),
@@ -133,10 +114,13 @@ function renderRates() {
         extraDog: money(rates.additionalDog), extraCat: money(rates.additionalCat), puppyAge: booking.puppyAgeYears,
         puppy: money(rates.puppy), peakPuppy: money(flags.peakPuppyRate),
       })));
-      if (service === 'dropIn') card.append(element('p', flags.smallExoticPetRate.requiresCustomQuote ? copy('estimateCustom') : copy('exoticRate', {
+      if (service === 'dropIn') body.append(element('p', flags.smallExoticPetRate.requiresCustomQuote ? copy('estimateCustom') : copy('exoticRate', {
         exoticBase: money(flags.smallExoticPetRate.base), exoticExtra: money(flags.smallExoticPetRate.additional),
       })));
     }
+    const choose = element('a',t('Choose this service'));choose.className = 'button button-small';
+    choose.href = '../../portal/index.html?service='+{walk:'dog-walking',dropIn:'drop-in',overnight:'pet-sitting'}[service]+'#book';
+    body.append(choose);card.append(summary,body);
     return card;
   });
   byId('rate-cards').replaceChildren(...cards);
@@ -144,20 +128,14 @@ function renderRates() {
 }
 
 function renderCalendar() {
-  const dateFormat = new Intl.DateTimeFormat(locale(), {dateStyle: 'medium', timeZone: 'UTC'});
-  byId('peak-dates').replaceChildren(...myoConfig.peakPeriods.map(([key, start, end]) => {
-    const listItem = element('li');
-    listItem.append(element('strong', copy(key)), element('br'));
-    for (const date of [start, end]) {
-      const time = element('time', dateFormat.format(new Date(date + 'T00:00:00Z')));
-      time.dateTime = date;
-      if (date === end) listItem.append(' – ');
-      listItem.append(time);
-    }
-    return listItem;
+  const dates = new Intl.DateTimeFormat(locale(),{dateStyle:'medium',timeZone:'UTC'});
+  byId('peak-dates').replaceChildren(...myoConfig.peakPeriods.map(([key,start,end]) => {
+    const row = element('li');
+    const range = element('span',dates.formatRange(new Date(start+'T12:00:00Z'),new Date(end+'T12:00:00Z')));
+    row.append(element('strong',copy(key)),range);
+    return row;
   }));
 }
-
 function setVisibility(fields, key, show, required = false) {
   const wrapper = fields.querySelector('[data-field="' + key + '"]');
   const control = wrapper.querySelector('input,textarea,select');
@@ -179,22 +157,26 @@ function updateEstimateFields() {
   setVisibility(estimateFields, 'puppyLabel', !overnight && primary.value === 'dog');
 }
 
-function updateIntakeFields() {
-  const overnight = intakeForm.elements.service.value === 'overnight';
-  for (const key of ['overnightAlone', 'overnightBehavior', 'overnightAcknowledgment']) setVisibility(intakeFields, key, overnight, true);
-}
-
 function renderEstimate(focus = false) {
   if (!submittedEstimate) return;
   const result = byId('estimate-result');
   const form = estimateForm.elements;
   const {service, date, primary, duration, nights, puppyLabel} = form;
   const counts = [form.extraDogCount, form.extraCatCount, form.extraExoticCount];
-  const invalid = [date, nights, ...counts].find(control => !control.disabled && !control.validity.valid);
+  const controls = [date, nights, ...counts];
+  const invalid = controls.find(control => !control.disabled && !control.validity.valid);
   const today = new Intl.DateTimeFormat('sv-SE', {timeZone: business.timeZone, dateStyle: 'short'}).format();
   const leadDays = (Date.parse(date.value) - Date.parse(today)) / 86_400_000;
   const lastMinute = leadDays < (service.value === 'overnight' ? booking.overnightNoticeDays : booking.visitNoticeDays);
   result.replaceChildren();
+  for (const control of controls) {
+    const message = !control.disabled && (!control.validity.valid || (control === date && leadDays < 0)) ? copy(control === date && leadDays < 0 ? 'estimatePast' : 'estimateInvalid') : '';
+    const error = byId(control.id + '-error');
+    error.textContent = message;
+    error.hidden = !message;
+    if (message) control.setAttribute('aria-invalid','true');
+    else control.removeAttribute('aria-invalid');
+  }
   if (invalid || leadDays < 0) {
     result.append(element('p', copy(leadDays < 0 ? 'estimatePast' : 'estimateInvalid')));
     if (focus) (invalid ?? date).focus();
@@ -230,30 +212,10 @@ function renderEstimate(focus = false) {
   if (lastMinute) result.append(element('p', copy('estimateShortNotice')));
 }
 
-function renderIntakeStatus(focus = false) {
-  if (!submittedIntake) return;
-  let firstInvalid;
-  for (const control of intakeForm.querySelectorAll('input, select, textarea')) {
-    const error = byId(control.id + '-error');
-    const missing = control.required && (control.type === 'checkbox' ? !control.checked : !control.value.trim()) && !control.validity.badInput;
-    const invalid = !control.disabled && (missing || !control.validity.valid);
-    error.hidden = !invalid;
-    if (invalid) {
-      error.textContent = copy(missing ? 'required' : 'invalidNumber');
-      control.setAttribute('aria-invalid', 'true');
-      firstInvalid ??= control;
-    } else {
-      control.removeAttribute('aria-invalid');
-    }
-  }
-  byId('intake-result').textContent = firstInvalid ? copy('intakeErrors') : copy('intakeDone');
-  if (focus) firstInvalid?.focus();
-}
-
 function setLanguage(next) {
   language = next;
   setLocale(next);
-  document.title = copy('title');
+  document.title = t('Services & rates | myo.');
   const values = policyValues();
   for (const node of document.querySelectorAll('[data-copy]')) {
     node.textContent = copy(node.dataset.copy, {...values, minutes: node.value});
@@ -265,7 +227,7 @@ function setLanguage(next) {
   renderRates();
   renderCalendar();
   renderEstimate();
-  renderIntakeStatus();
+
 }
 
 estimateForm.addEventListener('change', () => {
@@ -277,18 +239,22 @@ estimateForm.addEventListener('submit', event => {
   submittedEstimate = true;
   renderEstimate(true);
 });
-intakeForm.addEventListener('input', () => {
-  updateIntakeFields();
-  renderIntakeStatus();
+const dialog = byId('estimate-dialog');
+const openEstimate = document.querySelector('[data-open-estimate]');
+openEstimate.addEventListener('click', () => {dialog.showModal();byId('estimate-title').focus();});
+document.querySelector('[data-close-estimate]').addEventListener('click', () => dialog.close());
+dialog.addEventListener('close', () => openEstimate.focus({preventScroll:true}));
+dialog.addEventListener('click', event => {
+  if (event.target !== dialog) return;
+  const box = dialog.getBoundingClientRect();
+  if (event.clientX < box.left || event.clientX > box.right || event.clientY < box.top || event.clientY > box.bottom) dialog.close();
 });
-intakeForm.addEventListener('submit', event => {
-  event.preventDefault();
-  submittedIntake = true;
-  renderIntakeStatus(true);
-});
-for (const button of document.querySelectorAll('[data-language]')) {
-  button.addEventListener('click', () => setLanguage(button.dataset.language));
-}
+window.addEventListener('myo:languagechange', () => setLanguage(selectedLanguage()));
+// Keep previously shared fragments useful after moving policies and retiring the preview intake.
+if (location.hash === '#policies') location.replace('../safety_first_faq/index.html#policies');
+if (location.hash === '#intake') location.replace('../../portal/index.html#care');
+const revealPeak = () => {if (location.hash === '#peak') document.querySelector('.peak-calendar').open = true;};
+revealPeak();
+window.addEventListener('hashchange',revealPeak);
 updateEstimateFields();
-updateIntakeFields();
 setLanguage(selectedLanguage());
