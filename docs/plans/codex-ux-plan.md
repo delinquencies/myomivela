@@ -50,12 +50,12 @@ Codex does not recreate price math, authorization, prerequisite rules, token han
 
 ## DUX-02 — Consistent shell and route presentation
 
-- [ ] **Dependency** CUX-01 route descriptors and canonical resolution.
-- [ ] **Files** All six HTML shells in the ownership table, `assets/home.css`, `assets/portal.css`, `assets/home.js`, `assets/public-i18n.js`, `assets/portal.js::render()/showSection()`, `assets/care-portal.js::loadCareSection()`, EN/ES catalogs.
-- [ ] Apply the landing page's recognizable full-width header and permanent hamburger placement to public and authenticated destinations. Retain the homepage's existing approved brand behavior.
-- [ ] Render public, customer, owner, and sitter destination sets from the route contract. Use one label per concept and one current-location indicator.
-- [ ] Add skip navigation and a focusable main target. Give each route an appropriate document title, visible heading and return destination. Render explicit unavailable/forbidden/unknown states from CUX-01.
-- [ ] **Acceptance** Walk homepage → About → FAQ → sample → rates → portal in each language. Menu placement, link order for shared destinations, current state and language control remain predictable. Browser Back/Forward returns to the previous task. An unknown hash never silently masquerades as home. Sitter menu exposes operational destinations and hides owner-only administration.
+- [x] **Dependency** CUX-01 route descriptors and canonical resolution.
+- [x] **Files** All six HTML shells in the ownership table, `assets/home.css`, `assets/portal.css`, `assets/home.js`, `assets/public-i18n.js`, `assets/portal.js::render()/showSection()`, `assets/care-portal.js::loadCareSection()`, EN/ES catalogs.
+- [x] Apply the landing page's recognizable full-width header and permanent hamburger placement to public and authenticated destinations. Retain the homepage's existing approved brand behavior.
+- [x] Render public, customer, owner, and sitter destination sets from the route contract. Use one label per concept and one current-location indicator.
+- [x] Add skip navigation and a focusable main target. Give each route an appropriate document title, visible heading and return destination. Render explicit unavailable/forbidden/unknown states from CUX-01.
+- [x] **Acceptance** Walk homepage → About → FAQ → sample → rates → portal in each language. Menu placement, link order for shared destinations, current state and language control remain predictable. Browser Back/Forward returns to the previous task. An unknown hash never silently masquerades as home. Sitter menu exposes operational destinations and hides owner-only administration.
 
 ## DUX-03 — Mobile booking dock, targets and control hierarchy
 
@@ -281,3 +281,14 @@ The original November 19 document is retained below for attribution, evidence, a
 - Selected stay endpoints use ink with cream text. The peach range treatment and selected endpoint contrast are covered by populated-state axe checks.
 - Validation passed JavaScript syntax checks, all seven i18n tests, and the complete nine-script Chromium browser command. The added DUX-01 matrix exercises public/customer/owner/sitter menus in EN and ES at 1440×900 and 390×844, actual intake-save/menu interaction, keyboard focus, selected stays and staff-only answer contrast. Screenshots at both sizes were visually reviewed. Physical-device and screen-reader checks remain pending.
 - The next sequential task is DUX-02. Its CUX-01 route descriptor/resolution contract was absent from main and audit-remediation when checked for this batch. Claude should publish that contract before Codex integrates the shared shell and canonical navigation.
+
+## Handoff Notes — November 19, 2026 — DUX-02
+
+- CUX-01 from Claude's batch 1 is integrated through the read-only `assets/portal-route-state.js` contract. DUX-02 is complete for current screens. No Claude-owned module, backend, financial rule or plan was edited.
+- All six HTML shells now share the homepage's full-width sticky header, permanent hamburger, language control, and focusable skip target. Public menus use the same destinations and order. The portal uses `routesFor(session)` for role-aware links and `resolveLocation()` for presentation, canonical legacy links, sign-in return destinations, current-location state, titles and recovery views.
+- Existing checkout, pet-history and add-pet views accept `#visit/<id>`, `#pet/<id>` and `#pets/new`. Client records now open/reload at `#client/<id>`, with stale successful responses ignored. `#settings/<group>` currently opens the existing settings screen; grouping its forms belongs to DUX-07. No new controller or financial workflow is implied.
+- Future CUX-02 booking-step hashes show a translated recovery action to booking until their controller/UI exists. Unknown/forbidden links have explicit recovery screens. Private destinations survive sign-in. Checkout-return feedback is captured before query canonicalization.
+- Public menu Escape, outside-click dismissal and current-location marking are centralized in `assets/public-i18n.js`; portal menu behavior stays in `assets/portal.js`. Rates-page details styling is scoped to its main content so it cannot distort the shared menu. Portal focus/section scroll margins accommodate the sticky header.
+- Added `tests/browser/navigation-smoke.mjs` to the browser chain: actual public click paths, EN/ES persistence, customer Back/Forward, sign-in return, canonical legacy links, client-record reload and missing/forbidden recovery at 1440×900 and 390×844. The existing portal smoke explicitly opens staff home after sign-in because requested destinations are now preserved.
+- The next task is DUX-03: its visual work and CUX-09 availability metadata are ready; prerequisite ordering still waits on CUX-02. DUX-04/05/06/07/08 depend on the remaining Claude contracts as listed above. Do not infer that CUX-02 or CUX-04 is complete from this navigation integration.
+- Validation: all ten Chromium browser scripts, seven i18n tests and changed-JavaScript syntax checks passed. EN/ES rendered shells were reviewed at 1440×900 and 390×844. Physical-device and screen-reader verification remains pending.

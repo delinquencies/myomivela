@@ -2,7 +2,9 @@
 .portal h1 { font-size: clamp(1.65rem, 4vw, 2.35rem); line-height: 1.1; overflow-wrap: anywhere; }
 .portal h2 { font-size: clamp(2rem, 4.2vw, 3.4rem); max-width: none; }
 .portal h3 { font-size: 1.45rem; margin-bottom: .5rem; }
-.portal section { margin-top: 2.2rem; max-width: 65rem; scroll-margin-top: 1rem; }
+.portal section { margin-top: 2.2rem; max-width: 65rem; scroll-margin-top: 6rem; }
+.portal :is(input,textarea,button,summary,[tabindex]) { scroll-margin-top: 7rem; }
+.portal [data-pet-step-count] { scroll-margin-top: 7rem; }
 .portal section > h2 { margin-bottom: .7rem; }
 .dashboard-actions { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .75rem; max-width: 48rem; }
 .dashboard-action {

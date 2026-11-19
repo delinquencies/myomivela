@@ -1,6 +1,10 @@
 // @ts-check
 // Shared customer-facing copy. English phrases are stable translation keys.
 export const en = {
+  "This page isn’t part of your account.": "This page isn’t part of your account.",
+  "Let’s get you back to your next step.": "Let’s get you back to your next step.",
+  "We couldn’t find that page.": "We couldn’t find that page.",
+  "Choose where you’d like to go next.": "Choose where you’d like to go next.",
   " Doors locked and home secured": " Doors locked and home secured",
   " ET": " ET",
   " ET.": " ET.",
@@ -657,6 +661,10 @@ export const en = {
 
 /** @type {Record<keyof typeof en, string>} */
 export const es = {
+  "This page isn’t part of your account.": "Esta página no está disponible para tu cuenta.",
+  "Let’s get you back to your next step.": "Volvamos al siguiente paso.",
+  "We couldn’t find that page.": "No encontramos esa página.",
+  "Choose where you’d like to go next.": "Elige adónde quieres ir.",
   " Doors locked and home secured": " Puertas cerradas y casa asegurada",
   " ET": " hora del Este",
   " ET.": " hora del Este.",

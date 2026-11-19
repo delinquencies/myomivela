@@ -5,7 +5,9 @@ import { showPriceSheet } from './price-sheet.js';
 import { locale, t, hasKey, formatDate, formatMoney, translateLabel, catalogs } from './i18n.js';
 import {careSettings,staffComplianceSettings,stayCalendar,syncStayCalendar,vaccineTools,blockerHtml,staffCareTools,feedbackTool,reportInputs,reportPayload,timelineSection,clientSection,configureCareUi,bindCareUi,loadCareSection,clearEntryDetails} from './care-portal.js';
 import {myoConfig} from './myo-config.js';
+import {routesFor,resolveLocation,roleOf,homeFor,hrefFor} from './portal-route-state.js';
 const uiLocale = locale;
+const checkoutReturn = new URLSearchParams(location.search).get('payment');
 
 const app = document.querySelector('#app');
 const feedback = document.querySelector('#feedback');
@@ -60,9 +62,10 @@ const serviceNames = new Map([
 ]);
 const requestedService = () => serviceNames.get(new URLSearchParams(location.search).get('service'));
 const requestedRate = () => new URLSearchParams(location.search).get('rate');
-const bookingIntake = '#pet-intake';
+const bookingIntake = hrefFor('pet-new');
 const drafts = createDrafts();
 let data;
+let signInReturnTo;
 let diaryFilterValue = '';
 const diaryVisitOptions = new Map();
 
@@ -846,6 +849,7 @@ function render() {
   if (!data?.user) {
     portalLinks.replaceChildren();
     auth();
+    showSection();
     return;
   }
   // Replacing the page discards an open booking review, so give its held time back.
@@ -862,10 +866,11 @@ function render() {
   const older = data.history_next ? '<button type="button" class="secondary" id="more-history">'+emoji('⬇️')+(t("Show older bookings") + "</button>") : '';
   const main = admin ? staffVisitsLabel() : t("My bookings");
   document.querySelector('.portal h1').textContent = t("Welcome, ")+data.user.name+'.';
-  const links = admin
-    ? [['staff-home',t("Staff home")],['upcoming',staffVisitsLabel()],['diary',t("Publish updates")],['history',t("Booking history")],['settings',t("Services & availability")],['financials',t("Financials")],['clients',t('Clients')]].filter(([id]) => isOwner() || !['settings','financials'].includes(id))
-    : [['client-home',t("Home")],['upcoming',t("My bookings")],['book',t("Book a visit")],['pets',t("My pets")],['care',t('Care details')],['diary',t("Pet Diary")]];
-  portalLinks.innerHTML = links.map(([id,label]) => '<a href="#'+id+'">'+text(translateLabel(label))+'</a>').join('');
+  portalLinks.innerHTML = routesFor(data.user).map(route => {
+    const label = admin && route.id === 'upcoming' ? staffVisitsLabel()
+      : admin && route.id === 'diary' ? t('Publish updates') : t(route.labelKey);
+    return '<a href="'+route.href+'">'+text(label)+'</a>';
+  }).join('');
   const staffNotice = !admin && new URLSearchParams(location.search).get('staff') === '1'
     ? ("<p>" + t("You’re signed in as a client. Sign out to switch to your staff account.") + "</p>") : '';
   app.innerHTML = staffNotice+(admin ? section('staff-home',t("Staff home"),staffHome(bookings)) : section('client-home',t("Client home"),clientHome()))+
@@ -873,7 +878,7 @@ function render() {
       ("<h3>" + t("Other upcoming bookings") + "</h3>")+cards(bookings.filter(b=>b.status !== 'In Progress' && day(b.starts) !== today))
       : ("<h3>" + t("Upcoming visits") + "</h3>")+cards(bookings)+("<h3>" + t("Past visits") + "</h3>")+cards(history)+older)+
     (admin ? (isOwner() ? section('settings',t("Services and availability"),adminSettings()+staffComplianceSettings(data)) : '') :
-      section('pets',t("Pet profiles"),data.pets.map(p=>'<article><h3>'+text(p.name)+'</h3>'+profileSummary(p)+vaccineTools(p)+tapLink('#pet-'+p.id,t('Care history'),'📖')+("<details><summary>" + t("Edit profile") + "</summary>")+petForm(p)+'</details></article>').join('')+("<h3>" + t("Add a pet") + "</h3>")+petForm())+
+      section('pets',t("Pet profiles"),data.pets.map(p=>'<article><h3>'+text(p.name)+'</h3>'+profileSummary(p)+vaccineTools(p)+tapLink(hrefFor('pet',{pet:p.id}),t('Care history'),'📖')+("<details><summary>" + t("Edit profile") + "</summary>")+petForm(p)+'</details></article>').join('')+("<h3>" + t("Add a pet") + "</h3>")+petForm())+
       section('book',t("Request care"),bookingForm())+
       bookings.filter(canReviewCheckout).map(booking => section('checkout-'+booking.id,t("Visit details"),checkoutSummary(booking))).join(''))+
     section('diary',admin ? t("Publish updates") : t("Pet Diary"),
@@ -903,24 +908,81 @@ function render() {
   if (!admin && location.hash === '#book') applyRepeatBooking();
   showSection();
 }
+function showRouteNotice(route, focus, unavailable = false) {
+  let panel = app.querySelector('#route-status');
+  if (!panel) {
+    app.insertAdjacentHTML('beforeend',section('route-status','', ''));
+    panel = app.querySelector('#route-status');
+  }
+  const title = route.outcome === 'forbidden' ? t('This page isn’t part of your account.')
+    : unavailable ? t('Let’s get you back to your next step.') : t('We couldn’t find that page.');
+  const destinationId = unavailable && route.parent ? route.parent : homeFor(roleOf(data?.user));
+  const destination = hrefFor(destinationId);
+  const label = routesFor(data?.user).find(item => item.id === destinationId)?.labelKey || 'Sign in';
+  panel.innerHTML = '<h2>'+text(title)+'</h2><p>'+text(t('Choose where you’d like to go next.'))+'</p>'+
+    tapLink(destination,t(label),'🐾');
+  for (const child of app.children) child.hidden = child !== panel;
+  for (const link of [...portalLinks.querySelectorAll('a'),accountLink]) link.removeAttribute('aria-current');
+  document.title = title+' | myo.';
+  if (focus) {
+    const heading = panel.querySelector('h2');
+    heading.tabIndex = -1;
+    heading.focus();
+  }
+}
 function showSection(focus = false) {
-  if (!data?.user) return;
-  const panels = [...app.querySelectorAll(':scope > section')];
-  if (!panels.length) return;
-  const requested = location.hash === bookingIntake ? 'pets' : location.hash.slice(1);
-  const id = panels.some(panel => panel.id === requested) ? requested : (data.user.admin ? 'staff-home' : 'client-home');
-  for (const panel of panels) panel.hidden = panel.id !== id;
+  const route = resolveLocation(location,data?.user);
+  if (route.outcome === 'not_found' || route.outcome === 'forbidden') {
+    showRouteNotice(route,focus);
+    return;
+  }
+  if (!data?.user) {
+    if (route.outcome === 'sign_in_required') signInReturnTo = route.returnTo;
+    if (app.querySelector('#route-status')) auth();
+    document.title = t('Care Portal | myo.');
+    return;
+  }
+  const viewIds = {'pet-new':'pets',pet:'pet-'+route.params.pet,visit:'checkout-'+route.params.booking,
+    client:'clients','settings-group':'settings'};
+  const id = viewIds[route.id] || route.id;
+  let panel = document.getElementById(id);
+  if (route.id === 'visit' && !panel) {
+    const booking = find(data.bookings,Number(route.params.booking));
+    if (booking) {
+      panel = app.querySelector('#route-visit');
+      if (!panel || panel.dataset.booking !== String(booking.id)) {
+        panel?.remove();
+        app.insertAdjacentHTML('beforeend',section('route-visit',t('Visit details'),
+          tapLink(hrefFor('upcoming'),t('Back to my bookings'),'📅')+bookingCard(booking)));
+        panel = app.querySelector('#route-visit');
+        panel.dataset.booking = booking.id;
+      }
+    }
+  }
+  if (!panel) {
+    showRouteNotice(route,focus,true);
+    return;
+  }
+  if (route.legacy || !location.hash) history.replaceState(null,'',route.canonical);
+  app.querySelector('#route-status')?.remove();
+  for (const child of app.children) child.hidden = child.tagName === 'SECTION' && child !== panel;
+  const activeRoute = route.parent || route.id;
   for (const link of [...portalLinks.querySelectorAll('a'), accountLink]) {
-    if (link.hash === '#'+id || (id.startsWith('checkout-') && link.hash === '#upcoming')) link.setAttribute('aria-current','page');
+    if (link.hash === hrefFor(activeRoute)) link.setAttribute('aria-current','page');
     else link.removeAttribute('aria-current');
   }
   if (id === 'financials') showFinancials();
-  loadCareSection(id);
+  loadCareSection(id,route.params);
   if (id === 'settings') { showBackupStatus(); showStaffPanel(); }
+  document.title = panel.querySelector('h2').textContent+' | myo.';
   if (focus) {
-    const heading = document.getElementById(id).querySelector('h2');
+    const heading = panel.querySelector('h2');
     heading.tabIndex = -1;
     heading.focus();
+  }
+  if (route.id === 'pet-new' && focus) {
+    const form = panel.querySelector('form[data-action="pets"][data-id=""]');
+    showPetCard(form,Number(form.dataset.draftStep || 0),true);
   }
 }
 window.addEventListener('hashchange', () => {
@@ -948,7 +1010,14 @@ portalMenu.addEventListener('click', event => {
   const link = event.target.closest('a');
   if (!link && !event.target.closest('#logout')) return;
   portalMenu.open = false;
-  if (link?.getAttribute('href') === location.hash) showSection(true);
+  if (link?.getAttribute('href') === location.hash) {
+    event.preventDefault();
+    showSection(true);
+  }
+});
+document.querySelector('.skip').addEventListener('click',event => {
+  event.preventDefault();
+  document.querySelector('#main').focus();
 });
 document.addEventListener('click', event => {
   if (!portalMenu.contains(event.target)) portalMenu.open = false;
@@ -1544,7 +1613,10 @@ app.addEventListener('submit',async event => {
     }
     if (action === 'status' && payload.status === 'In Progress') history.replaceState(null,'','#diary');
     const signedIn = action === 'login';
-    if (signedIn) history.replaceState(null,'',result?.admin ? '#staff-home' : '#client-home');
+    if (signedIn) {
+      history.replaceState(null,'',signInReturnTo || (requestedService() ? location.search+'#book' : hrefFor(homeFor(roleOf(result)))));
+      signInReturnTo = undefined;
+    }
     await refresh();
     if (publication) {
       showPublicationFeedback(publication);
@@ -1628,7 +1700,7 @@ function suspendBookingQuote() {
 }
 refresh().then(() => {
   // Back from the hosted checkout: the redirect proves nothing, so say what happens next and tidy the address.
-  const returned = new URLSearchParams(location.search).get('payment');
+  const returned = checkoutReturn;
   if (!returned) return;
   feedback.textContent = returned === 'success' ? t("Thank you. Your payment is being confirmed; it shows as paid once the payment provider confirms it.")
     : t("Checkout cancelled. Nothing was charged.");

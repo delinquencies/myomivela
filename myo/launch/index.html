@@ -5,20 +5,43 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#faeee3">
   <title>MYO</title>
-  <link rel="stylesheet" href="../../assets/home.css">
+  <link rel="stylesheet" href="../../assets/home.css?v=shared-shell">
   <link rel="stylesheet" href="../../assets/myo-launch.css">
   <script type="module" src="../../assets/myo-launch.js"></script>
+  <script type="module" src="../../assets/home.js"></script>
+  <script type="module" src="../../assets/public-i18n.js"></script>
 </head>
 <body class="launch">
   <a class="skip" href="#main" data-copy="skip"></a>
-  <header class="site-header">
-    <a class="wordmark" href="../../index.html" data-label="home">myo.</a>
-    <div class="language" role="group" data-label="languages">
-      <button type="button" data-language="en" lang="en" aria-label="EN, English">EN</button>
-      <button type="button" data-language="es" lang="es" aria-label="ES, Español">ES</button>
+  <header class="site-header site-header--sticky">
+    <a class="wordmark" href="../../index.html" aria-label="myo.">myo<span class="wordmark-mark" aria-hidden="true"><svg class="wordmark-shape" viewBox="0 0 24 24"><path fill="currentColor" d="M 12 8 C 14.2 8 16 9.8 16 12 16 14.2 14.2 16 12 16 9.8 16 8 14.2 8 12 8 9.8 9.8 8 12 8 Z"/></svg><span class="wordmark-burst"><span>♥</span><span>♥</span><span>♥</span><span>♥</span></span></span></a>
+    <div class="header-actions">
+      <div class="language" role="group" aria-label="Language" data-i18n-aria-label="Language">
+      <button type="button" data-language="en" lang="en" aria-label="EN, English" aria-pressed="true">EN</button>
+      <button type="button" data-language="es" lang="es" aria-label="ES, Español" aria-pressed="false">ES</button>
+    </div>
+      <a class="button button-small header-booking" href="../../portal/index.html#book" aria-label="Book a Visit" data-i18n-aria-label="Book a Visit"><span class="booking-label" data-i18n="Book a Visit">Book a Visit</span><svg class="booking-paw" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><ellipse cx="4.8" cy="10.5" rx="2" ry="2.8" transform="rotate(-25 4.8 10.5)"/><ellipse cx="9.2" cy="6.6" rx="2" ry="2.8" transform="rotate(-10 9.2 6.6)"/><ellipse cx="14.8" cy="6.6" rx="2" ry="2.8" transform="rotate(10 14.8 6.6)"/><ellipse cx="19.2" cy="10.5" rx="2" ry="2.8" transform="rotate(25 19.2 10.5)"/><path d="M12 11c2.4 0 3.6 2.2 5.5 4.3 2.6 3 .9 5.7-1.7 5.7-1.5 0-2.5-.9-3.8-.9s-2.3.9-3.8.9c-2.6 0-4.3-2.7-1.7-5.7C8.4 13.2 9.6 11 12 11Z"/></svg></a>
+      <details class="site-menu">
+        <summary class="menu-toggle" aria-label="Menu" data-i18n-aria-label="Menu">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <path class="menu-bars" d="M4 6h16M4 12h16M4 18h16"/>
+            <path class="menu-close" d="m6 6 12 12M18 6 6 18"/>
+          </svg>
+        </summary>
+        <div class="menu-panel">
+          <nav class="site-nav" aria-label="Main navigation" data-i18n-aria-label="Main navigation">
+            <a href="../../index.html#services" data-i18n="Services">Services</a>
+            <a href="../../myo/launch/index.html" data-i18n="Rates &amp; Policies">Rates &amp; Policies</a>
+            <a href="../../myo/about/index.html" data-i18n="About">About</a>
+            <a href="../../myo/safety_first_faq/index.html" data-i18n="FAQ">FAQ</a>
+            <a href="../../portal/index.html" data-i18n="Client Portal">Client Portal</a>
+            <a href="../../portal/index.html?staff=1#diary" data-i18n="Staff sign-in">Staff sign-in</a>
+          </nav>
+        </div>
+      </details>
     </div>
   </header>
-  <main class="launch-main" id="main">
+  <main class="launch-main" id="main" tabindex="-1">
     <div class="launch-intro">
       <h1 data-copy="heading"></h1>
       <p data-copy="intro"></p>
