@@ -453,9 +453,11 @@ const dollarsInput = (label, name) => input(label,name,'type="number" min="1" ma
 function paymentBlock(booking) {
   const payment = booking.payment;
   if (!payment || (payment.status === 'none' && !payment.paid_cents)) return '';
-  const balance = payment.balance_cents > 0 ? ' · '+t("Balance {amount}",{ amount:money(payment.balance_cents) })
+  const balance = payment.balance_cents > 0 ? ' · '+t(payment.stage === 'deposit' ? 'Deposit due {amount}' : 'Balance {amount}',{ amount:money(payment.balance_cents) })
     : payment.balance_cents < 0 ? ' · '+t("{amount} to return",{ amount:money(-payment.balance_cents) }) : '';
   let html = '<p class="payment-status" data-payment-status>'+t("Payment:")+' <strong>'+t(paymentLabels[payment.status])+'</strong>'+balance+'</p>';
+  if (payment.stage === 'deposit' && payment.deposit_due_at) html += '<p>'+text(t('Deposit due by {date}.',{date:date(payment.deposit_due_at)}))+'</p>';
+  if (payment.stage === 'deposit' && payment.balance_cents > 0 && !data.payments_enabled) html += '<p>'+text(t('Arrange the deposit with Myomi. Online payment is unavailable.'))+'</p>';
   if (data.user.admin && !isOwner()) return html;
   if (data.user.admin) {
     const methods = choiceGroup(t("Method"),['cash','check','other'].map((method,index) => choice('method',method,methodLabel(method),{ checked:index === 0, required:true })).join(''));
@@ -469,8 +471,8 @@ function paymentBlock(booking) {
     }
     return html;
   }
-  if (data.payments_enabled && payment.balance_cents > 0 && booking.status !== 'Requested') {
-    html += form('payments/start',button(t("Pay {amount} now",{ amount:money(payment.balance_cents) }),'','💳'),booking.id);
+  if (data.payments_enabled && payment.balance_cents > 0 && (booking.status !== 'Requested' || payment.stage === 'deposit')) {
+    html += form('payments/start',button(t(payment.stage === 'deposit' ? 'Pay deposit {amount}' : 'Pay {amount} now',{ amount:money(payment.balance_cents) }),'','💳'),booking.id);
   }
   if (['In Progress','Completed'].includes(booking.status)) {
     html += '<details><summary>'+emoji('💝')+t("Add a tip")+'</summary>'+form('tips',input(t("Tip (USD)"),'dollars','type="number" min="1" max="500" step="1" required')+
@@ -577,6 +579,13 @@ window.addEventListener('pageshow', event => {
   const review = openReview();
   if (review?.dataset.released) expireHold(review.closest('form'), t("You left this page, so the time was released for others. Choose a time again to continue."));
 });
+function reviewTerms(booking) {
+  const quote = booking.quote;
+  if (!quote?.terms || !(quote.deposit_cents > 0)) return '';
+  const terms = quote.terms;
+  const percent = new Intl.NumberFormat(uiLocale() === 'es' ? 'es-US' : 'en-US',{style:'percent'}).format(terms.late_retention_ratio);
+  return '<section class="review-terms" aria-label="'+text(t('Deposit and cancellation'))+'"><h4>'+text(t('Deposit and cancellation'))+'</h4><dl><div><dt>'+text(t('Deposit'))+'</dt><dd>'+money(quote.deposit_cents)+'</dd></div><div><dt>'+text(t('Remaining balance'))+'</dt><dd>'+money(quote.balance_cents)+'</dd></div></dl><p>'+text(t('Your deposit is due within {hours} hours after you send this request.',{hours:terms.deposit_due_hours}))+'</p><p>'+text(t(terms.deposit_collection === 'online' ? 'Pay the deposit online after sending your request.' : 'Arrange the deposit with Myomi. Online payment is unavailable.'))+'</p><p>'+text(t('Cancel at least {days} days before your visit for the deposit to be returned. Later cancellations keep {percent} of the deposit paid.',{days:terms.cancellation_days,percent}))+'</p><p>'+text(t('Sending a request does not confirm your visit or charge your card.'))+'</p></section>';
+}
 function checkoutSummary(booking, expires) {
   const pets = booking.pet_ids.map(id => find(data.pets,id)?.name).filter(Boolean);
   const ends = day(booking.starts) === day(booking.ends) ? appointmentTime.format(booking.ends) : date(booking.ends);
@@ -592,9 +601,10 @@ function checkoutSummary(booking, expires) {
       : ("<div><dt>" + t("Duration") + "</dt><dd>")+((booking.ends-booking.starts)/60_000)+(t(" min") + "</dd></div></dl>"))+
     quoteLines(booking.lines)+
     ("<div class=\"checkout-total\"><span>" + t("Visit total") + "</span><strong>")+(booking.cents === 0 ? t("No charge") : money(booking.cents))+'</strong></div>'+
-    (expires ? ("<p class=\"checkout-payment-note\" data-hold-note role=\"status\">" + t("Time held until "))+appointmentTime.format(expires)+t(' ET. ')+
-      (booking.cents === 0 ? '' : t("Online payment is currently unavailable. "))+(t("Send a request for Myomi to confirm.") + "</p>") :
-      (booking.cents === 0 ? '' : ("<p class=\"checkout-payment-note\">" + t("Your visit is confirmed. Online payment is currently unavailable.") + "</p>")))+'</article>'+
+    (expires ? reviewTerms(booking)+("<p class=\"checkout-payment-note\" data-hold-note role=\"status\">" + t("Time held until "))+appointmentTime.format(expires)+t(' ET. ')+
+      (t("Send a request for Myomi to confirm.") + "</p>") :
+      (booking.cents === 0 || data.payments_enabled ? '' : ("<p class=\"checkout-payment-note\">" + t("Your visit is confirmed. Online payment is currently unavailable.") + "</p>")))+'</article>'+
+    (expires && booking.quote?.deposit_cents > 0 && booking.quote?.terms ? '<label class="review-acceptance"><input type="checkbox" name="accept_terms" data-no-draft aria-required="true" aria-describedby="review-terms-error">'+text(t('I have reviewed the deposit and cancellation terms.'))+'</label><p class="pet-field-error" id="review-terms-error" role="alert"></p>' : '')+
     (expires ? ("<div class=\"checkout-actions\"><button type=\"button\" class=\"secondary\" data-edit-booking>" + t("Edit booking") + "</button>")+
       button(t("Send booking request"),'','📅')+'</div>' : tapLink('#upcoming',t("Back to my bookings"),''));
 }
@@ -1039,6 +1049,7 @@ function quoteLines(lines) {
     '</dt><dd>'+money(line.cents)+'</dd></div>').join('')+'</dl>' : '';
 }
 const quoteRequests = new WeakMap();
+const bookingQuotes = new WeakMap();
 const availabilityRequests = new WeakMap();
 function markStayDays(booking, value) {
   if (!value) return;
@@ -1094,6 +1105,7 @@ function updateTotal(booking, message = '') {
       : [appointmentDay.format(start),appointmentTime.format(start),money(cents)].join(' · ');
   };
   delete booking.dataset.quotedCents;
+  bookingQuotes.delete(booking);
   lines.replaceChildren();
   retry.hidden = true;
   status.textContent = message;
@@ -1108,6 +1120,7 @@ function updateTotal(booking, message = '') {
       const quote = await api('quote',overnight ? { service:service.id,...stay,pets } : { service:service.id,slot,start,pets });
       if (!booking.isConnected || quoteRequests.get(booking) !== request) return;
       booking.dataset.quotedCents = quote.total_cents;
+      bookingQuotes.set(booking,quote);
       showTotal(quote.total_cents);
       lines.innerHTML = quoteLines(quote.lines);
       const blocked = quote.blockers || [];
@@ -1514,7 +1527,7 @@ async function confirmCancellation(kind, bookingId) {
       const preview = await api('cancellation-preview?booking='+bookingId);
       fee = preview.fee_cents;
       const back = preview.refund_due_cents ? ' '+t("{amount} of what you paid will be due back to you.",{ amount:money(preview.refund_due_cents) }) : '';
-      terms.textContent = (fee ? t("Cancelling now has a fee of {fee} ({percent}% · within {hours} hours of the visit).",{ fee:money(fee), percent:preview.percent, hours:preview.cutoff_hours })
+      terms.textContent = (fee ? (preview.model === 'deposit' ? t('Cancelling now keeps {fee} from your paid deposit.',{fee:money(fee)}) : t("Cancelling now has a fee of {fee} ({percent}% · within {hours} hours of the visit).",{ fee:money(fee), percent:preview.percent, hours:preview.cutoff_hours }))
         : t("Cancelling is free."))+back;
     } catch { /* the server still checks the fee */ }
   }
@@ -1606,6 +1619,7 @@ app.addEventListener('submit',async event => {
         review.dataset.expires = hold.expires;
         heldBooking = {
           service_name:service.name, service_kind:service.kind, pet_ids:payload.pets, starts:hold.starts, ends:hold.ends, cents:hold.total_cents, lines:hold.lines,
+          quote:bookingQuotes.get(form),
         };
         review.innerHTML = checkoutSummary(heldBooking,hold.expires);
         form.querySelector('[data-booking-inputs]').hidden = true;
@@ -1619,6 +1633,16 @@ app.addEventListener('submit',async event => {
         return;
       }
       payload.hold = Number(review.dataset.expires);
+      if (heldBooking?.quote?.terms && heldBooking.quote.deposit_cents > 0) {
+        const accepted = review.querySelector('[name="accept_terms"]');
+        if (!accepted?.checked) {
+          review.querySelector('#review-terms-error').textContent = t('Please review and accept these terms before sending your request.');
+          accepted?.focus();
+          return;
+        }
+        payload.accept_terms_version = heldBooking.quote.terms.version;
+      }
+      delete payload.accept_terms;
     }
     if (action === 'services') {
       payload.cents = Math.round(Number(payload.price)*100);
@@ -1711,12 +1735,13 @@ app.addEventListener('submit',async event => {
       if(status)status.innerHTML=blockerHtml(error.blockers || [],data);
       return;
     }
-    if (action === 'bookings' && error.code === 'price_changed') {
+    if (action === 'bookings' && ['price_changed','terms_changed'].includes(error.code)) {
       const review = openReview();
       if (review) await releaseHold(Number(review.dataset.expires));
-      await reopenBooking(t("The price changed — review the new total."));
+      const message = t(error.code === 'terms_changed' ? 'Booking terms changed. Please review them again.' : 'The price changed — review the new total.');
+      await reopenBooking(message);
       const booking = app.querySelector('[data-action="bookings"]');
-      if (booking) updateTotal(booking,t("The price changed — review the new total."));
+      if (booking) updateTotal(booking,message);
       return;
     }
     if (action === 'changes/decide' && error.code === 'time_reserved') {
@@ -1793,6 +1818,7 @@ window.addEventListener('myo:languagechange', () => {
   }));
   const heldReview = openReview();
   const heldState = heldReview && {
+    termsAccepted:Boolean(heldReview.querySelector('[name="accept_terms"]')?.checked),
     expires: Number(heldReview.dataset.expires),
     expired: heldReview.dataset.expired,
     released: heldReview.dataset.released,
@@ -1832,6 +1858,8 @@ window.addEventListener('myo:languagechange', () => {
       const review = form?.querySelector('[data-booking-review]');
       if (review) {
         review.innerHTML = checkoutSummary(heldBooking, heldState.expires);
+        const acceptance = review.querySelector('[name="accept_terms"]');
+        if (acceptance) acceptance.checked = heldState.termsAccepted;
         form.dataset.quotedCents = heldBooking.cents;
         review.dataset.expires = heldState.expires;
         review.hidden = false;
