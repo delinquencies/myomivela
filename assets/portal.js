@@ -7,6 +7,7 @@ import {careSettings,staffComplianceSettings,stayCalendar,syncStayCalendar,vacci
 import {myoConfig} from './myo-config.js';
 import {routesFor,resolveLocation,roleOf,homeFor,hrefFor} from './portal-route-state.js';
 import {syncIntake,updateIntakeProgress,showIntakeErrors} from './intake-ui.js';
+import {createBookingJourney} from './booking-journey-ui.js';
 const uiLocale = locale;
 const checkoutReturn = new URLSearchParams(location.search).get('payment');
 
@@ -67,6 +68,8 @@ const requestedRate = () => new URLSearchParams(location.search).get('rate');
 const bookingIntake = hrefFor('pet-new');
 const drafts = createDrafts();
 let data;
+const journey = createBookingJourney(app,() => data);
+let authMode = location.hash === '#register' ? 'register' : 'login';
 let signInReturnTo;
 let diaryFilterValue = '';
 const diaryVisitOptions = new Map();
@@ -167,7 +170,7 @@ function auth() {
     : t("Sign in or create an account to request a visit.");
   const bookingEntry = ['#book', bookingIntake].includes(location.hash);
   app.innerHTML = (bookingEntry ? '<p>'+bookingPrompt+'</p>' : ("<p>" + t("Sign in to manage bookings, pet profiles, and your Pet Diary.") + "</p>")) +
-    ("<button type=\"button\" class=\"secondary auth-jump\" data-create-account>" + t("New here? Create an account") + "</button>")+
+    '<div class="auth-modes" role="group" aria-label="'+text(t('Choose how to sign in'))+'"><button type="button" class="secondary" data-auth-mode="login">🔑 '+text(t('Sign in'))+'</button><button type="button" class="secondary" data-auth-mode="register" data-create-account>👋 '+text(t('New here? Create an account'))+'</button></div>'+
     (bookingEntry ? ("<section class=\"auth-availability\"><h2>" + t("Prices &amp; availability") + "</h2><p>" + t("Times shown in Massachusetts time. Myomi confirms each request.") + "</p>")+
       '<div data-auth-price-sheet aria-live="polite"></div></section>' :
       ("<p><a class=\"text-link\" href=\"../index.html#services\">" + t("See services and prices") + "</a></p>"))+'<div class="grid">'+
@@ -177,6 +180,13 @@ function auth() {
       ("<small id=\"registration-password-tip\">" + t("Use at least 12 characters for your password.") + "</small>")+
       '<p class="pet-field-error" data-registration-error role="alert"></p>'+button(t("Create account"),'','👋'))+'</div>';
   if (bookingEntry) showPriceSheet(app.querySelector('[data-auth-price-sheet]'),{service,rate:requestedRate()});
+  setAuthMode(authMode);
+}
+function setAuthMode(mode,focus = false) {
+  authMode = mode;
+  for (const form of app.querySelectorAll('[data-action="login"],[data-action="register"]')) form.hidden = form.dataset.action !== mode;
+  for (const button of app.querySelectorAll('[data-auth-mode]')) button.setAttribute('aria-pressed',String(button.dataset.authMode === mode));
+  if (focus) app.querySelector('[data-action="'+mode+'"] [name]')?.focus();
 }
 const profileGroups = [
   ['About your pet', [['breed','Breed'],['sex','Sex'],['age','Age or birthday'],['weight','Weight (lb)']]],
@@ -365,7 +375,7 @@ function bookingForm() {
   const preferred = matching.find(service => String(service.id) === requestedRate()) || matching[0];
   const unavailable = serviceName && !preferred;
   const initial = preferred ?? (unavailable ? null : data.services[0]);
-  const serviceOptions = data.services.map(service =>
+  const serviceOptions = (journey.meetingDetour ? data.services.filter(service => service.kind === 'meet') : data.services).map(service =>
     choice('service',service.id,translateLabel(service.name)+' · '+(service.kind === 'overnight' ? t('per night') : service.minutes+' min')+' · '+(service.cents === 0 ? t("Free") : money(service.cents)),{
       checked:service.id === initial?.id, required:true, icon:serviceIcons[service.name],
     })
@@ -587,6 +597,7 @@ function startHoldTimer(form) {
   holdTimer = setTimeout(() => expireHold(form), Math.max(0, Number(review.dataset.expires) - Date.now()));
 }
 function expireHold(form, message = t("Your hold on this time has ended, so someone else may book it. Choose a time again to continue.")) {
+  journey.expired();
   const review = form.querySelector('[data-booking-review]');
   if (!review?.isConnected || review.hidden || !review.dataset.expires || review.dataset.expired) return;
   review.dataset.expired = '1';
@@ -898,7 +909,7 @@ async function showFinancials() {
 let changingLanguage = false;
 let heldBooking;
 function render() {
-  configureCareUi({data,api,refresh,drafts,notify:showPublicationFeedback});
+  configureCareUi({data,api,refresh,drafts,notify:showPublicationFeedback,onRequirementComplete:id => journey.completed(id)});
   logout.hidden = accountLink.hidden = !data?.user;
   if (!data?.user) {
     portalLinks.replaceChildren();
@@ -943,6 +954,7 @@ function render() {
     section('account',t("Account"),accountSettings())+
     (admin ? clientSection() : section('care',t('Care details'),careSettings(data))+data.pets.map(timelineSection).join(''));
   if(admin)updateLaunchServiceForm(app.querySelector('[data-action="services"]'));
+  journey.suspend();
   updateQuote();
   drafts.restore(app, {
     onChoice:(form, input) => {
@@ -962,6 +974,12 @@ function render() {
     syncIntake(form);
     updateIntakeProgress(form,data.intake);
   }
+  const booking = app.querySelector('[data-action="bookings"]');
+  if (booking) {
+    journey.restoreForm(booking,input => updateQuote(input ? {target:input} : undefined,true));
+  }
+  journey.resume();
+  if (booking) updateTotal(booking);
   for (const form of app.querySelectorAll('form[data-action="status"]')) updateDepartureCheck(form); // after drafts are restored
   if (!admin && location.hash === '#book') applyRepeatBooking();
   showSection();
@@ -1000,8 +1018,10 @@ function showSection(focus = false) {
     document.title = t('Care Portal | myo.');
     return;
   }
+  const bookingRoute = ['book','book-step','book-review','book-intake'].includes(route.id);
+  const returningToCare = bookingRoute && journey.begin();
   const viewIds = {'pet-new':'pets',pet:'pet-'+route.params.pet,visit:'checkout-'+route.params.booking,
-    client:'clients','settings-group':'settings'};
+    client:'clients','settings-group':'settings','book-step':'book','book-review':'book','book-intake':'care'};
   const id = viewIds[route.id] || route.id;
   let panel = document.getElementById(id);
   if (route.id === 'visit' && !panel) {
@@ -1030,6 +1050,22 @@ function showSection(focus = false) {
     else link.removeAttribute('aria-current');
   }
   if (id === 'financials') showFinancials();
+  if (id === 'care' && route.id === 'book-intake') {
+    const intake = panel.querySelector('[data-care-action="intake"]');
+    if (intake) syncIntake(intake,Number(route.params.step)-1,focus);
+  }
+  if (id === 'book' && !openReview()) {
+    const booking = panel.querySelector('[data-action="bookings"]');
+    if (booking) {
+      if (returningToCare) journey.restoreForm(booking,input => updateQuote(input ? {target:input} : undefined,true));
+      updateTotal(booking);
+    }
+  }
+  if (route.id === 'pet' && journey.active && !panel.querySelector('[data-guided-vaccines]')) {
+    const pet = find(data.pets,Number(route.params.pet));
+    if (pet) panel.insertAdjacentHTML('beforeend','<div data-guided-vaccines>'+vaccineTools(pet)+'</div>');
+  }
+  journey.paint();
   loadCareSection(id,route.params);
   if (id === 'settings') { showBackupStatus(); showStaffPanel(); }
   document.title = panel.querySelector('h2').textContent+' | myo.';
@@ -1044,6 +1080,7 @@ function showSection(focus = false) {
   }
 }
 window.addEventListener('hashchange', () => {
+  if (!data?.user && ['#register','#sign-in'].includes(location.hash)) setAuthMode(location.hash === '#register' ? 'register' : 'login');
   showSection(true);
   if (data?.user && !data.user.admin) {
     if (location.hash === '#book') applyRepeatBooking();
@@ -1136,6 +1173,7 @@ function updateTotal(booking, message = '') {
   const stay = overnight && nights ? { arrive:easternEpoch(fields.get('stay_start'), fields.get('drop_time')), depart:easternEpoch(fields.get('stay_end'), fields.get('pick_time')) } : null;
   const [slot,start] = overnight ? [stay && 1, stay?.arrive] : (fields.get('slot') || '').split(':').map(Number);
   const pets = fields.getAll('pets').map(Number);
+  const revision = journey.select({service:service?.id ?? null,pets,primaryPet:pets[0] ?? null,date:fields.get('day') || null,slot:overnight ? null : slot || null,start:overnight ? null : start || null,arrive:stay?.arrive ?? null,depart:stay?.depart ?? null,notes:fields.get('notes') || ''});
   const summary = booking.querySelector('[data-quote]');
   const lines = booking.querySelector('[data-quote-lines]');
   const status = booking.querySelector('[data-quote-status]');
@@ -1164,6 +1202,7 @@ function updateTotal(booking, message = '') {
       if (!booking.isConnected || quoteRequests.get(booking) !== request) return;
       booking.dataset.quotedCents = quote.total_cents;
       bookingQuotes.set(booking,quote);
+      journey.quoted(quote,revision);
       showTotal(quote.total_cents);
       lines.innerHTML = quoteLines(quote.lines);
       const blocked = quote.blockers || [];
@@ -1307,6 +1346,7 @@ async function refresh() {
     diaryVisitOptions.clear();
   }
   data = user ? await api('portal') : null;
+  journey.bind(data);
   if (data) await loadDiary();
   app.setAttribute('aria-busy','false');
   render();
@@ -1405,6 +1445,7 @@ async function updateDiaryFilter(select) {
 // Save drafts shortly after typing stops, and when the tab is hidden, so a reload or a discarded tab keeps them.
 let draftTimer;
 app.addEventListener('input', event => {
+  if (event.target.form?.dataset.action === 'bookings' && event.target.name === 'notes') journey.notes(event.target.value);
   if (event.target.name === 'secure_note' && event.target.form) updateDepartureCheck(event.target.form);
   if (event.target.matches('.pet-field [aria-invalid]')) petFieldError(event.target,'');
   const card = event.target.closest('[data-pet-card]');
@@ -1437,10 +1478,9 @@ app.addEventListener('click', async event => {
     showFinancials();
     return;
   }
-  if (event.target.closest('[data-create-account]')) {
-    const heading = app.querySelector('[data-action="register"] h2');
-    heading.focus({preventScroll:true});
-    heading.scrollIntoView({block:'start',behavior:'instant'});
+  const modeControl = event.target.closest('[data-auth-mode]');
+  if (modeControl) {
+    setAuthMode(modeControl.dataset.authMode,true);
     return;
   }
   const changeDates = event.target.closest('[data-day-page]');
@@ -1660,6 +1700,7 @@ app.addEventListener('submit',async event => {
         } finally { delete form.dataset.holdPending; }
         pendingKeys.delete(form);
         review.dataset.expires = hold.expires;
+        journey.held(hold.expires);
         heldBooking = {
           service_name:service.name, service_kind:service.kind, pet_ids:payload.pets, starts:hold.starts, ends:hold.ends, cents:hold.total_cents, lines:hold.lines,
           quote:bookingQuotes.get(form),
@@ -1730,8 +1771,14 @@ app.addEventListener('submit',async event => {
     form.dataset.submitted = '1'; // saved: start this form empty on the next render
     drafts.forget(form);
     const resumeBooking = action === 'pets' && !form.dataset.id && location.hash === bookingIntake;
+    if (resumeBooking) {
+      const latest = await api('portal');
+      const added = latest.pets.find(pet => !data.pets.some(saved => saved.id === pet.id) && pet.name === payload.name);
+      if (added) journey.addedPet(added.id);
+    }
     if (resumeBooking) history.replaceState(null,'','#book');
     if (action === 'bookings') {
+      journey.sent(result);
       clearTimeout(holdTimer);
       delete form.querySelector('[data-booking-review]').dataset.expires; // the server already removed the hold
       const next = new URL(location.href);
@@ -1742,8 +1789,10 @@ app.addEventListener('submit',async event => {
     }
     if (action === 'status' && payload.status === 'In Progress') history.replaceState(null,'','#diary');
     const signedIn = action === 'login';
+    if (action === 'register' && (journey.active || requestedService())) history.replaceState(null,'',location.search+'#book');
+    if (action === 'signout-all') {journey.clear();authMode = 'login';}
     if (signedIn) {
-      history.replaceState(null,'',signInReturnTo || (requestedService() ? location.search+'#book' : hrefFor(homeFor(roleOf(result)))));
+      history.replaceState(null,'',signInReturnTo || (requestedService() || journey.active ? location.search+'#book' : hrefFor(homeFor(roleOf(result)))));
       signInReturnTo = undefined;
     }
     await refresh();
@@ -1815,6 +1864,8 @@ logout.addEventListener('click',async () => {
   showPublicationFeedback('');
   try {
     await api('logout',{});
+    journey.clear();
+    authMode = 'login';
     drafts.clear();
     history.replaceState(null,'',location.pathname+location.search+(new URLSearchParams(location.search).get('staff') === '1' ? '#diary' : ''));
     await refresh();
