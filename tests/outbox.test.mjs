@@ -35,10 +35,11 @@ test('a request, its confirmation, start and completion each queue one message f
   await call('staff','POST','/api/status',{ id, status:'Completed', summary:'Good walk', secured:true });
   const queued = (await messages()).reverse();
   assert.deepEqual(queued.map(m => [m.template, m.recipient]), [
-    ['request_received','Staff'], ['booking_confirmed','Ann'], ['visit_started','Ann'], ['visit_completed','Ann'],
+    ['request_received','Staff'], ['request_received_client','Ann'], ['booking_confirmed','Ann'], ['visit_started','Ann'], ['visit_completed','Ann'],
   ].map(([template, who]) => [template, who === 'Staff' ? queued[0].recipient : who]));
   assert.match(queued[0].subject, /New booking request/);
-  assert.match(queued[1].text, /Myomi confirmed Dog walking on .* ET\./);
+  assert.match(queued[1].text, /Myomi has your request/);
+  assert.match(queued[2].text, /Myomi confirmed Dog walking on .* ET\./);
   assert.ok(queued.every(m => m.status === 'pending'));
   assert.equal((await call('ann','GET','/api/outbox')).status, 403);
 });
