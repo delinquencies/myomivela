@@ -31,6 +31,8 @@ Claude's complete CU0–CU8 text from `b89aa1f` is preserved in the appendix. Th
 | Cancellation | Launch policy uses seven days and retention of part of the deposit; runtime catalog model uses service settings. | Use launch deposit-based policy and retain catalog compatibility. | Confirm retention and grandfathering, record accepted terms on the booking. |
 | Meeting notice | No explicit dedicated meeting-notice rule. | Minimum 24 hours. | Confirm operational minimum and meeting-before-service interval. |
 
+**Owner decisions recorded November 19, 2026** (and implemented in `f093d4b`): Meet & Greet once per client (pets have no accounts, so not per pet); booked at least 24 hours ahead; the 48-hour deposit window starts when the request is sent; a late cancellation keeps 50% of the deposit. Not yet decided: whether a first request may be sent before the meeting, balance timing, and no-shows.
+
 These are proposed implementation decisions, not new approvals or features already shipped. A test flag may exercise an agreed proposal without making it the production default.
 
 ## Exclusive ownership
@@ -55,7 +57,7 @@ New modules proposed here have no DOM rendering and no translated prose. Return 
 
 ## CUX-02 — One booking-intent and prerequisite controller
 
-- [ ] **Issues** UX-03, UX-05, UX-18.
+- [x] **Issues** UX-03, UX-05, UX-18.
 - [ ] **Paths** Proposed `assets/booking-flow-state.js`; `lib/compliance.mjs`, `lib/routes/bookings.mjs`, `lib/routes/portal.mjs`, `lib/idempotency.mjs` if required; `tests/ux-booking-flow.test.mjs`.
 - [ ] Model the selected service, attending pets and explicit primary pet, desired dates/times, quote revision, prerequisites, review hold and final request as one resumable task.
 - [ ] Reuse current quote and blocker rules. Supply ordered prerequisites with stable task IDs, completion state, resolution destination and return intent. Distinguish customer information from a separately scheduled meeting.
@@ -64,8 +66,9 @@ New modules proposed here have no DOM rendering and no translated prose. Return 
 - [ ] Preserve nonsensitive selection across auth, language change, new-pet creation, care save and reload through CUX-03. Invalidate quote/hold only when its actual inputs or expiry change. Ignore stale async quote responses.
 - [ ] **Handoff contract** Publish state equivalent to `{ intentId, revision, selection, steps, currentStep, blockers, quote, hold, resumeLocation, nextAction }`, and documented events for selection change, requirement completion, refresh, review, expiry, send and discard.
 - [ ] **Acceptance** A first parent can resume after each requirement. A returning parent skips already-completed requirements according to the confirmed business policy. A stale quoted amount or taken time cannot submit. Double submits remain idempotent. Another customer's intent is never restored after sign-out.
-- [ ] **Decision to expose** The current launch implementation consumes a completed Meet & Greet for each paid booking. Confirm with the owner whether that is intentional. Record the decision and migration impact. Codex must not silently convert it into a once-per-customer rule.
+- [x] **Decision to expose** The current launch implementation consumes a completed Meet & Greet for each paid booking. Confirm with the owner whether that is intentional. Record the decision and migration impact. Codex must not silently convert it into a once-per-customer rule.
 - [ ] **Codex consumer** DUX-04 supplies step UI and continuation; DUX-03 presents compact blocker/action states.
+- **Status (Nov 19, `f093d4b`):** the owner decided once per client; `availableMeet()`, the blocker (`meet_required` with `status`) and `meet_status` follow it, and the one-meeting-per-booking index is dropped (links kept). The booking-intent controller itself (`assets/booking-flow-state.js`) is still to do; linking a first request to a pending meeting waits for the "request before meeting" decision.
 
 ## CUX-03 — Canonical intake, safe drafts and structured errors
 
@@ -83,18 +86,19 @@ New modules proposed here have no DOM rendering and no translated prose. Return 
 
 ## CUX-04 — Financial and eligibility truth shared by every surface
 
-- [ ] **Issues** UX-01, UX-15, UX-16.
-- [ ] **Paths** `assets/myo-config.js`, `assets/myo-launch-backend.js`; `lib/pricing.mjs`, `lib/cancellation.mjs`, `lib/ledger.mjs`, `lib/payments.mjs`, `lib/outbox.mjs`, `lib/routes/bookings.mjs`, `lib/routes/payments.mjs`, `lib/routes/portal.mjs`; append-only `lib/db.mjs` migration when needed; `tests/ux-financial-flow.test.mjs`.
-- [ ] First publish a discrepancy matrix for configured policy, estimator, quote, request, confirmation, ledger and cancellation. The observed policies promise 50% within 48 hours and a seven-day cancellation cutoff, while requested bookings currently owe zero and catalog cancellation defaults can differ.
-- [ ] Define one authoritative quote/terms revision containing service units, line items, total, deposit due now, remaining balance, due/expiry times, cancellation schedule and payment capabilities. Both launch and catalog compatibility mode must have explicit semantics.
-- [ ] Store the accepted terms revision/time on the request. A changed revision requires renewed acknowledgment before commit. Existing bookings retain their accepted financial terms.
-- [ ] Implement the approved deposit lifecycle, or return a capability that prevents the UI from promising an unavailable step. An unconfigured live provider must yield a usable, explicit outcome. Test drivers may exercise the complete contract.
+- [x] **Issues** UX-01, UX-15, UX-16.
+- [x] **Paths** `assets/myo-config.js`, `assets/myo-launch-backend.js`; `lib/pricing.mjs`, `lib/cancellation.mjs`, `lib/ledger.mjs`, `lib/payments.mjs`, `lib/outbox.mjs`, `lib/routes/bookings.mjs`, `lib/routes/payments.mjs`, `lib/routes/portal.mjs`; append-only `lib/db.mjs` migration when needed; `tests/ux-financial-flow.test.mjs`.
+- [x] First publish a discrepancy matrix for configured policy, estimator, quote, request, confirmation, ledger and cancellation. The observed policies promise 50% within 48 hours and a seven-day cancellation cutoff, while requested bookings currently owe zero and catalog cancellation defaults can differ.
+- [x] Define one authoritative quote/terms revision containing service units, line items, total, deposit due now, remaining balance, due/expiry times, cancellation schedule and payment capabilities. Both launch and catalog compatibility mode must have explicit semantics.
+- [x] Store the accepted terms revision/time on the request. A changed revision requires renewed acknowledgment before commit. Existing bookings retain their accepted financial terms.
+- [x] Implement the approved deposit lifecycle, or return a capability that prevents the UI from promising an unavailable step. An unconfigured live provider must yield a usable, explicit outcome. Test drivers may exercise the complete contract.
 - [ ] Make deposit confirmation, approval, hold/availability, unpaid expiry, meeting association, cancellation and refunds consistent under retries and concurrent actions. Webhook truth is authoritative for paid state. Expiring one request must release only the allocations that belong to it.
 - [ ] Make primary-pet ordering explicit in input and quote output. Retain selected-date peak/short-notice calculations and overnight nightly units. Expose service-area and manual-quote eligibility as data where used by the flow.
-- [ ] **Owner decisions** Confirm per-booking meeting consumption, cancellation retention, unresolved configuration comments such as peak puppy amount and peak date range, and the payment/email provider setup. Preserve existing booked terms unless an approved, explicit repricing action applies.
-- [ ] **Handoff contract** Document all financial states, transition triggers, amount fields in cents, deadlines with timezone rules, capability flags, idempotency behavior and error codes. Do not supply a separate UI-only price calculator.
+- [x] **Owner decisions** Confirm per-booking meeting consumption, cancellation retention, unresolved configuration comments such as peak puppy amount and peak date range, and the payment/email provider setup. Preserve existing booked terms unless an approved, explicit repricing action applies.
+- [x] **Handoff contract** Document all financial states, transition triggers, amount fields in cents, deadlines with timezone rules, capability flags, idempotency behavior and error codes. Do not supply a separate UI-only price calculator.
 - [ ] **Acceptance** With a test provider, a request follows the approved deposit/approval order, webhook replay cannot double-charge or double-credit, unpaid expiry runs once, refunds reconcile, and cancel-preview values match the stored terms. Changing current service settings cannot silently rewrite an earlier booking's cancellation terms. Concurrency tests cover expiry versus payment/approval. Node and Worker agree.
 - [ ] **Codex consumer** DUX-06 renders review, estimator wording, deposit deadlines, unavailable-payment states and cancellation truth.
+- **Status (Nov 19, `f093d4b`):** deposit lifecycle, launch cancellation terms and terms acknowledgment are done (`lib/deposits.mjs`, `lib/cancellation.mjs`, `tests/ux-financial-flow.test.mjs`). Late deposit payments after expiry show as `refund_due` for Myomi to refund. Explicit primary-pet ordering is still open.
 
 ## CUX-05 — Visit state and actionable dashboard summaries
 
@@ -155,11 +159,12 @@ New modules proposed here have no DOM rendering and no translated prose. Return 
 - [x] **Paths** `lib/scheduling.mjs::bookableStarts()/overnightNights()`, `lib/pricing.mjs`, `lib/routes/portal.mjs`, `lib/routes/bookings.mjs`, `assets/myo-config.js`, CUX-02's selection controller; `tests/ux-availability.test.mjs`.
 - [x] Supply day metadata for capacity, peak period, short notice and next eligible start, together with next available overnight nights. Use the same capacity and timezone calculations as quote/confirmation.
 - [x] Define a server-backed default to a notice-free eligible day when available. Keep short-notice choices available when allowed, with surcharge metadata. Never replace an explicit restored date silently. If no notice-free day exists, expose that fact and the available alternatives.
-- [ ] Exclude or label full days consistently and recheck capacity at hold/confirmation under concurrency. Enforce the owner-approved meeting-notice rule at quote, hold and request.
+- [x] Exclude or label full days consistently and recheck capacity at hold/confirmation under concurrency. Enforce the owner-approved meeting-notice rule at quote, hold and request.
 - [x] **Handoff contract** Publish `days:[{ date, full, peak, last_minute, first_start }]`, `overnight_nights`, notice-free threshold, service units and distinct unavailable/notice error codes. Maintain existing API callers through additive fields or a versioned transition.
 - [ ] **Acceptance** Seed a full day and peak day; availability agrees with quote rejection and shows the next valid alternative. Overnight availability never depends on visit-grid start times. Default selection avoids a short-notice charge when a valid fee-free alternative exists. Restored dates remain explicit choices. Node and Worker tests cover Massachusetts day boundaries, DST and concurrent capacity changes.
 - [ ] **Codex consumer** DUX-03/06 render chips, short lists and stay units; DUX-11 uses metadata in guest discovery.
 - **Status (Nov 19, `9ed0be8`):** done except the meeting-notice rule, which waits for the owner decision above. Full days are excluded from start times and nights and still rechecked at quote, hold and approval. DST is covered by the shared Eastern-day helpers; there is no DST change inside today's 28-day window to test against, so the midnight-crossing case is tested instead.
+- **Meeting notice (Nov 19, `f093d4b`):** 24 hours, enforced in offered times, quotes, guest quotes, holds, requests and moves (`meet_too_soon`).
 
 ## Merge and handoff sequence
 
@@ -210,6 +215,16 @@ Batch 2 (November 19, 2026): CUX-03, CUX-05, CUX-06 and CUX-07. Node 212 passed;
 - Clients now receive their own request receipt (`request_received_client`) in the outbox; it sends once an email provider is connected.
 - A selected `<select>` no longer counts as always changed in drafts.
 - `MYO_EMAIL=log` is refused in production (Node start-up check).
+
+Batch 3 (November 19, 2026): owner decisions applied. Node 219 passed; Worker suites for the new rules passed; the full Chromium chain passed.
+
+**For Codex**
+- Quotes (guest and signed in) carry `terms:{ version, deposit_ratio, deposit_due_hours, deposit_clock:'request', cancellation_days, late_retention_ratio, meet_scope, meet_notice_hours, deposit_collection:'online'|'manual', free_cancellation_until }`. Show it on review with an acknowledgment, and send `accept_terms_version` with the request; a stale version returns 409 `terms_changed` with the current `terms`.
+- Requests in launch mode return `next_steps` with `pay_deposit` (online) or `deposit_arranged` (manual), each with `amount_cents` and `due_at`, then `pay_balance` / `payment_arranged`. Bookings carry `deposit_cents`, `deposit_due_at`, `cancel_reason`, `terms_version`, `terms_accepted_at`; `payment` adds `deposit_cents`, `deposit_paid`, `deposit_due_at` and `stage:'deposit'|'total'`.
+- `POST /api/payments/start` works on a request whose deposit is due (amount = deposit still owed). Owners can record a deposit by hand on a request. Confirming an unpaid paid request returns 409 `deposit_unpaid`.
+- `/api/cancellation-preview` in launch mode returns `model:'deposit'`, `cutoff_days`, `deposit_cents`, `received_cents` and `fee_cents` (50% of the paid deposit inside 7 days). Its `percent` is now of the deposit, not the visit.
+- Portal data adds `deposit_collection`, `meet_status` and `terms`. New outbox templates: `deposit_due`, `deposit_reminder`, `deposit_expired`, `deposit_expired_staff`.
+- Copy I changed because it stated the old rule (please review the tone): `meetBody` in `assets/myo-copy.js`, the client-home Meet & Greet line and `blocker.meet_required` in `assets/care-copy.js` (keys unchanged), plus error text for `meet_too_soon`, `terms_changed`, `deposit_unpaid`.
 
 
 ## Preserved Claude source from b89aa1f

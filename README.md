@@ -5,8 +5,8 @@ myo. is Myomi’s pet-care website and portal. Customers request visits and read
 ## Status at a glance
 
 - **Implemented:** launch pricing, booking review with a temporary hold, request, approval, visit, diary update and completion summary; care intake, agreements, vaccine records and encrypted home-access details; owner and sitter staff roles; daily scheduled backups. See [What works today](#what-works-today).
-- **Built but switched off or waiting for screens:** online payment (Stripe, off until configured); the notification outbox and password recovery (no email provider yet); recurring visits, fee rules and packages (APIs, minimal UI); the guest quote, ZIP check, visit page, confirmation next steps and self-refreshing diary (APIs and modules ready; Codex is building the screens).
-- **Not implemented:** the 50% deposit with a 48-hour window, invoices or receipts, care checklists, GPS walk tracking, messaging and email verification. See [Not built yet](#not-built-yet).
+- **Built but switched off or waiting for screens:** the 50% deposit and launch cancellation terms (server rules done; the review and payment screens are Codex's next tasks); online payment (Stripe, off until configured); the notification outbox and password recovery (no email provider yet); recurring visits, fee rules and packages (APIs, minimal UI); the guest quote, ZIP check, visit page, confirmation next steps and self-refreshing diary (APIs and modules ready; Codex is building the screens).
+- **Not implemented:** invoices or receipts, care checklists, GPS walk tracking, messaging and email verification. See [Not built yet](#not-built-yet).
 - **Not production-ready for public launch.** Read [Known limitations](#known-limitations) and the [audit](MYO_AUDIT.md) first.
 
 ## Technology and structure
@@ -68,9 +68,9 @@ The approved launch rates in `assets/myo-config.js` now price live server quotes
 
 Customers use **Care details** to save all required intake and emergency information, accept the current agreement and save encrypted home-entry instructions. Pet cards offer vaccine records with PDF/image uploads and a care timeline. Staff can configure vaccine requirements, publish bilingual agreement versions, reveal entry details within the visit window, publish structured activity answers, and manage private client or pet notes. Overnight bookings have a two-month date picker and a diary grouped by night.
 
-In launch mode, each paid booking requires a complete care intake and its own completed complimentary Meet & Greet. Cancelling a booking releases that Meet & Greet for a replacement request. Whether a Meet & Greet should be needed once per client instead is an open owner decision (see the [UX flow audit](docs/ux-flow-audit.md)). The ten-visit daily limit is checked on quotes, holds and confirmation, and full days are no longer offered as times or nights. Short notice uses Massachusetts calendar days and adds the configured fee. The first pet in a quote's list is priced as the primary pet.
+In launch mode, a client's first paid booking needs a complete care intake and a completed complimentary Meet & Greet; one Meet & Greet covers every later booking, and it must be booked at least 24 hours ahead. A paid request owes a 50% deposit within 48 hours of being sent, and Myomi confirms it once the deposit is in. With online payment on, an unpaid request is released at its deadline; with it off, Myomi records deposits by hand and decides. Cancelling 7 or more days ahead is free; later, Myomi keeps 50% of the deposit paid. The ten-visit daily limit is checked on quotes, holds and confirmation, and full days are no longer offered as times or nights. Short notice uses Massachusetts calendar days and adds the configured fee. The first pet in a quote's list is priced as the primary pet.
 
-Main also includes Stripe Checkout, payment/refund records, recurring and package APIs, staff roles, scheduled backups and password recovery. Live payment credentials and an email driver remain unconfigured. The launch-specific 50% deposit and 48-hour unpaid-request expiry are not built yet: quotes show the deposit split, but nothing collects it, and requests continue through Myomi’s approval flow. See the [iteration report](docs/audits/2026-11-18-launch-iteration.md) and the [Claude UX plan](docs/plans/claude-ux-plan.md) for verified work and open dependencies.
+Main also includes Stripe Checkout, payment/refund records, recurring and package APIs, staff roles, scheduled backups and password recovery. Live payment credentials and an email driver remain unconfigured. See the [iteration report](docs/audits/2026-11-18-launch-iteration.md) and the [Claude UX plan](docs/plans/claude-ux-plan.md) for verified work and open dependencies.
 
 ## Run locally
 
@@ -200,7 +200,7 @@ Playwright is not a dev dependency: install it separately (`npm install --no-sav
 ## Not built yet
 
 - **Waiting for screens (the server side exists):** recurring visits, fee rules and packages management; the guest price and ZIP check before sign-in; the visit page and post-request confirmation with next steps; the self-refreshing diary; the forgotten-password form. See [the Codex UX plan](docs/plans/codex-ux-plan.md).
-- **Waiting for owner decisions:** the 50% deposit with a 48-hour window, Meet & Greet scope (per booking or once per client), Meet & Greet notice, and cancellation retention.
+- **Waiting for owner decisions:** balance timing beyond "before the visit", no-shows, and the price checks in the Decisions table.
 - **Waiting for a provider:** sending email (messages and reset links are queued).
 - **Not started:** invoices or receipts, email verification, care plans and per-visit checklists, structured medication logging (today “Medication” is a free-text activity type), GPS walk tracking and distance (“Walk started/completed” are diary labels only), messaging, and editing or deleting published diary updates.
 
@@ -216,7 +216,7 @@ Stripe Checkout, switched off unless `MYO_PAYMENTS=stripe` and its two secrets a
 - Rate-limit counters live in memory (in the single Durable Object on Cloudflare), so they reset when it restarts.
 - Lockouts: 8 failed passwords per account and address per 15 minutes; 50 per account per hour from devices that have never signed in to it; a device that has signed in before (it holds a `myo_device` cookie) has its own 8-per-15-minutes allowance and ignores the other two. So a guesser locks out only themselves, and a large distributed attack can block new devices for an hour but never the owner's known phone or computer.
 - The first staff account (the owner) is created from environment variables. The owner adds sitters and other owners in **Settings → Staff**; sitters run visits but can't change prices, settings or money. Without email, the owner hands over each temporary password.
-- Visits can start from the visit buffer (default 30 minutes) before their booked time. Cancellation fees are set per service in catalog mode (0% until Myomi sets one); the launch policy's deposit-based cancellation terms are not enforced yet; no-shows have no policy.
+- Visits can start from the visit buffer (default 30 minutes) before their booked time. In launch mode the deposit-based cancellation terms apply (free 7+ days ahead, then 50% of the deposit paid); in catalog mode fees are set per service (0% until Myomi sets one). No-shows have no policy yet.
 - The service-area check uses ZIP-code centres, so homes near the 15-mile edge are flagged for Myomi to confirm. Connecticut ZIPs inside the radius count as in the area.
 - The current list of open work, decisions and usability findings is in [DEVELOPMENT_HANDOFF.md §5](DEVELOPMENT_HANDOFF.md#5-what-is-still-open-as-of-november-18-2026).
 - `sitemap.xml` and `robots.txt` still point at GitHub Pages; update them once the Cloudflare domain is chosen.
@@ -226,7 +226,7 @@ Stripe Checkout, switched off unless `MYO_PAYMENTS=stripe` and its two secrets a
 | Area | Needed |
 | --- | --- |
 | Service area and pricing | Configured in `assets/myo-config.js`: 15 miles from Springfield 01108, 10 visits a day, $30 per 30-minute walk or drop-in ($44 on peak dates, +$20 for 60 minutes, $39 puppy), $95 overnight (+$44 per peak night), extra pets $21 (dog) / $13 (cat), $15 short-notice fee. Still to confirm there: the peak puppy rate ($44 or $53), the Christmas 2026 dates, and whether Connecticut ZIPs are served. |
-| Policies | Configured: 3 days' notice for visits and 7 for stays, a 50% deposit within 48 hours, 7-day cancellation keeping part of the deposit. Still to decide: whether the deposit clock starts at request or at acceptance, how much of the deposit a late cancellation keeps (50% or 100%), Meet & Greet once per client or before every booking, Meet & Greet notice, balance timing, no-shows, photo and location consent, data retention. |
+| Policies | Decided and enforced (Nov 19, 2026): 3 days' notice for visits and 7 for stays; a 50% deposit due 48 hours after the request is sent; cancelling 7+ days ahead is free, later Myomi keeps 50% of the deposit; one Meet & Greet per client, booked 24 hours ahead. Still to decide: whether a new pet needs its own meeting, balance timing, no-shows, photo and location consent, data retention. |
 | Launch content | Contact and social links, portrait and photos, testimonials with permission, review of English and Spanish copy. |
 | Production domain | Hosting is decided (Cloudflare Workers + Durable Object + R2). Choose the public domain, then fix `sitemap.xml` and `robots.txt`. |
 | Payments and email | Stripe Checkout is built; supply live keys and a webhook to turn it on. Choose an email provider and sending domain (needed for receipts, notifications and password recovery). |
