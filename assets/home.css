@@ -549,7 +549,7 @@ a.social-icon:hover { background: #9f3018; color: white; }
 }
 .faq-answers summary::-webkit-details-marker { display: none; }
 .faq-answers summary::after { content: ''; width: .55rem; height: .55rem; border: solid #a63116; border-width: 0 2px 2px 0; transform: rotate(45deg); }
-.faq-answers details[open] summary::after { transform: rotate(225deg); }
+.faq-answers details[open] > summary::after { transform: rotate(225deg); }
 .faq-answers details p { margin: 0 1rem 1rem; max-width: 60ch; }
 
 .preview-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding-block: 1.5rem; }

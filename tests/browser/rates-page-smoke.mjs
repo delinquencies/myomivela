@@ -1,0 +1,100 @@
+import assert from 'node:assert/strict';
+import {createRequire} from 'node:module';
+import {readFileSync} from 'node:fs';
+import {join} from 'node:path';
+import {tmpdir} from 'node:os';
+import {chromium} from 'playwright';
+import {startServer} from '../helpers.mjs';
+
+const require=createRequire(import.meta.url);
+const axe=readFileSync(require.resolve('axe-core/axe.min.js'),'utf8');
+const server=await startServer();
+const browser=await chromium.launch();
+const errors=[];
+async function layout(page,label) {
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth),true,label+' horizontal overflow');
+}
+async function accessible(page,label) {
+  await page.evaluate(axe);
+  const violations=await page.evaluate(async()=> (await window.axe.run(document,{runOnly:{type:'tag',values:['wcag2a','wcag2aa','wcag21aa']}})).violations.map(({id,nodes})=>({id,targets:nodes.map(node=>node.target)})));
+  assert.deepEqual(violations,[],label);
+}
+try {
+  for(const width of [1440,390]) for(const language of ['en','es']) {
+    const context=await browser.newContext({viewport:{width,height:width===390?844:900},reducedMotion:'reduce'});
+    const page=await context.newPage();
+    page.on('pageerror',error=>errors.push(error.message));
+    await page.goto(server.base+'/myo/launch/',{waitUntil:'networkidle'});
+    await page.locator('[data-language="'+language+'"]').click();
+    await page.evaluate(()=>document.fonts.ready);
+    assert.equal(await page.locator('.rate-stack > details').count(),3);
+    assert.equal(await page.locator('.rate-stack > details[open]').count(),0);
+    assert.equal(await page.locator('#intake-form, #policy-list').count(),0);
+    assert.equal(await page.locator('.peak-calendar').getAttribute('open'),null);
+    assert.equal(await page.locator('.rate-summary-price').first().isVisible(),true);
+    await layout(page,'rates '+width+language);
+    await accessible(page,'rates');
+    if(process.env.MYO_CAPTURE) await page.screenshot({path:join(tmpdir(),'myo-rates-'+width+'-'+language+'.png'),fullPage:true});
+    const summary=page.locator('.rate-stack > details > summary').first();
+    await summary.focus();await page.keyboard.press('Enter');
+    assert.equal(await page.locator('.rate-stack > details[open]').count(),1);
+    const service=page.locator('.rate-details a').first();
+    assert.match(await service.getAttribute('href'),/service=dog-walking#book$/);
+    await page.locator('[data-open-estimate]').click();
+    assert.equal(await page.locator('#estimate-title').evaluate(node=>node===document.activeElement),true);
+    assert.equal(await page.locator('[data-close-estimate]').evaluate(node=>node.getBoundingClientRect().height>=44),true);
+    assert.equal(await page.locator('#estimate-dialog').evaluate(node=>node.matches(':modal')),true,'native dialog makes background inert');
+    await page.locator('[data-open-estimate]').evaluate(node=>node.focus());
+    assert.equal(await page.locator('[data-open-estimate]').evaluate(node=>node===document.activeElement),false,'background cannot receive focus');
+    await page.keyboard.press('Tab');
+    assert.equal(await page.evaluate(()=>!!document.activeElement.closest('#estimate-dialog')),true);
+    await page.locator('#estimate-form button').click();
+    assert.equal(await page.locator('#estimate-fields-date').evaluate(node=>node===document.activeElement),true);
+    assert.equal(await page.locator('#estimate-fields-date').getAttribute('aria-invalid'),'true');
+    await page.locator('#estimate-fields-date').fill('2027-07-05');
+    await page.locator('#estimate-fields-duration').selectOption('60');
+    await page.locator('#estimate-form button').click();
+    assert.equal(await page.locator('#estimate-fields-date').getAttribute('aria-invalid'),null);
+    assert.match(await page.locator('#estimate-result').innerText(),/\$64\.00/);
+    await accessible(page,'estimate dialog');
+    await layout(page,'estimate');
+    if(process.env.MYO_CAPTURE) await page.screenshot({path:join(tmpdir(),'myo-estimate-'+width+'-'+language+'.png')});
+    await page.keyboard.press('Escape');
+    await page.waitForFunction(()=>document.activeElement.matches('[data-open-estimate]'));
+    const next=language==='en'?'es':'en';
+    await page.locator('[data-language="'+next+'"]').click();
+    assert.equal(await page.locator('.rate-stack > details[open]').count(),1,'language keeps disclosed service');
+    await page.locator('[data-open-estimate]').click();
+    assert.equal(await page.locator('#estimate-fields-date').inputValue(),'2027-07-05');
+    assert.match(await page.locator('#estimate-result').innerText(),/\$64\.00/);
+    await page.locator('[data-close-estimate]').click();
+    await page.locator('.peak-calendar > summary').click();
+    assert.equal(await page.locator('#peak-dates li').count(),11);
+    await layout(page,'peak dates');
+    await page.evaluate(()=>{document.documentElement.style.fontSize='200%';});
+    await layout(page,'rates enlarged text');
+    await page.goto(server.base+'/myo/safety_first_faq/index.html#policy-clientCancel',{waitUntil:'networkidle'});
+    assert.equal(await page.locator('.policy-group').count(),4);
+    assert.equal(await page.locator('[data-policy]').count(),16);
+    assert.equal(await page.locator('#policy-clientCancel').evaluate(node=>node.open&&node.closest('.policy-group').open),true);
+    await accessible(page,'policy categories');
+    await page.locator('#policy-topic-care > summary').click();
+    await page.locator('#policy-intake > summary').click();
+    assert.match(await page.locator('#policy-intake a').getAttribute('href'),/portal\/index.html#care$/);
+    await page.locator('[data-language="'+language+'"]').click();
+    assert.equal(await page.locator('#policy-intake').evaluate(node=>node.open),true);
+    await page.locator('#policies details').evaluateAll(nodes=>nodes.forEach(node=>node.open=true));
+    await layout(page,'all policies');
+    await accessible(page,'expanded policies');
+    if(process.env.MYO_CAPTURE) await page.screenshot({path:join(tmpdir(),'myo-policies-'+width+'-'+language+'.png'),fullPage:true});
+    await page.evaluate(()=>{document.documentElement.style.fontSize='200%';});
+    await layout(page,'policies enlarged text');
+    await page.goto(server.base+'/myo/launch/index.html#policies',{waitUntil:'networkidle'});
+    await page.waitForURL('**/myo/safety_first_faq/index.html#policies');
+    await page.goto(server.base+'/myo/launch/index.html#intake',{waitUntil:'networkidle'});
+    await page.waitForURL('**/portal/index.html#care');
+    await context.close();
+    console.log('Compact rates, estimate dialog and policies '+width+' '+language+' passed');
+  }
+  assert.deepEqual(errors,[]);
+} finally {await browser.close();await server.stop();}
