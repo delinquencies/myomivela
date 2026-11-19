@@ -10,14 +10,14 @@
 .launch-nav { display: flex; flex-wrap: wrap; justify-content: center; gap: .4rem 1rem; }
 .launch-nav a { display: inline-flex; align-items: center; min-height: 44px; text-underline-offset: .2em; }
 .launch-grid, .launch-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); gap: .8rem; }
-.launch-card, .launch-dates li, .launch details { min-width: 0; background: #fff9f2; border: 1px solid #e9cdbb; border-radius: 1.3rem; padding: clamp(.9rem, 3vw, 1.4rem); }
+.launch-card, .launch-dates li, .launch-main details { min-width: 0; background: #fff9f2; border: 1px solid #e9cdbb; border-radius: 1.3rem; padding: clamp(.9rem, 3vw, 1.4rem); }
 .launch-card p:last-child, .launch-card ul:last-child { margin-bottom: 0; }
 .launch-excluded, .launch-estimate { margin-top: .8rem; }
 .launch-dates { padding: 0; list-style: none; }
 .launch-dates time { white-space: normal; }
-.launch details { margin-bottom: .45rem; padding-block: 0; }
-.launch details summary { cursor: pointer; font-weight: 700; min-height: 44px; padding-block: .65rem; }
-.launch details p { margin: 0 0 1rem; }
+.launch-main details { margin-bottom: .45rem; padding-block: 0; }
+.launch-main details summary { cursor: pointer; font-weight: 700; min-height: 44px; padding-block: .65rem; }
+.launch-main details p { margin: 0 0 1rem; }
 .launch-field { min-width: 0; display: flex; flex-direction: column; gap: .35rem; align-items: stretch; }
 .launch-field label { font-weight: 650; }
 .launch-field input:not([type=checkbox]), .launch-field select, .launch-field textarea { width: 100%; min-width: 0; min-height: 44px; background: white; color: inherit; border: 1px solid #9b7663; border-radius: .65rem; padding: .55rem; font: inherit; font-size: max(1rem, 16px); }
@@ -27,7 +27,6 @@
 .launch [aria-invalid=true] { outline: 2px solid #a62d19; }
 .launch .field-error { color: #8b2818; }
 .launch form .button { margin-top: 1rem; min-height: 44px; cursor: pointer; }
-.launch .language button { min-height: 44px; min-width: 44px; }
 .launch-result-line { display: flex; gap: .75rem; justify-content: space-between; }
 .launch-result-line dd { margin: 0; text-align: end; }
 .launch-result-total { border-top: 1px solid #e9cdbb; padding-top: .4rem; font-weight: 700; }

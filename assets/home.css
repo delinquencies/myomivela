@@ -142,6 +142,9 @@ html:has(.site-header--sticky) { scroll-padding-top: 5.5rem; }
   border: 1px solid #a8614460;
   border-radius: 1.1rem;
   box-shadow: 0 12px 30px #6d301824;
+  max-height: calc(100dvh - 6rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 .site-nav a {
   display: flex;

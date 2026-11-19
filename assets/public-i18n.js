@@ -27,3 +27,32 @@ export function initializeLanguage(onChange = () => {}) {
   }
 }
 initializeLanguage();
+
+const publicMenu = document.querySelector('.site-menu:not(.portal-menu)');
+if (publicMenu) {
+  const toggle = publicMenu.querySelector('summary');
+  publicMenu.addEventListener('keydown', event => {
+    if (event.key !== 'Escape' || !publicMenu.open) return;
+    event.preventDefault();
+    publicMenu.open = false;
+    toggle.focus();
+  });
+  publicMenu.addEventListener('click', event => {
+    if (event.target.closest('nav a')) publicMenu.open = false;
+  });
+  document.addEventListener('click', event => {
+    if (!publicMenu.contains(event.target)) publicMenu.open = false;
+  });
+  const updateCurrentPage = () => {
+    const path = location.pathname.replace(/index\.html$/, '');
+    for (const link of publicMenu.querySelectorAll('nav a')) {
+      const target = new URL(link.href);
+      const current = target.pathname.replace(/index\.html$/, '') === path &&
+        (!target.hash || target.hash === location.hash);
+      if (current) link.setAttribute('aria-current',target.hash ? 'location' : 'page');
+      else link.removeAttribute('aria-current');
+    }
+  };
+  updateCurrentPage();
+  window.addEventListener('hashchange',updateCurrentPage);
+}
