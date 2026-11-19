@@ -1,6 +1,6 @@
 # Security and correctness audit — November 19, 2026
 
-**Scope:** server code on `main` at `4e75710` and the two fixes below, with emphasis on what was added in the last three days: payments and deposits, password recovery, guest quotes and ZIP checks, staff roles, scheduled backups, and the booking-flow APIs. The portal's HTML escaping and the Content Security Policy were checked too. **Method:** a route-by-route access review of all 98 API routes, code reading, targeted greps (SQL construction, unescaped output, secrets), `npm audit`, and the existing Node, Worker and Chromium suites. No penetration test, no deployed site.
+**Scope:** server code on `main` at `4e75710` and the three fixes below, with emphasis on what was added in the last three days: payments and deposits, password recovery, guest quotes and ZIP checks, staff roles, scheduled backups, and the booking-flow APIs. The portal's HTML escaping and the Content Security Policy were checked too. **Method:** a route-by-route access review of all 98 API routes, code reading, targeted greps (SQL construction, unescaped output, secrets), `npm audit`, and the existing Node, Worker and Chromium suites. No penetration test, no deployed site.
 
 ## Fixed in this audit
 
@@ -8,12 +8,12 @@
 |---|---|---|---|
 | F1 | Medium | A **sitter** could pause, skip or end any client's recurring series through `/api/series/pause`, `/skip` and `/end`. `seriesFor()` accepted any staff account, and skipping or ending cancels bookings, which elsewhere is the owner's decision. | Those routes now require the series' customer or the owner role (403 `owner_only`); sitters can still read series. Test added in `tests/series.test.mjs`. |
 | F2 | Medium | The public `/api/availability`, `/api/availability/days` and `/api/availability/times` had no rate limit. Each computes four weeks of start times inside the single Durable Object, so a simple loop could slow the whole API for everyone. | A separate per-address limit of 300 requests a minute (`limitAvailability` in `lib/auth.mjs`); the full browser suite still passes under it. |
+| F3 | Medium | **The Worker skipped the production safety checks.** `productionProblems()` ran only in `server.mjs`, so on Cloudflare the test-only `MYO_PAYMENTS=fake` and `MYO_EMAIL=log` would have been accepted silently, and a missing `MYO_VAULT_KEY` only surfaced when someone used home access or recovery. | The shared checks are now `workerProblems()` in `lib/config.mjs`. While any applies, the Durable Object answers every API call except `GET /api/session` with 503 `not_configured`, its alarm sends nothing, and the reasons go to the Worker log. Only the test harness's `MYO_TEST_SETTINGS=1` allows the test-only settings. Worker test added in `tests/operations.test.mjs`. |
 
 ## Open, recommended
 
 | # | Severity | Finding | Recommendation |
 |---|---|---|---|
-| F3 | Medium | **The Worker skips the production safety checks.** `productionProblems()` runs only in `server.mjs`, so on Cloudflare the test-only `MYO_PAYMENTS=fake` and `MYO_EMAIL=log` would be accepted silently (fake "payments" and silently dropped email), and a missing `MYO_VAULT_KEY` only surfaces when someone uses home access or recovery. | Before the first deploy, have the Worker refuse to serve the API with test-only settings unless the test harness sets an explicit flag, and report a missing vault key at start-up. Until then, follow the README's secret list exactly. |
 | F4 | Low | Registration says "This email cannot be registered" (409) for an existing account, which reveals who has an account; password recovery is careful not to. | Acceptable trade-off for a small business (the registration route is rate-limited). If it matters, answer registration generically and email the existing account instead, once email works. |
 | F5 | Low | Owner actions with the widest reach (adding owners, setting a staff password, restore, refunds) don't ask the owner to re-enter their password. A stolen owner session therefore has full control for up to 7 days. | Add a step-up password check for staff management and refunds; consider a shorter session for staff. |
 | F6 | Low | Rate limits and lockouts are kept in memory and reset when the Durable Object restarts (already noted in the README). | Acceptable at this scale; move counters to SQLite if abuse is ever seen. |
@@ -35,4 +35,4 @@
 
 ## Verification
 
-Node 226 passed; the full Chromium chain passed (exit 0) with the availability limit in place. The Worker suite was not re-run for these two small changes; the series and availability tests run on both runtimes in the next full run.
+Node 226 passed; the full Chromium chain passed (exit 0) with the availability limit in place. After the F3 fix the Worker suite passed (205 passed, 22 Node-only skips), including the series, availability and new settings tests.

@@ -92,3 +92,15 @@ test('backup script writes a verified copy of a live database and refuses to ove
     assert.equal(run().status, 1, 'second run must not overwrite');
   } finally { await app.stop(); await rm(dir, { recursive:true, force:true }); }
 });
+
+// The Worker has no start-up step that can exit, so it refuses the API instead (audit F3).
+test('a Worker with test-only settings refuses the API but still answers the session check', { skip:target === 'worker' ? false : 'needs the Worker runtime' }, async () => {
+  const app = await startServer({ MYO_TEST_SETTINGS:'', MYO_PAYMENTS:'fake' });
+  try {
+    assert.equal((await app.call('x','GET','/api/session')).status, 200);
+    const login = await app.call('x','POST','/api/login',adminLogin);
+    assert.equal(login.status, 503);
+    assert.equal(login.json.code, 'not_configured');
+    assert.match(app.output(), /MYO_PAYMENTS=fake is for tests only/, 'the reason is in the Worker log');
+  } finally { await app.stop(); }
+});
