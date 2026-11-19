@@ -357,7 +357,7 @@ const staffEntry = staff.locator('#diary-feed li').filter({ hasText:'Report card
 await staffEntry.waitFor(); // the portal loads its data after the page itself
 const staffHidden = await staffEntry.locator('.diary-field-hidden').allTextContents();
 log('report card answers hidden from the customer, as staff see them:', staffHidden);
-if (staffHidden.join('|') !== '✗ Poop') throw new Error('Staff should see the hidden Poop answer, greyed out');
+if (staffHidden.join('|') !== '✗ Poop Hidden from the client') throw new Error('Staff should see the hidden answer and its visibility label');
 log('diary departure lines:', /Home secured at/.test(diaryText), /Not fully secured: Back gate latch broken/.test(diaryText));
 if (!/Home secured at/.test(diaryText) || !/Not fully secured: Back gate latch broken/.test(diaryText)) throw new Error('The diary should show both departure checks');
 const diaryPicker = cust.getByLabel('Filter diary');

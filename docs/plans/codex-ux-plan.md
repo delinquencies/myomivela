@@ -1,6 +1,6 @@
 # Codex UX remediation plan
 
-Prepared November 19, 2026 from the [flow audit](../ux-flow-audit.md), baseline `5d139ec`. All tasks below are unchecked implementation work. The audit changed documentation only.
+Prepared November 19, 2026 from the [flow audit](../ux-flow-audit.md), baseline `5d139ec`. Implementation status is recorded in the active checklists below. The audit baseline remains documentation-only.
 
 ## Reconciliation with Claude's UI plan
 
@@ -41,12 +41,12 @@ Codex does not recreate price math, authorization, prerequisite rules, token han
 
 ## DUX-01 — Immediate navigation, obstruction and contrast repair
 
-- [ ] **Scope** UX-02, UX-06, UX-11. Independent of backend changes.
-- [ ] **Files** `portal/index.html`, `assets/portal.js::render()/showPublicationFeedback()`, `assets/portal.css`, `assets/diary.js::renderFields()`, `tests/browser/a11y-smoke.mjs`.
-- [ ] Remove static duplicate Care details. Produce a single customer destination, none for staff or signed-out people. Keep Account hidden while signed out.
-- [ ] Position notices where they cannot intercept the menu, language switch, primary action or focused field. Announce success through the existing status region. Keep critical error messages available until acted on.
-- [ ] Replace opacity-based hidden-answer styling with readable text plus an explicit Hidden from client label. Use selected-date colors that pass contrast.
-- [ ] **Acceptance** At 1440×900 and 390×844, save intake, then open the hamburger without dismissing the notice. All role menu links resolve to visible destinations. Axe finds no 1.4.3 failure on a published Poop No staff chip or selected stay dates in EN and ES. Existing Escape/focus-return behavior passes.
+- [x] **Scope** UX-02, UX-06, UX-11. Independent of backend changes.
+- [x] **Files** `portal/index.html`, `assets/portal.js::render()/showPublicationFeedback()`, `assets/portal.css`, `assets/diary.js::renderFields()`, `tests/browser/a11y-smoke.mjs`.
+- [x] Remove static duplicate Care details. Produce a single customer destination, none for staff or signed-out people. Keep Account hidden while signed out.
+- [x] Position notices where they cannot intercept the menu, language switch, primary action or focused field. Announce success through the existing status region. Keep critical error messages available until acted on.
+- [x] Replace opacity-based hidden-answer styling with readable text plus an explicit Hidden from client label. Use selected-date colors that pass contrast.
+- [x] **Acceptance** At 1440×900 and 390×844, save intake, then open the hamburger without dismissing the notice. All role menu links resolve to visible destinations. Axe finds no 1.4.3 failure on a published Poop No staff chip or selected stay dates in EN and ES. Existing Escape/focus-return behavior passes.
 
 ## DUX-02 — Consistent shell and route presentation
 
@@ -271,3 +271,13 @@ The original November 19 document is retained below for attribution, evidence, a
 <!-- claude-source-b89aa1f-end -->
 
 </details>
+
+## Handoff Notes — November 19, 2026 — DUX-01
+
+- DUX-01 is complete. The homepage reference was inspected in source and rendered desktop/mobile screenshots before editing. The portal treatments use the existing Fraunces/Outfit pairing and paper, peach, cream and ink palette.
+- The customer Care details destination is emitted by the role-specific links in `assets/portal.js::render()`. The duplicate static `#care` link was removed from `portal/index.html`, so public, owner and sitter menus do not expose it.
+- `.portal-feedback.is-notice` is an in-flow rounded peach notice. Its status region and dismiss control remain available, and saving intake permits immediate menu/language-control interaction.
+- `assets/diary.js::renderFields()` adds a visible `.diary-field-note` on staff-only answers using the existing EN/ES Hidden from the client catalog entry. The dashed paper chip replaces opacity/strike-through styling. Customer filtering remains enforced by the API.
+- Selected stay endpoints use ink with cream text. The peach range treatment and selected endpoint contrast are covered by populated-state axe checks.
+- Validation passed JavaScript syntax checks, all seven i18n tests, and the complete nine-script Chromium browser command. The added DUX-01 matrix exercises public/customer/owner/sitter menus in EN and ES at 1440×900 and 390×844, actual intake-save/menu interaction, keyboard focus, selected stays and staff-only answer contrast. Screenshots at both sizes were visually reviewed. Physical-device and screen-reader checks remain pending.
+- The next sequential task is DUX-02. Its CUX-01 route descriptor/resolution contract was absent from main and audit-remediation when checked for this batch. Claude should publish that contract before Codex integrates the shared shell and canonical navigation.
