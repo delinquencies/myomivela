@@ -1,6 +1,22 @@
 // @ts-check
 // Shared customer-facing copy. English phrases are stable translation keys.
 export const en = {
+  "Deposit due {amount}": "Deposit due {amount}",
+  "Deposit due by {date}.": "Deposit due by {date}.",
+  "Pay deposit {amount}": "Pay deposit {amount}",
+  "Deposit and cancellation": "Deposit and cancellation",
+  "Deposit": "Deposit",
+  "Remaining balance": "Remaining balance",
+  "Your deposit is due within {hours} hours after you send this request.": "Your deposit is due within {hours} hours after you send this request.",
+  "Pay the deposit online after sending your request.": "Pay the deposit online after sending your request.",
+  "Arrange the deposit with Myomi. Online payment is unavailable.": "Arrange the deposit with Myomi. Online payment is unavailable.",
+  "Cancel at least {days} days before your visit for the deposit to be returned. Later cancellations keep {percent} of the deposit paid.": "Cancel at least {days} days before your visit for the deposit to be returned. Later cancellations keep {percent} of the deposit paid.",
+  "Sending a request does not confirm your visit or charge your card.": "Sending a request does not confirm your visit or charge your card.",
+  "I have reviewed the deposit and cancellation terms.": "I have reviewed the deposit and cancellation terms.",
+  "Please review and accept these terms before sending your request.": "Please review and accept these terms before sending your request.",
+  "Booking terms changed. Please review them again.": "Booking terms changed. Please review them again.",
+  "Cancelling now keeps {fee} from your paid deposit.": "Cancelling now keeps {fee} from your paid deposit.",
+
   "per night": "per night",
   "From {price} per night": "From {price} per night",
   "From {price} / {minutes} min": "From {price} / {minutes} min",
@@ -708,6 +724,22 @@ export const en = {
 
 /** @type {Record<keyof typeof en, string>} */
 export const es = {
+  "Deposit due {amount}": "Depósito pendiente: {amount}",
+  "Deposit due by {date}.": "El depósito vence el {date}.",
+  "Pay deposit {amount}": "Pagar depósito de {amount}",
+  "Deposit and cancellation": "Depósito y cancelación",
+  "Deposit": "Depósito",
+  "Remaining balance": "Saldo restante",
+  "Your deposit is due within {hours} hours after you send this request.": "Tu depósito vence {hours} horas después de enviar esta solicitud.",
+  "Pay the deposit online after sending your request.": "Paga el depósito en línea después de enviar tu solicitud.",
+  "Arrange the deposit with Myomi. Online payment is unavailable.": "Coordina el depósito con Myomi. El pago en línea no está disponible.",
+  "Cancel at least {days} days before your visit for the deposit to be returned. Later cancellations keep {percent} of the deposit paid.": "Cancela al menos {days} días antes de tu visita para que se devuelva el depósito. Si cancelas después, se retiene el {percent} del depósito pagado.",
+  "Sending a request does not confirm your visit or charge your card.": "Enviar una solicitud no confirma tu visita ni hace un cargo a tu tarjeta.",
+  "I have reviewed the deposit and cancellation terms.": "He revisado las condiciones del depósito y la cancelación.",
+  "Please review and accept these terms before sending your request.": "Revisa y acepta estas condiciones antes de enviar tu solicitud.",
+  "Booking terms changed. Please review them again.": "Las condiciones de la reserva cambiaron. Revísalas de nuevo.",
+  "Cancelling now keeps {fee} from your paid deposit.": "Si cancelas ahora, se retienen {fee} de tu depósito pagado.",
+
   "per night": "por noche",
   "From {price} per night": "Desde {price} por noche",
   "From {price} / {minutes} min": "Desde {price} / {minutes} min",
