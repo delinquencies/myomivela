@@ -323,7 +323,7 @@ function bookingForm() {
   const unavailable = serviceName && !preferred;
   const initial = preferred ?? (unavailable ? null : data.services[0]);
   const serviceOptions = data.services.map(service =>
-    choice('service',service.id,translateLabel(service.name)+' · '+service.minutes+' min · '+(service.cents === 0 ? t("Free") : money(service.cents)),{
+    choice('service',service.id,translateLabel(service.name)+' · '+(service.kind === 'overnight' ? t('per night') : service.minutes+' min')+' · '+(service.cents === 0 ? t("Free") : money(service.cents)),{
       checked:service.id === initial?.id, required:true, icon:serviceIcons[service.name],
     })
   ).join('');

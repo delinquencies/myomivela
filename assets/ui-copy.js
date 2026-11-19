@@ -1,6 +1,12 @@
 // @ts-check
 // Shared customer-facing copy. English phrases are stable translation keys.
 export const en = {
+  "per night": "per night",
+  "From {price} per night": "From {price} per night",
+  "From {price} / {minutes} min": "From {price} / {minutes} min",
+  "Next available nights": "Next available nights",
+  "Check stay dates in booking for overnight availability.": "Check stay dates in booking for overnight availability.",
+  "Starting prices. Peak dates, short notice and extra pets may change your quote.": "Starting prices. Peak dates, short notice and extra pets may change your quote.",
   "Unsaved": "Unsaved",
   "Contacts": "Contacts",
   "Routines": "Routines",
@@ -702,6 +708,12 @@ export const en = {
 
 /** @type {Record<keyof typeof en, string>} */
 export const es = {
+  "per night": "por noche",
+  "From {price} per night": "Desde {price} por noche",
+  "From {price} / {minutes} min": "Desde {price} / {minutes} min",
+  "Next available nights": "Próximas noches disponibles",
+  "Check stay dates in booking for overnight availability.": "Consulta las fechas de tu estancia al reservar para ver la disponibilidad nocturna.",
+  "Starting prices. Peak dates, short notice and extra pets may change your quote.": "Precios iniciales. La temporada alta, la poca anticipación y las mascotas adicionales pueden cambiar tu cotización.",
   "Unsaved": "Sin guardar",
   "Contacts": "Contactos",
   "Routines": "Rutinas",
