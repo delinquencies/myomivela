@@ -78,6 +78,7 @@ export const catalogs = {
     "error.email_taken": "This email already has an account.",
     "error.staff_self": "You can’t change your own staff account here.",
     "error.last_owner": "Keep at least one active owner.",
+    "error.invalid_service": "Please choose one of Myomi’s services.",
     ...Object.fromEntries(Object.entries(launchEnglish).map(([key, value]) => ['launch.'+key, value])),
     'status.Requested': 'Waiting for Myomi',
     'status.Confirmed': 'Confirmed',
@@ -150,6 +151,7 @@ export const catalogs = {
     'error.email_taken': 'Este correo ya tiene una cuenta.',
     'error.staff_self': 'No puedes cambiar tu propia cuenta del equipo aquí.',
     'error.last_owner': 'Debe quedar al menos una cuenta de administración activa.',
+    'error.invalid_service': 'Elige uno de los servicios de Myomi.',
   },
 };
 export const hasKey = (key, language = locale()) => key in (catalogs[language] || {});
