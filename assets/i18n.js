@@ -84,6 +84,8 @@ export const catalogs = {
     "error.contact_required": "Add your phone, the address where Myomi will care for your pet, and your ZIP code.",
     "error.invalid_phone": "Enter a phone number with area code.",
     "error.pet_ineligible": "Dog walks are just for dogs. Try a drop-in visit for other pets.",
+    "error.invalid_transition": "This visit has already moved on. Refresh to see where it stands.",
+    "error.visit_not_active": "This visit isn’t in progress, so updates can’t be added to it. Refresh to see where it stands.",
     ...Object.fromEntries(Object.entries(launchEnglish).map(([key, value]) => ['launch.'+key, value])),
     'status.Requested': 'Waiting for Myomi',
     'status.Confirmed': 'Confirmed',
@@ -162,6 +164,8 @@ export const catalogs = {
     'error.contact_required': 'Agrega tu teléfono, la dirección donde Myomi cuidará a tu mascota y tu código postal.',
     'error.invalid_phone': 'Escribe un número de teléfono con código de área.',
     'error.pet_ineligible': 'Los paseos son solo para perros. Para otras mascotas, prueba una visita a domicilio.',
+    'error.invalid_transition': 'Esta visita ya cambió de estado. Actualiza para ver cómo va.',
+    'error.visit_not_active': 'Esta visita no está en curso, así que no se le pueden añadir novedades. Actualiza para ver cómo va.',
   },
 };
 export const hasKey = (key, language = locale()) => key in (catalogs[language] || {});
