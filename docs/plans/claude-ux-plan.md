@@ -1,3 +1,179 @@
+# Claude UX architecture and logic plan
+
+Prepared November 19, 2026 from the [flow audit](../ux-flow-audit.md), baseline `5d139ec`. All tasks below are unchecked implementation work.
+
+## Reconciliation with Claude's architecture plan
+
+Claude's complete CU0–CU8 text from `b89aa1f` is preserved in the appendix. The active execution IDs are CUX-01–CUX-09 below, with Codex's DUX tasks consuming their contracts.
+
+| Claude original ticket | Active task(s) preserving its scope |
+| --- | --- |
+| CU0 booking state and route model | CUX-01/02 |
+| CU1 public eligibility and quote | CUX-08 |
+| CU2 guest-first contact/account | CUX-08 with CUX-02 |
+| CU3 one intake with progressive save | CUX-03 |
+| CU4 meeting scope and pending first request | CUX-02, subject to the policy decision below |
+| CU5 deposit lifecycle | CUX-04 |
+| CU6 cancellation terms and acknowledgment | CUX-04 |
+| CU7 availability, capacity, notice and nights | CUX-09 |
+| CU8 confirmation and client notification | CUX-05 |
+
+**Ownership reconciliation.** The original CU plan assigned Claude unstyled markup and edits to `assets/portal.js`, `assets/care-portal.js`, `assets/price-sheet.js` and copy catalogs. Those integrations now belong exclusively to Codex under the path table in the Codex plan. Claude supplies pure controllers, data, API contracts and backend tests. The proposed `assets/booking-flow.js` export shape can be implemented within CUX-02's controller or renamed in its contract handoff; do not create a parallel state machine.
+
+### Policy decisions to record before changing live behavior
+
+| Question | Current configured/implemented behavior | Claude's proposed change | Required reconciliation |
+| --- | --- | --- | --- |
+| Meeting scope | A completed unused meeting is consumed per paid booking. | Once per client, with a new pet or 12-month renewal. | Confirm scope and renewal with Myomi. Preserve existing associations/history through any migration. |
+| Request before meeting | A paid request is blocked until meeting completion. | Link a pending paid request and meeting before completion. | Confirm whether the desired care dates are reserved, and for how long, before meeting/approval/payment. |
+| Deposit deadline trigger | Policy copy says within 48 hours of requesting; request ledger currently owes zero. | Start the 48 hours after owner acceptance. | Choose the trigger explicitly, including requests inside the service-start deadline, then align terms, state and tests. |
+| Balance due | Current policy copy says before service begins. | Original CU5 says visit date/completion. | Confirm the deadline and permitted service-start behavior; do not infer completion as approval. |
+| Cancellation | Launch policy uses seven days and retention of part of the deposit; runtime catalog model uses service settings. | Use launch deposit-based policy and retain catalog compatibility. | Confirm retention and grandfathering, record accepted terms on the booking. |
+| Meeting notice | No explicit dedicated meeting-notice rule. | Minimum 24 hours. | Confirm operational minimum and meeting-before-service interval. |
+
+These are proposed implementation decisions, not new approvals or features already shipped. A test flag may exercise an agreed proposal without making it the production default.
+
+## Exclusive ownership
+
+Claude owns backend rules, schema, route resolution, pure state controllers and draft serialization. Codex owns all DOM integration, HTML, CSS, human-facing EN/ES catalogs, public estimators' presentation and Playwright tests. The complete path allocation is in the [Codex plan](codex-ux-plan.md#exclusive-ownership-and-working-agreement).
+
+Claude must not edit `assets/portal.js`, `assets/care-portal.js`, `assets/diary.js`, HTML shells, CSS, copy catalogs or browser tests for these tickets. Publish data contracts and pure modules instead. Codex wires the views after the contract lands. A necessary UI change discovered during a backend ticket becomes a handoff item for Codex.
+
+New modules proposed here have no DOM rendering and no translated prose. Return stable route IDs, action IDs, reason codes, field keys and time/amount data. Codex translates and renders those results. Avoid a framework or a second independent state machine.
+
+## CUX-01 — Canonical routes and role capabilities
+
+- [ ] **Issues** UX-02, UX-08, UX-14, UX-17, UX-20.
+- [ ] **Paths** Proposed `assets/portal-route-state.js`; authorization checks in `lib/api.mjs` and `lib/routes/staff.mjs` only if needed; public-module registration in `lib/site.mjs`; `tests/ux-routing.test.mjs`.
+- [ ] Define one route descriptor registry with stable IDs, canonical locations, label keys, parent routes and allowed roles for signed-out, customer, owner and sitter states.
+- [ ] Resolve existing hashes, legacy aliases, visit/client/pet identifiers and invalid/forbidden destinations deterministically. Separate route authorization from menu visibility. Keep supported deep links recoverable.
+- [ ] Supply canonical routes for a selected visit, client record and bounded settings groups. Preserve browser history semantics and the booking return target. Do not manipulate the browser or render headings in this module.
+- [ ] **Handoff contract** Publish functions equivalent to `routesFor(session)` and `resolveLocation(location, session)`, returning `{ id, params, parent, canonical, outcome }`. Enumerate `ready`, `sign_in_required`, `forbidden`, and `not_found` outcomes. Include legacy-link examples.
+- [ ] **Acceptance** Customers have one Care details descriptor; owner/sitter sets exclude it. A sitter cannot access owner-only API resources. Invalid hashes produce an explicit result. Query service intent, visit/client IDs and Back/Forward history are preserved through canonicalization. Pure tests cover signed-out, all signed-in roles and invalid IDs.
+- [ ] **Codex consumer** DUX-02 renders navigation and recovery; DUX-07 renders visit and settings destinations.
+
+## CUX-02 — One booking-intent and prerequisite controller
+
+- [ ] **Issues** UX-03, UX-05, UX-18.
+- [ ] **Paths** Proposed `assets/booking-flow-state.js`; `lib/compliance.mjs`, `lib/routes/bookings.mjs`, `lib/routes/portal.mjs`, `lib/idempotency.mjs` if required; `tests/ux-booking-flow.test.mjs`.
+- [ ] Model the selected service, attending pets and explicit primary pet, desired dates/times, quote revision, prerequisites, review hold and final request as one resumable task.
+- [ ] Reuse current quote and blocker rules. Supply ordered prerequisites with stable task IDs, completion state, resolution destination and return intent. Distinguish customer information from a separately scheduled meeting.
+- [ ] After the recorded meeting-policy decision, model linked pending care/meeting requests and expose a machine-readable meeting status. Define cancellation propagation, date reservations and transition guards so neither request can become accidentally confirmed. Preserve the original CU4 cases for new pets, renewal, meeting cancellation and meeting-too-late only when those rules are approved.
+- [ ] Keep a desired time distinct from a reserved time. A prerequisite detour must not imply a hold. Revalidate availability and pricing when returning to review.
+- [ ] Preserve nonsensitive selection across auth, language change, new-pet creation, care save and reload through CUX-03. Invalidate quote/hold only when its actual inputs or expiry change. Ignore stale async quote responses.
+- [ ] **Handoff contract** Publish state equivalent to `{ intentId, revision, selection, steps, currentStep, blockers, quote, hold, resumeLocation, nextAction }`, and documented events for selection change, requirement completion, refresh, review, expiry, send and discard.
+- [ ] **Acceptance** A first parent can resume after each requirement. A returning parent skips already-completed requirements according to the confirmed business policy. A stale quoted amount or taken time cannot submit. Double submits remain idempotent. Another customer's intent is never restored after sign-out.
+- [ ] **Decision to expose** The current launch implementation consumes a completed Meet & Greet for each paid booking. Confirm with the owner whether that is intentional. Record the decision and migration impact. Codex must not silently convert it into a once-per-customer rule.
+- [ ] **Codex consumer** DUX-04 supplies step UI and continuation; DUX-03 presents compact blocker/action states.
+
+## CUX-03 — Canonical intake, safe drafts and structured errors
+
+- [ ] **Issues** UX-04, UX-09, UX-19.
+- [ ] **Paths** `assets/drafts.js`; `lib/routes/intake.mjs`, `lib/routes/bookings.mjs`, `lib/care.mjs`, `lib/validate.mjs`, `lib/headers.mjs`; append-only `lib/db.mjs` migrations if a verified data change is necessary; `tests/ux-intake.test.mjs`, `tests/ux-drafts.test.mjs`.
+- [ ] Inventory overlapping fields in pet profile JSON, household intake and public intake. Define ownership, conditional requirements and explicit precedence. Reuse saved pet facts and household contacts without silently replacing a newer answer.
+- [ ] Preserve old plain-text pet details and previous profile versions. Provide a migration/compatibility strategy only after that inventory establishes a real need.
+- [ ] Extend draft form identity to care actions with stable owner/record IDs. Classify fields rather than persisting all care text blindly. Exclude passwords, entry codes, lockbox instructions, tokens, payment information and fields marked `data-no-draft`.
+- [ ] Define whether emergency and medical details may be retained locally before implementing persistence. Use the smallest approved draft set; do not copy sensitive canonical records into browser storage by default. Support explicit discard and account-bound cleanup.
+- [ ] Provide machine-readable validation errors in addition to existing messages, such as `{ code, fieldErrors: [{ field, code, params }] }`. Support partial save semantics only where operationally valid; an incomplete draft must not count as completed intake.
+- [ ] **Handoff contract** Publish field keys, required conditions, saved/draft status, safe-draft allowlist and error payload examples. Keep markup attributes and visible wording with Codex.
+- [ ] **Acceptance** Approved nonsensitive feeding draft survives reload; entry secrets do not appear in storage. Drafts clear on sign-out/account change/discard and expire under the documented policy. Save/validation failures retain recoverable values. Zero spending authorization is valid. Existing profile and intake data survive upgrades. Server blockers distinguish absent, incomplete and outdated records.
+- [ ] **Codex consumer** DUX-05 renders grouped forms, completion and field errors. DUX-04 uses the completion state.
+
+## CUX-04 — Financial and eligibility truth shared by every surface
+
+- [ ] **Issues** UX-01, UX-15, UX-16.
+- [ ] **Paths** `assets/myo-config.js`, `assets/myo-launch-backend.js`; `lib/pricing.mjs`, `lib/cancellation.mjs`, `lib/ledger.mjs`, `lib/payments.mjs`, `lib/outbox.mjs`, `lib/routes/bookings.mjs`, `lib/routes/payments.mjs`, `lib/routes/portal.mjs`; append-only `lib/db.mjs` migration when needed; `tests/ux-financial-flow.test.mjs`.
+- [ ] First publish a discrepancy matrix for configured policy, estimator, quote, request, confirmation, ledger and cancellation. The observed policies promise 50% within 48 hours and a seven-day cancellation cutoff, while requested bookings currently owe zero and catalog cancellation defaults can differ.
+- [ ] Define one authoritative quote/terms revision containing service units, line items, total, deposit due now, remaining balance, due/expiry times, cancellation schedule and payment capabilities. Both launch and catalog compatibility mode must have explicit semantics.
+- [ ] Store the accepted terms revision/time on the request. A changed revision requires renewed acknowledgment before commit. Existing bookings retain their accepted financial terms.
+- [ ] Implement the approved deposit lifecycle, or return a capability that prevents the UI from promising an unavailable step. An unconfigured live provider must yield a usable, explicit outcome. Test drivers may exercise the complete contract.
+- [ ] Make deposit confirmation, approval, hold/availability, unpaid expiry, meeting association, cancellation and refunds consistent under retries and concurrent actions. Webhook truth is authoritative for paid state. Expiring one request must release only the allocations that belong to it.
+- [ ] Make primary-pet ordering explicit in input and quote output. Retain selected-date peak/short-notice calculations and overnight nightly units. Expose service-area and manual-quote eligibility as data where used by the flow.
+- [ ] **Owner decisions** Confirm per-booking meeting consumption, cancellation retention, unresolved configuration comments such as peak puppy amount and peak date range, and the payment/email provider setup. Preserve existing booked terms unless an approved, explicit repricing action applies.
+- [ ] **Handoff contract** Document all financial states, transition triggers, amount fields in cents, deadlines with timezone rules, capability flags, idempotency behavior and error codes. Do not supply a separate UI-only price calculator.
+- [ ] **Acceptance** With a test provider, a request follows the approved deposit/approval order, webhook replay cannot double-charge or double-credit, unpaid expiry runs once, refunds reconcile, and cancel-preview values match the stored terms. Changing current service settings cannot silently rewrite an earlier booking's cancellation terms. Concurrency tests cover expiry versus payment/approval. Node and Worker agree.
+- [ ] **Codex consumer** DUX-06 renders review, estimator wording, deposit deadlines, unavailable-payment states and cancellation truth.
+
+## CUX-05 — Visit state and actionable dashboard summaries
+
+- [ ] **Issues** UX-07, UX-08, UX-17.
+- [ ] **Paths** Proposed `assets/visit-state.js`; `lib/bookings.mjs`, `lib/routes/portal.mjs`, `lib/routes/clients.mjs`, `lib/routes/diary.mjs`, `lib/routes/access.mjs`, `lib/routes/bookings.mjs`; `tests/ux-visit-state.test.mjs`.
+- [ ] Derive customer current care, latest update, next booking, outstanding actions and staff priority work from existing bookings rather than duplicating business state in several views.
+- [ ] Supply a stable selected-visit resource/action descriptor, compatible with CUX-01. Include permitted next actions, relevant pets, latest event, financial state and client/profile links.
+- [ ] Preserve CU8's explicit confirmation contract. Request responses and the access-checked booking resource expose ordered `next_steps`, request reference, timeline and authoritative meeting/deposit deadlines. Queue client receipt and relevant deposit/meeting notifications through the outbox, exposing delivery capability truthfully.
+- [ ] Reuse the current start/completion guards, owner/sitter authorization and home-entry reveal window. Operational actions must retain visit identity across publish and refresh.
+- [ ] Put availability/pricing/policy/team/money/backup route capabilities in CUX-01. This task supplies resource/action data, leaving layout and grouping to Codex.
+- [ ] **Handoff contract** Publish DTOs equivalent to `{ activeCare, latestUpdate, nextActions, workQueue }` and a selected-visit state with `allowedActions`, freshness/revision and relevant links.
+- [ ] **Confirmation acceptance** A sent request can be reopened by its owner through a stable route and gives the same next actions after reload. A customer cannot read another customer's confirmation. Replayed writes queue each client notification once. The response distinguishes queued/delivered/unavailable notification state.
+- [ ] **Acceptance** Two simultaneous active visits cannot receive each other's notes or photos. Owner can approve/cancel; sitter can perform only authorized operational actions. Customer sees only their own care and finances. Stale completion/update requests fail consistently. Summary counts match underlying records and pagination handles more than one page of work.
+- [ ] **Codex consumer** DUX-07 builds active-care summaries, due-work lists and the visit workspace.
+
+## CUX-06 — Bounded diary freshness and request lifecycle
+
+- [ ] **Issues** UX-10, UX-13 and async route recovery.
+- [ ] **Paths** Proposed `assets/diary-sync.js`; `lib/routes/diary.mjs`, `lib/routes/portal.mjs`, `lib/bookings.mjs`; `tests/ux-diary-sync.test.mjs`.
+- [ ] Define an update revision/cursor and a lightweight reconciliation strategy. Reuse paginated diary reads where possible. Avoid repeatedly fetching unrelated account/configuration data for an open diary.
+- [ ] Start refresh only while a relevant screen is visible. Stop on sign-out, account change, hidden tab and route disposal. Coalesce overlapping reads, ignore responses from an earlier user/route generation, and apply bounded backoff.
+- [ ] Propose a visible-screen freshness budget, for example 30 seconds, document its request cost and make it a configurable contract. This is a proposed product budget, not a measured production SLA.
+- [ ] Distinguish idle/current, checking, new data, stale and disconnected outcomes. Preserve loaded pages and filters; return merge information rather than replacing the entire portal.
+- [ ] **Handoff contract** Publish start/stop/refresh and subscription callbacks with `revision`, `checkedAt`, `latestPublishedAt`, `state` and incremental results. No DOM, announcements or scroll operations in this module.
+- [ ] **Acceptance** A new staff update is discoverable within the chosen visible-screen budget. Hidden tabs do not poll. Retry delays are bounded, navigation cancels/discards old responses, and switching accounts never merges data. Older-page/filter selections survive refresh. Document expected Worker requests per active client.
+- [ ] **Codex consumer** DUX-08 renders freshness and retry UI. DUX-10 validates the observed update path.
+
+## CUX-07 — Account recovery capability
+
+- [ ] **Issue** UX-22.
+- [ ] **Paths** `lib/auth.mjs`, `lib/routes/account.mjs`, `lib/outbox.mjs`, `lib/config.mjs`; append-only `lib/db.mjs` migration if necessary; `tests/ux-account-recovery.test.mjs`.
+- [ ] Define whether self-service recovery can be delivered with the configured email driver. Return a capability so the UI can present a truthful alternative while delivery is unavailable.
+- [ ] Implement request/redeem recovery with short-lived, single-use tokens stored as hashes, account/IP rate limits, generic account-discovery-safe responses and appropriate session invalidation after reset.
+- [ ] Use existing account/password validation and outbox delivery boundaries. No token value belongs in an API log, browser draft or human-facing plan.
+- [ ] **Handoff contract** Publish request and redeem endpoints, validation/error codes, delivery capability, expiry behavior and account-session effects.
+- [ ] **Acceptance** Existing and unknown emails receive the same public request response. Expired/replayed tokens fail, concurrent redemption succeeds once, reset enforces password rules, and compromised sessions are handled according to the published policy. Test delivery failure explicitly.
+- [ ] **Codex consumer** DUX-08 adds recovery entry/form and statuses after capability is available.
+
+## CUX-08 — Guest quote, service area and contact contract
+
+- [ ] **Issues** UX-26, UX-27. Preserves Claude CU1/2.
+- [ ] **Paths** Proposed `lib/service-area.mjs` and `lib/routes/public.mjs`; `lib/pricing.mjs`, `lib/routes/bookings.mjs`, `lib/routes/account.mjs`, `lib/routes/intake.mjs`, `lib/config.mjs`, `assets/myo-config.js`; CUX-02's pure intent controller; append-only `lib/db.mjs` migration if required; `tests/ux-public-booking.test.mjs`.
+- [ ] Reuse server pricing for a public quote accepting provisional species/age/count and service/date data. It creates no hold or booking and returns no customer-specific records or blockers. Rate-limit and bound inputs.
+- [ ] Supply a public eligibility result for a ZIP/location with an explicit confidence/manual-review outcome. If ZIP-centroid data is used, preserve source/date and acknowledge boundary uncertainty. Collect a structured service address and client phone at the account/contact step and recheck actual eligibility according to an approved area rule.
+- [ ] Revalidate the guest estimate against authenticated pet records before creating a hold or request. Keep intent through register, email-already-exists, sign-in and a time becoming unavailable.
+- [ ] Coordinate client phone/address field ownership with CUX-03. Keep legacy registration valid for existing callers or provide a documented compatibility path. Do not require an unconfigured email-link login as the only way to continue.
+- [ ] **Handoff contract** Document endpoints equivalent to `GET /api/eligibility?zip=` and `POST /api/public-quote`, quote revision/units/expiry semantics, supported contact fields, area confidence and machine-readable failure codes. Use CUX-04 financial fields and CUX-09 day/night metadata.
+- [ ] **Acceptance** A signed-out visitor can see a real-date estimate without account creation. Unknown/boundary ZIPs receive an explicit review outcome. Malformed/out-of-area inputs are handled according to the approved service-area policy. The guest and signed-in quotes match for equivalent facts, and a changed actual price requires review. No public response leaks client, pet or sensitive occupancy information.
+- [ ] **Codex consumer** DUX-11 renders eligibility/guest preview; DUX-04 integrates account continuation.
+
+## CUX-09 — Availability metadata and predictable defaults
+
+- [ ] **Issues** UX-15, UX-16, UX-28. Preserves Claude CU7.
+- [ ] **Paths** `lib/scheduling.mjs::bookableStarts()/overnightNights()`, `lib/pricing.mjs`, `lib/routes/portal.mjs`, `lib/routes/bookings.mjs`, `assets/myo-config.js`, CUX-02's selection controller; `tests/ux-availability.test.mjs`.
+- [ ] Supply day metadata for capacity, peak period, short notice and next eligible start, together with next available overnight nights. Use the same capacity and timezone calculations as quote/confirmation.
+- [ ] Define a server-backed default to a notice-free eligible day when available. Keep short-notice choices available when allowed, with surcharge metadata. Never replace an explicit restored date silently. If no notice-free day exists, expose that fact and the available alternatives.
+- [ ] Exclude or label full days consistently and recheck capacity at hold/confirmation under concurrency. Enforce the owner-approved meeting-notice rule at quote, hold and request.
+- [ ] **Handoff contract** Publish `days:[{ date, full, peak, last_minute, first_start }]`, `overnight_nights`, notice-free threshold, service units and distinct unavailable/notice error codes. Maintain existing API callers through additive fields or a versioned transition.
+- [ ] **Acceptance** Seed a full day and peak day; availability agrees with quote rejection and shows the next valid alternative. Overnight availability never depends on visit-grid start times. Default selection avoids a short-notice charge when a valid fee-free alternative exists. Restored dates remain explicit choices. Node and Worker tests cover Massachusetts day boundaries, DST and concurrent capacity changes.
+- [ ] **Codex consumer** DUX-03/06 render chips, short lists and stay units; DUX-11 uses metadata in guest discovery.
+
+## Merge and handoff sequence
+
+1. CUX-01 and CUX-02 can begin after recording shared route/intent IDs. Keep each implementation in its assigned modules.
+2. CUX-03 establishes field/draft classification before DUX-05 integrates persistence. CUX-04 resolves policy truth before DUX-06 promises financial steps.
+3. CUX-05 builds on CUX-01 IDs. CUX-06 can progress independently using the existing diary API. CUX-07 depends on an actual delivery decision for a live launch.
+4. CUX-08/09 share CUX-02 intent and CUX-04 pricing semantics. They unblock DUX-11, public preview and short-notice/capacity presentation. CUX-05 confirmation data unblocks DUX-12.
+5. For every ticket, publish contract examples and fixture setup in this plan or a linked backend contract note, run relevant Node/Worker tests, and report the commit to Codex. Codex owns UI integration and all Playwright regressions.
+
+Do not mark an end-to-end issue complete solely because its API exists. Completion requires the corresponding Codex acceptance criteria and the combined customer/admin journey to pass.
+
+---
+
+## Preserved Claude source from b89aa1f
+
+The original November 19 document is retained below for attribution, evidence, and continuity of its issue and ticket IDs. The reconciled sections above are the active execution plan. Proposed policy defaults and UI ownership in this source are subject to the reconciliation above.
+
+<details>
+<summary>Read Claude's complete original document</summary>
+
+<!-- claude-source-b89aa1f-start -->
 # Claude UX plan: flow architecture and booking logic
 
 **Source:** [docs/ux-flow-audit.md](../ux-flow-audit.md) (November 19, 2026, `main` at `5d139ec`). Issue numbers below (#1–#20) refer to its table.
@@ -142,3 +318,7 @@
 
 ## Verification for every CU step
 Node and Worker API tests for each new rule (`tests/flow-*.test.mjs`): radius in/out/unknown, public quote parity with the signed-in quote, per-step intake completeness, Meet & Greet scope and pending visits, deposit expiry and late webhooks, terms acknowledgment, full-day exclusion, `next_steps` order. Spanish and English messages for every new error code (enforced by `tests/i18n.test.mjs`). Claude adds no browser tests; the end-to-end suite is Codex X-U11.
+
+<!-- claude-source-b89aa1f-end -->
+
+</details>
