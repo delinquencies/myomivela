@@ -1,6 +1,12 @@
 // @ts-check
 // Shared customer-facing copy. English phrases are stable translation keys.
 export const en = {
+  "Open visit": "Open visit",
+  "Back to Today": "Back to Today",
+  "Log an update": "Log an update",
+  "Care plan": "Care plan",
+  "This client hasn’t completed the care intake yet.": "This client hasn’t completed the care intake yet.",
+  "Logged so far": "Logged so far",
   "Today": "Today",
   "Bookings": "Bookings",
   "In progress": "In progress",
@@ -801,6 +807,12 @@ export const en = {
 
 /** @type {Record<keyof typeof en, string>} */
 export const es = {
+  "Open visit": "Abrir visita",
+  "Back to Today": "Volver a Hoy",
+  "Log an update": "Registrar una actualización",
+  "Care plan": "Plan de cuidado",
+  "This client hasn’t completed the care intake yet.": "Este cliente aún no ha completado los datos de cuidado.",
+  "Logged so far": "Registrado hasta ahora",
   "Today": "Hoy",
   "Bookings": "Reservas",
   "In progress": "En curso",

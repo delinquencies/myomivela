@@ -638,6 +638,22 @@ async function clients(query = '', cursor = '', append = false) {
     );
   panel.dataset.loaded = '1';
 }
+// The household care intake as a read-only list (client record and the staff visit page). `open` shows it expanded.
+export function intakeSummary(intake, { open = false } = {}) {
+  return '<details' + (open ? ' open' : '') + '><summary>' +
+    text(t('Care intake')) +
+    '</summary><dl>' +
+    myoConfig.intakeFields
+      .map(([key]) => '<dt>' + text(copy(key)) + '</dt><dd class="preserve">' +
+        text(key === 'vetAuthorization' ? copy(intake[key]) : intake[key]) + '</dd>')
+      .join('') +
+    (intake.overnightAcknowledgment
+      ? ['overnightAlone', 'overnightBehavior']
+          .map((key) => '<dt>' + text(copy(key)) + '</dt><dd class="preserve">' + text(intake[key]) + '</dd>')
+          .join('')
+      : '') +
+    '</dl></details>';
+}
 async function clientRecord(id) {
   const generation = ++clientRecordGeneration;
   const panel = document.querySelector('[data-client-record]');
@@ -651,29 +667,7 @@ async function clientRecord(id) {
     '</h3><p>' +
     text(client.email) +
     '</p>' +
-    (intake
-      ? '<details><summary>' +
-        text(t('Care intake')) +
-        '</summary><dl>' +
-        myoConfig.intakeFields
-          .map(
-            ([key]) =>
-              '<dt>' +
-              text(copy(key)) +
-              '</dt><dd class="preserve">' +
-              text(key === 'vetAuthorization' ? copy(intake[key]) : intake[key]) +
-              '</dd>'
-          )
-          .join('') +
-        (intake.overnightAcknowledgment
-          ? ['overnightAlone', 'overnightBehavior']
-              .map(
-                (key) => '<dt>' + text(copy(key)) + '</dt><dd class="preserve">' + text(intake[key]) + '</dd>'
-              )
-              .join('')
-          : '') +
-        '</dl></details>'
-      : '') +
+    (intake ? intakeSummary(intake) : '') +
     pets
       .map(
         (pet) =>

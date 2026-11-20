@@ -3,7 +3,7 @@ import { createDrafts } from './drafts.js';
 import { googleReviewLinks } from './review-links.js';
 import { showPriceSheet } from './price-sheet.js';
 import { locale, t, hasKey, formatDate, formatMoney, translateLabel, catalogs } from './i18n.js';
-import {careSettings,staffComplianceSettings,stayCalendar,syncStayCalendar,vaccineTools,blockerHtml,staffCareTools,feedbackTool,reportInputs,reportPayload,timelineSection,clientSection,configureCareUi,bindCareUi,loadCareSection,clearEntryDetails} from './care-portal.js';
+import {careSettings,staffComplianceSettings,stayCalendar,syncStayCalendar,vaccineTools,blockerHtml,staffCareTools,feedbackTool,reportInputs,reportPayload,timelineSection,clientSection,intakeSummary,configureCareUi,bindCareUi,loadCareSection,clearEntryDetails} from './care-portal.js';
 import {myoConfig} from './myo-config.js';
 import {routesFor,resolveLocation,roleOf,homeFor,hrefFor} from './portal-route-state.js';
 import {syncIntake,updateIntakeProgress,showIntakeErrors} from './intake-ui.js';
@@ -454,6 +454,35 @@ function eventForm(booking) {
     '<p data-photo-status role="status"></p><button type="button" class="secondary" data-clear-photo hidden>'+
     emoji('↩️')+(t("Remove photo") + "</button></fieldset>"),booking.id);
 }
+// The staff visit page (audit UX-01/UX-07): one booking's card, the client's care plan, the update form while the
+// visit runs, and what has been logged so far. Publishing or starting stays here; completing returns to Today.
+function visitWorkspace(booking) {
+  const running = booking.status === 'In Progress';
+  return tapLink('#staff-home',t("Back to Today"),'🗓️')+bookingCard(booking,{ workspace:true })+
+    '<div data-visit-care><p>'+text(t("Loading…"))+'</p></div>'+
+    (running ? '<h3>'+text(t("Log an update"))+'</h3>'+eventForm(booking).replace('<form ','<form data-draft-scope="visit" ') : '')+
+    '<div data-visit-log></div>';
+}
+async function loadVisitWorkspace(panel, booking) {
+  const current = data;
+  const [record, diaryPage] = await Promise.all([
+    api('clients/'+booking.owner).catch(() => null),
+    api('diary?visit='+booking.id).catch(() => null),
+  ]);
+  if (data !== current || !panel.isConnected || panel.dataset.booking !== String(booking.id)) return;
+  const care = panel.querySelector('[data-visit-care]');
+  care.innerHTML = record?.intake ? '<h3>'+text(t("Care plan"))+'</h3>'+intakeSummary(record.intake,{ open:true })
+    : '<p>'+text(t("This client hasn’t completed the care intake yet."))+'</p>';
+  const events = (diaryPage?.events || []).filter(event => event.booking === booking.id).sort((a,b) => a.published-b.published);
+  const petName = id => find(data.pets,id)?.name || '';
+  const line = event => translateLabel(event.kind)+(petName(event.pet) ? ' ('+petName(event.pet)+')' : '')+(event.notes ? ': '+event.notes : '');
+  panel.querySelector('[data-visit-log]').innerHTML = events.length
+    ? '<h3>'+text(t("Logged so far"))+'</h3><ul class="today-list">'+events.map(event =>
+      '<li class="today-item"><strong>'+text(appointmentTime.format(event.published))+'</strong> '+emoji(activityIcons[event.kind])+text(line(event))+'</li>').join('')+'</ul>' : '';
+  // Completing asks for a summary: start it from what was logged, for Myomi to edit.
+  const summary = panel.querySelector('form[data-action="status"] [name="summary"]');
+  if (summary && !summary.value.trim() && events.length) summary.value = events.map(line).join('\n');
+}
 function publishingDesk() {
   const visits = data.bookings.filter(booking => booking.status === 'In Progress');
   if (!visits.length) {
@@ -461,7 +490,7 @@ function publishingDesk() {
   }
   return visits.map(booking => '<article><h3>'+text(translateLabel(booking.service_name))+' for '+text(booking.customer)+'</h3>'+
     '<p class="appointment-details">'+date(booking.starts)+'</p>'+eventForm(booking)+
-    tapLink('#upcoming',t("Go to {section} to complete the visit", {section:staffVisitsLabel()}),'🏁')+'</article>').join('');
+    tapLink(hrefFor('visit',{ booking:booking.id }),t("Open visit"),'🏁')+'</article>').join('');
 }
 // "Start visit" opens a set number of minutes before the booked time (the visit buffer); until then it is
 // disabled with the time it opens, and a timer enables it when that time comes.
@@ -535,14 +564,15 @@ function paymentBlock(booking) {
   }
   return html;
 }
-function bookingCard(booking) {
+function bookingCard(booking, { workspace = false } = {}) {
   const pets = booking.pet_ids.map(id => find(data.pets,id)).filter(Boolean);
   const active = booking.status === 'In Progress';
   let actions = '';
   if (data.user.admin) {
     if (booking.status === 'Requested' && isOwner()) actions += statusForm(booking,'Confirmed',t("Approve request")) + statusForm(booking,'Cancelled',t("Decline request"));
     if (booking.status === 'Confirmed') actions += startVisitForm(booking) + (isOwner() ? statusForm(booking,'Cancelled',t("Cancel booking")) : '');
-    if (active) actions += tapLink('#diary',t("Publish a diary update"),'🐾')+statusForm(booking,'Completed',t("Complete visit"));
+    // A running visit is worked from its own page (audit UX-01): log updates there, then complete it.
+    if (active) actions += (workspace ? '' : tapLink(hrefFor('visit',{ booking:booking.id }),t("Open visit"),'🐾'))+statusForm(booking,'Completed',t("Complete visit"));
   } else if (booking.starts > Date.now() && ['Requested','Confirmed'].includes(booking.status)) {
     if (canReviewCheckout(booking)) {
       actions += '<a class="tap-link checkout-link" href="#checkout-'+booking.id+("\">" + t("View visit details") + "</a>");
@@ -977,6 +1007,22 @@ async function showFinancials() {
 }
 let changingLanguage = false;
 let heldBooking;
+// How restored drafts re-apply their side effects (quotes, report fields, photos, form steps).
+const draftHooks = {
+  onChoice:(form, input) => {
+    if(form.dataset.action==='reschedule' && data.pricing_mode==='launch')input.dispatchEvent(new Event('change',{bubbles:true}));
+    if (form.dataset.action === 'events' && input.name === 'kind') {
+      const panel=form.querySelector('[data-report-fields]');
+      panel.innerHTML=reportInputs(data.reportFields[panel.dataset.serviceKind]?.[input.value] || []);
+      form.elements.notes.required = input.value === 'Medication';
+    }
+    if (form.dataset.action !== 'bookings') return;
+    if (['service','day','slot'].includes(input.name)) updateQuote({ target:input });
+    if (input.name === 'pets') updateTotal(form);
+  },
+  onFile:(form, input, file) => showPhotoSelection(form, file),
+  onStep:(form, step) => form.dataset.careAction === 'intake' ? syncIntake(form,step) : showPetCard(form, step),
+};
 function render() {
   configureCareUi({data,api,refresh,drafts,notify:showPublicationFeedback,onRequirementComplete:id => journey.completed(id)});
   logout.hidden = accountLink.hidden = !data?.user;
@@ -1025,20 +1071,7 @@ function render() {
   if(admin)updateLaunchServiceForm(app.querySelector('[data-action="services"]'));
   journey.suspend();
   updateQuote();
-  drafts.restore(app, {
-    onChoice:(form, input) => {
-      if(form.dataset.action==='reschedule' && data.pricing_mode==='launch')input.dispatchEvent(new Event('change',{bubbles:true}));
-      if (form.dataset.action === 'events' && input.name === 'kind') {
-        const panel=form.querySelector('[data-report-fields]');
-        panel.innerHTML=reportInputs(data.reportFields[panel.dataset.serviceKind]?.[input.value] || []);
-      }
-      if (form.dataset.action !== 'bookings') return;
-      if (['service','day','slot'].includes(input.name)) updateQuote({ target:input });
-      if (input.name === 'pets') updateTotal(form);
-    },
-    onFile:(form, input, file) => showPhotoSelection(form, file),
-    onStep:(form, step) => form.dataset.careAction === 'intake' ? syncIntake(form,step) : showPetCard(form, step),
-  });
+  drafts.restore(app, draftHooks);
   for (const form of app.querySelectorAll('[data-care-action="intake"]')) {
     syncIntake(form);
     updateIntakeProgress(form,data.intake);
@@ -1099,10 +1132,11 @@ function showSection(focus = false) {
       panel = app.querySelector('#route-visit');
       if (!panel || panel.dataset.booking !== String(booking.id)) {
         panel?.remove();
-        app.insertAdjacentHTML('beforeend',section('route-visit',t('Visit details'),
-          tapLink(hrefFor('upcoming'),t('Back to my bookings'),'📅')+bookingCard(booking)));
+        app.insertAdjacentHTML('beforeend',section('route-visit',t('Visit details'),data.user.admin ? visitWorkspace(booking)
+          : tapLink(hrefFor('upcoming'),t('Back to my bookings'),'📅')+bookingCard(booking)));
         panel = app.querySelector('#route-visit');
         panel.dataset.booking = booking.id;
+        if (data.user.admin) { drafts.restore(panel, draftHooks); loadVisitWorkspace(panel, booking); }
       }
     }
   }
@@ -1462,6 +1496,7 @@ app.addEventListener('change', event => {
   if (name === 'kind' && form?.dataset.action === 'events') {
     const panel=form.querySelector('[data-report-fields]');
     panel.innerHTML=reportInputs(data.reportFields[panel.dataset.serviceKind]?.[value] || []);
+    form.elements.notes.required = value === 'Medication'; // the medicine, dose and time (audit UX-08)
   }
   if (form?.dataset.action === 'reschedule' && name==='slot' && data.pricing_mode==='launch') {
     const token={};
@@ -1861,7 +1896,8 @@ app.addEventListener('submit',async event => {
       next.hash = 'upcoming';
       history.replaceState(null,'',next);
     }
-    if (action === 'status' && payload.status === 'In Progress') history.replaceState(null,'','#diary');
+    if (action === 'status' && payload.status === 'In Progress') history.replaceState(null,'',hrefFor('visit',{ booking:payload.id }));
+    if (action === 'status' && payload.status === 'Completed' && location.hash.startsWith('#visit/')) history.replaceState(null,'','#staff-home');
     const signedIn = action === 'login';
     if (action === 'register' && (journey.active || requestedService())) history.replaceState(null,'',location.search+'#book');
     if (action === 'signout-all') {journey.clear();authMode = 'login';}

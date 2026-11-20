@@ -293,4 +293,6 @@ Done, with Node and the full Chromium suite passing after each:
 - **Task 4 / UX-04, Client Home** (`78dd9e7`): care in progress, latest update and next booking (with any deposit due) first, then a short to-do list and one "Book a visit" action. The menu tiles are gone.
 - **Task 1 / UX-02, Staff Today**: in progress, then today's visits in time order (with "Ready to start"), then requests with Approve/Decline, then money to settle. Every row opens `#visit/<id>`. Today is first in the staff menu. The bookings list is now labelled "Bookings" (was "Today & upcoming").
 
-Not started: Task 2 (visit workspace), Task 5 (menus to four).
+- **Task 2 / UX-01, UX-07, UX-08, visit page**: staff `#visit/<id>` holds the booking card, the client's care plan (the intake, expanded), the update form while the visit runs, and "Logged so far". Starting a visit opens it, publishing stays on it, and completing returns to Today. The completion summary is prefilled from the logged updates. A Medication update marked given needs a note, enforced in the form and on the server (`medication_details_required`). The diary page's publishing desk still works and links to each visit page. New browser test `tests/browser/visit-workspace-smoke.mjs`, passing on Node and the Worker.
+
+Not started: Task 5 (menus to four).

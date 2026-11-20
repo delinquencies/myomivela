@@ -77,3 +77,16 @@ test('a meet & greet has no report cards', async () => {
   const id = await visit('meet');
   assert.equal((await publish(id, 'Walk completed', { pee:true })).json.code, 'unknown_field');
 });
+
+// Audit UX-08: a medication that was given needs the medicine, dose and time in the notes.
+test('a given medication needs details; one not given does not', async () => {
+  const { json:portal } = await app.call('staff','GET','/api/portal');
+  const visit = portal.bookings.find(booking => booking.status === 'In Progress');
+  assert.ok(visit, 'an in-progress visit from the earlier tests');
+  const pet = visit.pet_ids[0];
+  const bare = await app.call('staff','POST','/api/events',{ id:visit.id, pet, kind:'Medication', notes:'', data:{ given:true } });
+  assert.equal(bare.status, 400);
+  assert.equal(bare.json.code, 'medication_details_required');
+  assert.equal((await app.call('staff','POST','/api/events',{ id:visit.id, pet, kind:'Medication', notes:'Apoquel 16 mg at 8:05 AM', data:{ given:true } })).status, 200);
+  assert.equal((await app.call('staff','POST','/api/events',{ id:visit.id, pet, kind:'Medication', notes:'', data:{ given:false } })).status, 200);
+});

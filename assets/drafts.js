@@ -16,7 +16,7 @@ const keepFor = 24 * 60 * 60_000;
 // Care forms (data-care-action) are "care:intake||", "care:vaccines|4|" and so on.
 const isCare = form => !form.dataset.action && Boolean(form.dataset.careAction);
 const identity = form => [isCare(form) ? 'care:' + form.dataset.careAction : form.dataset.action, form.dataset.id || form.dataset.careId || '',
-  form.querySelector('input[type="hidden"][name="status"]')?.value || ''].join('|');
+  form.querySelector('input[type="hidden"][name="status"]')?.value || '', form.dataset.draftScope || ''].join('|');
 const formSelector = 'form[data-action], form[data-care-action]';
 // Portal forms keep every ordinary field except secrets; care forms follow the intake model's policy.
 const policyFor = (form, field) => {

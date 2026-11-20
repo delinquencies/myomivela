@@ -250,6 +250,10 @@ log('customer cancelled; statuses:', await cust.locator('#upcoming article h3').
 await staff.reload();
 await staff.locator('button:has-text("Start visit")').first().click();
 await waitSaved(staff);
+// Starting opens the visit's own page (audit UX-01); this test then publishes from the diary desk, which still works.
+await staff.locator('#route-visit h2',{ hasText:'Visit details' }).waitFor();
+if (!/^#visit\/\d+$/.test(new URL(staff.url()).hash)) throw new Error('Starting a visit should open its page, not ' + staff.url());
+await section(staff, 'diary');
 // Publish a diary update with a photo
 const png = (() => { // 1x1 PNG
   const crc = b => { let c, t = []; for (let n=0;n<256;n++){c=n;for(let k=0;k<8;k++)c=c&1?0xedb88320^(c>>>1):c>>>1;t[n]=c>>>0;} let x=0xffffffff; for (const v of b) x=t[(x^v)&255]^(x>>>8); return (x^0xffffffff)>>>0; };
