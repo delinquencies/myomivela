@@ -9,6 +9,10 @@
 .dashboard-actions, .settings-groups { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .75rem; max-width: 48rem; }
 .settings-groups { list-style: none; margin: 0; padding: 0; }
 .settings-groups[hidden], [data-settings-group][hidden] { display: none; }
+.home-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr)); gap: .75rem; max-width: 48rem; margin-bottom: 1rem; }
+.home-cards .home-card { margin: 0; }
+.home-card .eyebrow { margin: 0; font-size: .85rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #842b16; }
+.home-card h3 { margin: .2rem 0 .35rem; }
 .dashboard-action {
   display: flex;
   align-items: center;

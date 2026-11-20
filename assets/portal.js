@@ -8,6 +8,8 @@ import {myoConfig} from './myo-config.js';
 import {routesFor,resolveLocation,roleOf,homeFor,hrefFor} from './portal-route-state.js';
 import {syncIntake,updateIntakeProgress,showIntakeErrors} from './intake-ui.js';
 import {createBookingJourney} from './booking-journey-ui.js';
+import {customerSummary,nextSteps} from './visit-state.js';
+import {intakeStatus} from './intake-model.js';
 const uiLocale = locale;
 const checkoutReturn = new URLSearchParams(location.search).get('payment');
 
@@ -860,16 +862,48 @@ app.addEventListener('scroll',event => {
   cards.querySelector('[data-card-move="-1"]').setAttribute('aria-disabled',String(index === 0));
   cards.querySelector('[data-card-move="1"]').setAttribute('aria-disabled',String(index === rail.children.length-1));
 },true);
+// Client home (audit UX-04): what is happening with their care now, then one way to book more. The summaries come from
+// assets/visit-state.js, the same rules the server uses for a booking's next steps.
 function clientHome() {
   const meet = (data.first_visit || (data.pricing_mode === 'launch' && !data.meet_available)) && data.services.some(service => service.kind === 'meet');
-  const invitation = meet ? '<p>'+tapLink('?service=meet#book',t("Book a free Meet & Greet"),'🤝')+("<br>" + text(data.pricing_mode==='launch'?t('A complimentary Meet & Greet is required for each new booking.'):t("Meet Myomi before your first visit.")) + "</p>") : '';
-  return invitation+dashboardActions([
-    ['book',requestedService() ? t("Continue booking") : t("Book a visit"),'🐾',t("Choose care with Myomi.")],
-    ['upcoming',t("My bookings"),'📅',t("Check requests and confirmed visits.")],
-    ['pets',t("My pets"),'🐶',t("Add a pet or update care details.")],
-    ['care',t('Care details'),'📝',t('Complete intake, agreements, and home access.')],
-    ['diary',t("Pet Diary"),'📖',t("Read visit notes and see photos.")],
-  ])+weekCalendar();
+  const invitation = meet ? '<p>'+tapLink('?service=meet#book',t("Book a free Meet & Greet"),'🤝')+'<br>'+text(t("Meet Myomi before your first visit."))+'</p>' : '';
+  const intakeState = intakeStatus(data.intake).state;
+  const summary = customerSummary({ bookings:data.bookings, events:data.diary?.events || [], paymentsEnabled:data.payments_enabled, intakeState });
+  const petNames = booking => booking.pet_ids.map(id => find(data.pets,id)?.name).filter(Boolean).join(', ');
+  const title = booking => text(translateLabel(booking.service_name))+(petNames(booking) ? ' · '+text(petNames(booking)) : '');
+  const card = (label, body) => '<article class="home-card"><p class="eyebrow">'+text(label)+'</p>'+body+'</article>';
+  const cards = [];
+  for (const id of summary.activeCare) {
+    const booking = find(data.bookings,id);
+    cards.push(card(t("Care in progress"),'<h3>'+title(booking)+'</h3>'+
+      (booking.arrived ? '<p class="appointment-details">'+text(t("Started {time}",{ time:date(booking.arrived) }))+'</p>' : '')+
+      tapLink('#diary',t("Follow along in the Pet Diary"),'📖')));
+  }
+  const latest = summary.latestUpdate;
+  if (latest) {
+    const pet = find(data.pets,latest.pet)?.name;
+    cards.push(card(t("Latest update"),'<h3>'+emoji(activityIcons[latest.kind])+text(translateLabel(latest.kind))+(pet ? ' · '+text(pet) : '')+'</h3>'+
+      '<p class="appointment-details">'+date(latest.published)+'</p>'+(latest.notes ? '<p class="preserve">'+text(latest.notes)+'</p>' : '')+
+      tapLink('#diary',t("Open the Pet Diary"),'📖')));
+  }
+  const next = !summary.activeCare.length && summary.nextBooking ? find(data.bookings,summary.nextBooking) : null;
+  if (next) {
+    const status = next.status === 'Requested' ? t("Waiting for Myomi") : translateLabel(next.status);
+    const deposit = nextSteps(next,{ intakeState, paymentsEnabled:data.payments_enabled })
+      .find(step => !step.done && ['pay_deposit','deposit_arranged'].includes(step.code));
+    const due = deposit ? '<p>'+text(t('Deposit due {amount}',{ amount:money(deposit.amount_cents) }))+
+      (deposit.due_at ? ' · '+text(t('Deposit due by {date}.',{ date:date(deposit.due_at) })) : '')+'</p>' : '';
+    cards.push(card(t("Next booking"),'<h3>'+title(next)+'</h3><p class="appointment-details">'+date(next.starts)+' · '+text(status)+'</p>'+due+
+      tapLink(hrefFor('visit',{ booking:next.id }),t("View visit details"),'📅')));
+  }
+  // Things only the client can do. A payment for the next booking is already on its card above.
+  const labels = { complete_intake:t("Finish your care details"), pay:t("Pay for a visit"), feedback:t("Rate your last visit") };
+  const todo = summary.nextActions.filter(action => labels[action.code] && !(action.code === 'pay' && action.booking === next?.id));
+  const todoList = todo.length ? card(t("To do"),todo.map(action => tapLink(action.href,labels[action.code],
+    { complete_intake:'📝', pay:'💳', feedback:'💬' }[action.code])).join('')) : '';
+  const book = dashboardActions([['book',requestedService() ? t("Continue booking") : t("Book a visit"),'🐾',t("Choose care with Myomi.")]]);
+  return invitation+(cards.length || todoList ? '<div class="home-cards">'+cards.join('')+todoList+'</div>' : '<p>'+text(t("No appointments here yet."))+'</p>')+
+    book+weekCalendar();
 }
 function staffHome(bookings) {
   // Requests and change requests both wait on Myomi.

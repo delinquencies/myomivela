@@ -1,6 +1,15 @@
 // @ts-check
 // Shared customer-facing copy. English phrases are stable translation keys.
 export const en = {
+  "Care in progress": "Care in progress",
+  "Started {time}": "Started {time}",
+  "Follow along in the Pet Diary": "Follow along in the Pet Diary",
+  "Latest update": "Latest update",
+  "Open the Pet Diary": "Open the Pet Diary",
+  "Next booking": "Next booking",
+  "Finish your care details": "Finish your care details",
+  "Pay for a visit": "Pay for a visit",
+  "Rate your last visit": "Rate your last visit",
   "All settings": "All settings",
   "Settings": "Settings",
   "Hours & dates": "Hours & dates",
@@ -784,6 +793,15 @@ export const en = {
 
 /** @type {Record<keyof typeof en, string>} */
 export const es = {
+  "Care in progress": "Cuidado en curso",
+  "Started {time}": "Comenzó {time}",
+  "Follow along in the Pet Diary": "Síguelo en el Diario de tu mascota",
+  "Latest update": "Última actualización",
+  "Open the Pet Diary": "Abrir el Diario de tu mascota",
+  "Next booking": "Próxima reserva",
+  "Finish your care details": "Completa los datos de cuidado",
+  "Pay for a visit": "Pagar una visita",
+  "Rate your last visit": "Califica tu última visita",
   "All settings": "Toda la configuración",
   "Settings": "Configuración",
   "Hours & dates": "Horario y fechas",

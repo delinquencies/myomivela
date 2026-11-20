@@ -93,7 +93,7 @@ await reg.locator('[name=email]').fill('casey@example.test');
 await reg.locator('[name=password]').fill(password);
 await reg.locator('button').click();
 await cust.locator('h1', { hasText:'Welcome, Casey.' }).waitFor();
-await cust.locator('#client-home').getByRole('link',{ name:'My pets' }).click();
+await section(cust, 'pets'); // the home no longer repeats the menu as tiles (audit UX-04)
 const add = cust.locator('#pets form[data-id=""]');
 await add.getByLabel('Help for Species').click();
 await add.getByText('Enter the type of animal', { exact:false }).waitFor();
@@ -143,6 +143,11 @@ await waitSaved(cust);
 await cust.getByRole('heading',{name:'Dog walking · Waiting for Myomi'}).waitFor();
 await section(cust,'client-home');
 await cust.locator('#client-home .week-calendar').getByText('Waiting for Myomi').waitFor();
+// Home leads with the client's own care (audit UX-04): the request is the next booking, with one link to it.
+const nextCard = cust.locator('#client-home .home-card').filter({ hasText:'Next booking' });
+await nextCard.getByText(/Waiting for Myomi/).waitFor();
+await nextCard.getByRole('link',{ name:'View visit details' }).waitFor();
+if (await cust.locator('#client-home .dashboard-action').count() !== 1) throw new Error('Client home should offer one booking action, not a menu of tiles');
 await cust.getByRole('button',{name:'Next day'}).click();
 await cust.getByText('Day 2 of 7',{exact:true}).waitFor();
 if ((await cust.request.get(server.base+'/api/financials')).status() !== 403) throw new Error('Client can access staff financials');
@@ -294,6 +299,14 @@ expected.push(/\/api\/events.*(ERR_CONNECTION_RESET|net::ERR_FAILED|net::ERR_ABO
 const published = await staff.locator('#diary-feed li:has-text("Great walk")').count();
 log('dropped connection on publish → diary shows the update', published, 'time(s)');
 if (published !== 1) throw new Error('Expected the retried diary update once, found ' + published);
+// While the visit runs, the client's home shows it and the latest update first.
+// (In a second tab, so the main customer page keeps its state for the diary checks below.)
+const homeTab = await cust.context().newPage();
+await homeTab.goto(server.base + '/portal/index.html#client-home');
+await homeTab.locator('#client-home .home-card').filter({ hasText:'Care in progress' }).waitFor();
+await homeTab.locator('#client-home .home-card').filter({ hasText:'Latest update' }).filter({ hasText:'Great walk' }).waitFor();
+await homeTab.close();
+log('client home shows the visit in progress and its latest update');
 // Report card (C2.4): an update with structured answers, published through the API (the form's fields are Codex X2.4).
 await staff.evaluate(async () => {
   const data = await fetch('/api/portal').then(r => r.json());
