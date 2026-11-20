@@ -96,6 +96,12 @@ try {
         await page.locator('#care:visible').waitFor();
         await page.goForward();
         await page.locator('#upcoming:visible').waitFor();
+        // Menus are short (audit UX-05): the diary opens from each pet, filtered to that pet.
+        assert.deepEqual(await page.locator('#portal-links a').evaluateAll(links => links.map(link => link.hash)),['#client-home','#upcoming','#pets']);
+        await page.goto(server.base+'/portal/index.html#pets');
+        await page.locator('#pets [data-diary-pet="'+pets[0].id+'"]').click();
+        await page.locator('#diary:visible').waitFor();
+        await page.waitForFunction(id => document.querySelector('#diary-filter')?.value === 'pet:'+id, pets[0].id);
         await page.goto(server.base+'/portal/index.html#not-a-route');
         await page.locator('#route-status').waitFor();
         assert.match(await page.locator('#route-status h2').innerText(),language === 'es' ? /No encontramos/ : /couldn’t find/);

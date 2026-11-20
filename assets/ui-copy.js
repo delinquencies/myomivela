@@ -1,6 +1,7 @@
 // @ts-check
 // Shared customer-facing copy. English phrases are stable translation keys.
 export const en = {
+  "More": "More",
   "Open visit": "Open visit",
   "Back to Today": "Back to Today",
   "Log an update": "Log an update",
@@ -807,6 +808,7 @@ export const en = {
 
 /** @type {Record<keyof typeof en, string>} */
 export const es = {
+  "More": "Más",
   "Open visit": "Abrir visita",
   "Back to Today": "Volver a Hoy",
   "Log an update": "Registrar una actualización",

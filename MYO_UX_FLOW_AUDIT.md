@@ -295,4 +295,6 @@ Done, with Node and the full Chromium suite passing after each:
 
 - **Task 2 / UX-01, UX-07, UX-08, visit page**: staff `#visit/<id>` holds the booking card, the client's care plan (the intake, expanded), the update form while the visit runs, and "Logged so far". Starting a visit opens it, publishing stays on it, and completing returns to Today. The completion summary is prefilled from the logged updates. A Medication update marked given needs a note, enforced in the form and on the server (`medication_details_required`). The diary page's publishing desk still works and links to each visit page. New browser test `tests/browser/visit-workspace-smoke.mjs`, passing on Node and the Worker.
 
-Not started: Task 5 (menus to four).
+- **Task 5 / UX-05, menus to four**: clients see Home, My bookings and My pets, plus Account in the header. Staff see Today, Bookings, Clients and More. Book a visit is on Home and My bookings. Care details and Pet Diary are on My pets, and each pet's diary link opens the diary filtered to that pet. More lists the five settings groups and Financials (owners), then Booking history and Publish updates. Every old link still opens (`tests/ux-routing.test.mjs`).
+
+All five tasks are done. Not done from the findings: UX-06's full pet page (diary, care history and profile on `#pet/<id>`; the per-pet diary link is the smaller step taken), UX-09 (Account order) and UX-10 beyond Today. The Phase 3 items need product decisions.

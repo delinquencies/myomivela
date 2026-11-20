@@ -116,7 +116,9 @@ async function checkRepairMenu(page, role) {
   const toggle = page.locator('.portal-menu summary');
   await toggle.click();
   const menu = page.locator('.portal-menu nav');
-  assert.equal(await menu.locator('a[href="#care"]:visible').count(),role === 'customer' ? 1 : 0);
+  // Care details opens from My pets now (audit UX-05), so the menu has My pets instead.
+  assert.equal(await menu.locator('a[href="#care"]:visible').count(),0);
+  assert.equal(await menu.locator('a[href="#pets"]:visible').count(),role === 'customer' ? 1 : 0);
   assert.equal(await page.locator('#account-link').isVisible(),role !== 'public');
   const destinations = await menu.locator('a[href^="#"]:visible').evaluateAll(links => links.map(link => link.hash));
   assert.equal(new Set(destinations).size,destinations.length,'Menu destinations must be unique');

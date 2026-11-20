@@ -794,6 +794,16 @@ function adminSettings() {
       (t("It includes password hashes, so store it somewhere private.") + "</p>")+'<a class="tap-link" href="/api/backup" download>'+emoji('💾')+(t("Download backup") + "</a>")+
       '<p data-backup-status role="status"></p>');
 }
+// More (audit UX-05): the less frequent staff destinations, out of the main menu. Owners reach each settings group directly.
+function moreHome() {
+  const link = (href, icon, label, detail) => '<li><a class="dashboard-action" href="'+href+'">'+emoji(icon)+'<span><strong>'+text(t(label))+'</strong>'+
+    (detail ? '<small>'+text(t(detail))+'</small>' : '')+'</span></a></li>';
+  return '<ul class="settings-groups">'+
+    (isOwner() ? settingsGroups.map(([id,icon,label,detail]) => link('#settings/'+id,icon,label,detail)).join('')+
+      link('#financials','📊','Financials','See visit totals and service breakdowns.') : '')+
+    link('#history','📖','Booking history','Find past visits and their details.')+
+    link('#diary','🐾','Publish updates','Share activity notes and photos.')+'</ul>';
+}
 // Settings groups (audit UX-03): #settings lists them; #settings/<id> shows only that group's forms.
 const settingsGroups = [
   ['hours','🕒','Hours & dates','Weekly hours, closed dates and extra appointment windows.'],
@@ -1056,9 +1066,11 @@ function render() {
   app.innerHTML = staffNotice+(admin ? section('staff-home',t("Today"),staffHome()) : section('client-home',t("Client home"),clientHome()))+
     section('upcoming',main,admin ? cards(bookings.filter(b=>b.status === 'In Progress' || day(b.starts) === today)) +
       ("<h3>" + t("Other upcoming bookings") + "</h3>")+cards(bookings.filter(b=>b.status !== 'In Progress' && day(b.starts) !== today))
-      : ("<h3>" + t("Upcoming visits") + "</h3>")+cards(bookings)+("<h3>" + t("Past visits") + "</h3>")+cards(history)+older)+
-    (admin ? (isOwner() ? section('settings',t("Settings"),adminSettings()) : '') :
-      section('pets',t("Pet profiles"),data.pets.map(p=>'<article><h3>'+text(p.name)+'</h3>'+profileSummary(p)+vaccineTools(p)+tapLink(hrefFor('pet',{pet:p.id}),t('Care history'),'📖')+("<details><summary>" + t("Edit profile") + "</summary>")+petForm(p)+'</details></article>').join('')+("<h3>" + t("Add a pet") + "</h3>")+petForm())+
+      : tapLink('#book',t("Book a visit"),'🐾')+("<h3>" + t("Upcoming visits") + "</h3>")+cards(bookings)+("<h3>" + t("Past visits") + "</h3>")+cards(history)+older)+
+    (admin ? section('more',t("More"),moreHome())+(isOwner() ? section('settings',t("Settings"),adminSettings()) : '') :
+      section('pets',t("Pet profiles"),tapLink('#care',t('Care details'),'📝')+tapLink('#diary',t("Pet Diary"),'📖')+
+        data.pets.map(p=>'<article><h3>'+text(p.name)+'</h3>'+profileSummary(p)+vaccineTools(p)+
+        '<a class="tap-link" href="#diary" data-diary-pet="'+p.id+'">'+emoji('📖')+text(t("Pet Diary"))+'</a>'+tapLink(hrefFor('pet',{pet:p.id}),t('Care history'),'📖')+("<details><summary>" + t("Edit profile") + "</summary>")+petForm(p)+'</details></article>').join('')+("<h3>" + t("Add a pet") + "</h3>")+petForm())+
       section('book',t("Request care"),bookingForm())+
       bookings.filter(canReviewCheckout).map(booking => section('checkout-'+booking.id,t("Visit details"),checkoutSummary(booking))).join(''))+
     section('diary',admin ? t("Publish updates") : t("Pet Diary"),
@@ -1566,6 +1578,8 @@ app.addEventListener('input', event => {
 });
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden' && data?.user) drafts.capture(app); });
 app.addEventListener('click', async event => {
+  const petDiary = event.target.closest('[data-diary-pet]');
+  if (petDiary) { diaryFilterValue = 'pet:'+petDiary.dataset.diaryPet; return; } // the hash change then loads that pet's diary
   const adjustHours = event.target.closest('[data-schedule-day]');
   if (adjustHours) {
     event.preventDefault();

@@ -76,7 +76,7 @@ try {
    await page.locator('#upcoming:visible').waitFor();
    const done=(await server.call('fixture-'+width+language,'GET','/api/portal')).json.bookings.filter(item=>item.service_kind==='visit');assert.equal(done.length,1);assert.equal(done[0].notes,'Keep Coco on the quiet path.');
    assert.equal(await page.evaluate(()=>sessionStorage.getItem('myo-booking-intent')),null);
-   await page.locator('.menu-toggle').click();await page.locator('.site-nav a[href="#book"]').click();await booking.locator('[name=pets]').first().check();await booking.locator('[name=notes]').fill('Only Camila should see these choices.');
+   await page.locator('#upcoming a[href="#book"]:not([data-book-again])').click();await booking.locator('[name=pets]').first().check();await booking.locator('[name=notes]').fill('Only Camila should see these choices.');
    await page.locator('.menu-toggle').click();await page.locator('#logout').click();await page.locator('[data-action=login]:visible').waitFor();
    assert.equal(await page.evaluate(()=>sessionStorage.getItem('myo-booking-intent')),null);
    console.log('Guided booking '+language+' '+width+'px passed');

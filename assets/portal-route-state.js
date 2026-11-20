@@ -26,7 +26,7 @@ export const routes = [
   { id:'client-home', pattern:/^client-home$/, roles:customer, parent:null, labelKey:'Home', menu:customer },
   { id:'staff-home', pattern:/^staff-home$/, roles:staff, parent:null, labelKey:'Today', menu:staff },
   { id:'upcoming', pattern:/^upcoming$/, roles:[...customer, ...staff], parent:null, labelKey:'My bookings', menu:[...customer, ...staff] },
-  { id:'book', pattern:/^book$/, roles:['signed_out', ...customer], parent:null, labelKey:'Book a visit', menu:customer },
+  { id:'book', pattern:/^book$/, roles:['signed_out', ...customer], parent:null, labelKey:'Book a visit' },
   // The booking flow's steps (CUX-02). Choosing care and seeing a price work signed out; the rest need an account.
   { id:'book-step', pattern:/^book\/(service|details|about)$/, params:['step'], roles:['signed_out', ...customer], parent:'book' },
   { id:'book-intake', pattern:/^book\/intake\/([1-3])$/, params:['step'], roles:customer, parent:'book' },
@@ -35,17 +35,18 @@ export const routes = [
   { id:'pets', pattern:/^pets$/, roles:customer, parent:null, labelKey:'My pets', menu:customer },
   { id:'pet-new', pattern:/^pets\/new$/, roles:customer, parent:'pets' },
   { id:'pet', pattern:/^pet\/(\d+)$/, params:['pet'], roles:customer, parent:'pets' },
-  { id:'care', pattern:/^care$/, roles:customer, parent:null, labelKey:'Care details', menu:customer },
-  { id:'diary', pattern:/^diary$/, roles:[...customer, ...staff], parent:null, labelKey:'Pet Diary', menu:[...customer, ...staff] },
+  { id:'care', pattern:/^care$/, roles:customer, parent:null, labelKey:'Care details' },
+  { id:'diary', pattern:/^diary$/, roles:[...customer, ...staff], parent:null, labelKey:'Pet Diary' },
   // Customers and staff: one visit.
   { id:'visit', pattern:/^visit\/(\d+)$/, params:['booking'], roles:[...customer, ...staff], parent:'upcoming' },
   // Staff
-  { id:'history', pattern:/^history$/, roles:staff, parent:null, labelKey:'Booking history', menu:staff },
+  { id:'history', pattern:/^history$/, roles:staff, parent:'more', labelKey:'Booking history' },
   { id:'clients', pattern:/^clients$/, roles:staff, parent:null, labelKey:'Clients', menu:staff },
   { id:'client', pattern:/^client\/(\d+)$/, params:['client'], roles:staff, parent:'clients' },
-  { id:'settings', pattern:/^settings$/, roles:owner, parent:null, labelKey:'Services & availability', menu:owner },
+  { id:'more', pattern:/^more$/, roles:staff, parent:null, labelKey:'More', menu:staff },
+  { id:'settings', pattern:/^settings$/, roles:owner, parent:'more', labelKey:'Settings' },
   { id:'settings-group', pattern:/^settings\/(hours|services|policies|team|backups)$/, params:['group'], roles:owner, parent:'settings' },
-  { id:'financials', pattern:/^financials$/, roles:owner, parent:null, labelKey:'Financials', menu:owner },
+  { id:'financials', pattern:/^financials$/, roles:owner, parent:'more', labelKey:'Financials' },
   // Everyone signed in
   { id:'account', pattern:/^account$/, roles:[...customer, ...staff], parent:null, labelKey:'Account' },
 ];

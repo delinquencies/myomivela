@@ -17,13 +17,18 @@ test('roles come from the session', () => {
   assert.equal(roleOf(sitter), 'sitter');
 });
 
-test('each role gets its own menu, and Care details appears once for customers only', () => {
+test('each role gets a short menu of goals; the rest open in context (audit UX-05)', () => {
   const ids = session => routesFor(session).map(route => route.id);
-  assert.deepEqual(ids(customer), ['client-home','upcoming','book','pets','care','diary']);
-  assert.deepEqual(ids(owner), ['staff-home','upcoming','diary','history','clients','settings','financials']);
-  assert.deepEqual(ids(sitter), ['staff-home','upcoming','diary','history','clients']);
+  // Account is its own header link, so each role has four destinations.
+  assert.deepEqual(ids(customer), ['client-home','upcoming','pets']);
+  assert.deepEqual(ids(owner), ['staff-home','upcoming','clients','more']);
+  assert.deepEqual(ids(sitter), ['staff-home','upcoming','clients','more']);
   assert.deepEqual(ids(signedOut), []);
-  assert.equal(ids(customer).filter(id => id === 'care').length, 1);
+  // Off the menu but still reachable, and owner-only screens still refuse sitters.
+  for (const hash of ['#book','#care','#diary']) assert.equal(resolveLocation({ hash, search:'' }, customer).outcome, 'ready', hash);
+  for (const hash of ['#history','#diary','#more']) assert.equal(resolveLocation({ hash, search:'' }, sitter).outcome, 'ready', hash);
+  for (const hash of ['#settings','#financials']) assert.equal(resolveLocation({ hash, search:'' }, owner).outcome, 'ready', hash);
+  assert.equal(resolveLocation({ hash:'#financials', search:'' }, sitter).outcome, 'forbidden');
   assert.ok(routesFor(customer).every(route => route.href.startsWith('#') && route.labelKey));
 });
 

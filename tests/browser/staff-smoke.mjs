@@ -70,7 +70,11 @@ try {
   watch(sam, 'sam', [/status of 401/]); // the last check expects the switched-off sitter to be refused
   await signIn(sam, sitter);
   const nav = await sam.locator('#portal-links a, nav a').allTextContents();
-  check(nav.some(label => /Publish updates/.test(label)) && !nav.some(label => /Services|Financials/.test(label)), 'the sitter’s menu has Publish updates but no Settings or Financials');
+  check(['Today','Bookings','Clients','More'].every(label => nav.includes(label)) && !nav.some(label => /Settings|Financials/.test(label)), 'the sitter’s menu is Today, Bookings, Clients and More');
+  await sam.goto(server.base + '/portal/index.html?staff=1#more');
+  await sam.locator('#more:visible').waitFor();
+  const more = await sam.locator('#more a').allTextContents();
+  check(more.some(label => /Publish updates/.test(label)) && !more.some(label => /Hours|Financials|Team/.test(label)), 'a sitter’s More page has Publish updates but no settings or Financials');
   check(await sam.locator('#settings, #financials').count() === 0, 'the Settings and Financials sections are not rendered for a sitter');
   await sam.goto(server.base + '/portal/index.html?staff=1#upcoming');
   await sam.reload();
