@@ -179,7 +179,8 @@ test('with online payment off, deposits are arranged with Myomi and nothing expi
     const meeting = await book(meetService, open[2]);
     for (const status of ['Confirmed','In Progress']) await c('staff','POST','/api/status',{ id:meeting.id, status });
     await c('staff','POST','/api/status',{ id:meeting.id, status:'Completed', summary:'Hello Ty', secured:true });
-    const visit = await book(walkService, open[5]);
+    // An ordinary day (not peak, not short notice), so the price is the base $30 whatever today's date is.
+    const visit = await book(walkService, open.find((day, index) => index >= 5 && !day.peak && !day.last_minute));
     assert.equal(visit.next_steps.find(step => step.code === 'deposit_arranged').amount_cents, 1500);
     const db = new DatabaseSync(manual.dbPath);
     try { db.prepare('UPDATE bookings SET deposit_due_at=? WHERE id=?').run(Date.now() - 1000, visit.id); } finally { db.close(); }

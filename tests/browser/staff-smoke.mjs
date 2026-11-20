@@ -52,7 +52,7 @@ try {
   const request = await post(ana, 'bookings', { service:portal.services[0].id, pets:[portal.pets[0].id], slot:slot.id, start:slot.starts, cents:3000, notes:'' });
 
   // The owner adds Sam as a sitter in Settings.
-  await owner.goto(server.base + '/portal/index.html?staff=1#settings');
+  await owner.goto(server.base + '/portal/index.html?staff=1#settings/team');
   await owner.reload();
   const add = owner.locator('form[data-action=staff]');
   await add.waitFor();

@@ -726,7 +726,10 @@ function adminSettings() {
     input(t("Closes"),'closes','type="time" required value="'+clock(schedule.closes)+'"');
   const exceptionList = schedule.exceptions.map(exception => '<li>'+text(exception.day)+' · '+
     (exception.opens === null ? t("Closed") : clock(exception.opens)+'–'+clock(exception.closes))+'</li>').join('');
-  return '<div class="grid">'+form('schedule',("<h3>" + t("Regular hours") + "</h3><p>" + t("These hours repeat each week in Massachusetts time.") + "</p>")+
+  const group = (id, contents) => '<div data-settings-group="'+id+'" hidden>'+tapLink('#settings',t("All settings"),'↩️')+contents+'</div>';
+  const index = '<ul class="settings-groups" data-settings-index>'+settingsGroups.map(([id,icon,label,detail]) =>
+    '<li><a class="dashboard-action" href="#settings/'+id+'">'+emoji(icon)+'<span><strong>'+text(t(label))+'</strong><small>'+text(t(detail))+'</small></span></a></li>').join('')+'</ul>';
+  return index+group('hours','<div class="grid">'+form('schedule',("<h3>" + t("Regular hours") + "</h3><p>" + t("These hours repeat each week in Massachusetts time.") + "</p>")+
     choiceGroup(t("Working days"),weekdays.map((label,index)=>choice('days',index,label,{type:'checkbox',checked:Boolean(schedule.days & (1<<index))})).join(''))+
     timeFields+input(t("Buffer before and after a visit (minutes)"),'buffer','type="number" min="0" max="180" required aria-describedby="buffer-tip" value="'+schedule.buffer+'"')+
     choiceGroup(t("Overnight stays (nights starting on)"),weekdays.map((label,index)=>choice('overnight_days',index,label,{type:'checkbox',checked:Boolean((schedule.overnight_days || 0) & (1<<index))})).join(''))+
@@ -737,7 +740,10 @@ function adminSettings() {
       input(t("Date"),'day','type="date" required')+
       choiceGroup(t("Date change"),choice('mode','closed',t("Closed"),{checked:true})+choice('mode','custom',t("Custom hours"))+choice('mode','reset',t("Use weekly hours")))+
       timeFields+button(t("Save date change"),'','✓')+(exceptionList ? '<ul>'+exceptionList+'</ul>' : ''))+
-    form('services',("<h3>" + t("Set a service price") + "</h3>")+
+    form('slots',("<h3>" + t("Add an extra appointment window") + "</h3><p>" + t("Enter the window in your device’s local time. The portal displays Massachusetts time.") + "</p>")+
+    input(t("Starts"),'starts','type="datetime-local" required')+input(t("Ends"),'ends','type="datetime-local" required')+button(t("Publish window"),'','📅'))+'</div>'+
+    data.windows.map(s=>form('slots','<p class="appointment-details">'+date(s.starts)+' – '+date(s.ends)+'</p>'+button(t("Remove window"),'secondary','✕'),s.id)).join(''))+
+    group('services','<div class="grid">'+form('services',("<h3>" + t("Set a service price") + "</h3>")+
     choiceGroup(t("Service"),Object.entries(serviceIcons).map(([service,icon],index) =>
       choice('name',service,service,{ icon, checked:index === 0, required:true })
     ).join(''))+
@@ -745,18 +751,30 @@ function adminSettings() {
     input(t("Price in USD"),'price','type="number" min="0" max="10000" step="0.01" required')+
     input(t("Extra pet (USD)"),'extra_pet','type="number" min="0" max="1000" step="0.01" value="0"')+
     input(t("Free cancellation until (hours before)"),'cancel_cutoff_hours','type="number" min="0" max="336" value="24"')+
-    input(t("Cancellation fee after that (%)"),'cancel_fee_percent','type="number" min="0" max="100" value="0"')+button(t("Save service"),'','✓'))+
-    form('slots',("<h3>" + t("Add an extra appointment window") + "</h3><p>" + t("Enter the window in your device’s local time. The portal displays Massachusetts time.") + "</p>")+
-    input(t("Starts"),'starts','type="datetime-local" required')+input(t("Ends"),'ends','type="datetime-local" required')+button(t("Publish window"),'','📅'))+'</div>'+
+    input(t("Cancellation fee after that (%)"),'cancel_fee_percent','type="number" min="0" max="100" value="0"')+button(t("Save service"),'','✓'))+'</div>'+
     '<p class="appointment-details">'+data.services.map(s=>text(translateLabel(s.name))+' · '+s.minutes+' min · '+money(s.cents)+
       (s.extra_pet_cents ? ' + '+money(s.extra_pet_cents)+' per extra pet' : '')+
-      (s.cancel_fee_percent ? ' · '+t("{percent}% fee inside {hours} h",{ percent:s.cancel_fee_percent, hours:s.cancel_cutoff_hours }) : '')).join('<br>')+'</p>'+
-    data.windows.map(s=>form('slots','<p class="appointment-details">'+date(s.starts)+' – '+date(s.ends)+'</p>'+button(t("Remove window"),'secondary','✕'),s.id)).join('')+
-    ("<h3>" + t("Backup") + "</h3><p>" + t("Download everything (accounts, pets, bookings, diary updates and photos) as one file. "))+
-    (t("It includes password hashes, so store it somewhere private.") + "</p>")+'<a class="tap-link" href="/api/backup" download>'+emoji('💾')+(t("Download backup") + "</a>")+
-    '<p data-backup-status role="status"></p>'+
-    '<h3>'+t("Staff")+'</h3><p>'+t("Sitters run visits and publish updates. Owners also set prices, hours and money, and manage staff.")+'</p>'+
-    '<div data-staff-panel aria-live="polite"></div>';
+      (s.cancel_fee_percent ? ' · '+t("{percent}% fee inside {hours} h",{ percent:s.cancel_fee_percent, hours:s.cancel_cutoff_hours }) : '')).join('<br>')+'</p>')+
+    group('policies',staffComplianceSettings(data))+
+    group('team','<h3>'+t("Staff")+'</h3><p>'+t("Sitters run visits and publish updates. Owners also set prices, hours and money, and manage staff.")+'</p>'+
+      '<div data-staff-panel aria-live="polite"></div>')+
+    group('backups',("<h3>" + t("Backup") + "</h3><p>" + t("Download everything (accounts, pets, bookings, diary updates and photos) as one file. "))+
+      (t("It includes password hashes, so store it somewhere private.") + "</p>")+'<a class="tap-link" href="/api/backup" download>'+emoji('💾')+(t("Download backup") + "</a>")+
+      '<p data-backup-status role="status"></p>');
+}
+// Settings groups (audit UX-03): #settings lists them; #settings/<id> shows only that group's forms.
+const settingsGroups = [
+  ['hours','🕒','Hours & dates','Weekly hours, closed dates and extra appointment windows.'],
+  ['services','🏷️','Services & prices','What you offer and what it costs.'],
+  ['policies','📋','Booking rules','Vaccine requirements and the service agreement.'],
+  ['team','👥','Team','Staff accounts and roles.'],
+  ['backups','💾','Backups','Download everything and check daily backups.'],
+];
+function showSettingsGroup(panel, group) {
+  for (const element of panel.querySelectorAll('[data-settings-group]')) element.hidden = element.dataset.settingsGroup !== group;
+  panel.querySelector('[data-settings-index]').hidden = Boolean(group);
+  const label = settingsGroups.find(([id]) => id === group)?.[2];
+  panel.querySelector('h2').textContent = label ? t(label) : t("Settings");
 }
 function accountSettings() {
   const sessions = data.account?.sessions ?? 1;
@@ -807,7 +825,7 @@ function weekCalendar() {
     const openings = data.user.admin && data.schedule.openings.filter(window=>weekDayKey.format(window.starts)===key);
     const hours = data.user.admin ? '<p class="week-hours">'+(exception?.opens === null ? t("Closed") :
       openings.length ? openings.map(window=>appointmentTime.format(window.starts)+'–'+appointmentTime.format(window.ends)).join(' · ') : t("No hours set"))+
-      '</p><a class="text-link week-adjust" href="#settings" data-schedule-day="'+key+("\">" + t("Adjust hours") + "</a>") : '';
+      '</p><a class="text-link week-adjust" href="#settings/hours" data-schedule-day="'+key+("\">" + t("Adjust hours") + "</a>") : '';
     return '<li class="week-day"><h4>'+(index === 0 ? t("Today · ") : '')+'<time datetime="'+key+'">'+weekDayLabel.format(date)+'</time></h4>'+
       hours+(entries ? '<ul>'+entries+'</ul>' : ("<p>" + t("No visits") + "</p>"))+'</li>';
   });
@@ -942,7 +960,7 @@ function render() {
     section('upcoming',main,admin ? cards(bookings.filter(b=>b.status === 'In Progress' || day(b.starts) === today)) +
       ("<h3>" + t("Other upcoming bookings") + "</h3>")+cards(bookings.filter(b=>b.status !== 'In Progress' && day(b.starts) !== today))
       : ("<h3>" + t("Upcoming visits") + "</h3>")+cards(bookings)+("<h3>" + t("Past visits") + "</h3>")+cards(history)+older)+
-    (admin ? (isOwner() ? section('settings',t("Services and availability"),adminSettings()+staffComplianceSettings(data)) : '') :
+    (admin ? (isOwner() ? section('settings',t("Settings"),adminSettings()) : '') :
       section('pets',t("Pet profiles"),data.pets.map(p=>'<article><h3>'+text(p.name)+'</h3>'+profileSummary(p)+vaccineTools(p)+tapLink(hrefFor('pet',{pet:p.id}),t('Care history'),'📖')+("<details><summary>" + t("Edit profile") + "</summary>")+petForm(p)+'</details></article>').join('')+("<h3>" + t("Add a pet") + "</h3>")+petForm())+
       section('book',t("Request care"),bookingForm())+
       bookings.filter(canReviewCheckout).map(booking => section('checkout-'+booking.id,t("Visit details"),checkoutSummary(booking))).join(''))+
@@ -1067,7 +1085,12 @@ function showSection(focus = false) {
   }
   journey.paint();
   loadCareSection(id,route.params);
-  if (id === 'settings') { showBackupStatus(); showStaffPanel(); }
+  if (id === 'settings') {
+    const group = route.id === 'settings-group' ? route.params.group : '';
+    showSettingsGroup(panel, group);
+    if (group === 'backups') showBackupStatus();
+    if (group === 'team') showStaffPanel();
+  }
   document.title = panel.querySelector('h2').textContent+' | myo.';
   if (focus) {
     const heading = panel.querySelector('h2');
@@ -1462,7 +1485,7 @@ app.addEventListener('click', async event => {
     event.preventDefault();
     const date = app.querySelector('[data-action="schedule-exception"] [name="day"]');
     date.value = adjustHours.dataset.scheduleDay;
-    history.pushState(null,'','#settings');
+    history.pushState(null,'','#settings/hours');
     showSection();
     date.focus();
     return;

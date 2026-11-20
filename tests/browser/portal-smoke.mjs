@@ -59,7 +59,8 @@ await staff.getByText('Day 2 of 7',{exact:true}).waitFor();
 await staff.getByRole('button',{name:'Previous day'}).click();
 await staff.getByText('Day 1 of 7',{exact:true}).waitFor();
 await staff.locator('#staff-home').getByRole('link',{ name:'Services & availability' }).click();
-await staff.locator('#settings').waitFor();
+await staff.locator('#settings [data-settings-index]').waitFor();
+await staff.locator('#settings').getByRole('link',{ name:/Services & prices/ }).click(); // Settings is grouped (audit UX-03)
 await staff.locator('[data-action=services] input[value="Dog walking"]').locator('xpath=..').click();
 await staff.fill('[data-action=services] [name=minutes]', '30');
 await staff.fill('[data-action=services] [name=price]', '25');
@@ -69,6 +70,7 @@ await staff.getByRole('button',{ name:'Dismiss notification' }).click();
 const t = new Date(Date.now() + 2*86400e3); // two days out, local NY time
 const pad = n => String(n).padStart(2,'0');
 const local = h => `${t.getFullYear()}-${pad(t.getMonth()+1)}-${pad(t.getDate())}T${pad(h)}:00`;
+await section(staff, 'settings/hours');
 await staff.fill('[data-action=slots] [name=starts]', local(9));
 await staff.fill('[data-action=slots] [name=ends]', local(12));
 await staff.locator('[data-action=slots] button:has-text("Publish window")').click();
@@ -259,7 +261,7 @@ await ev.locator('[name=notes]').fill('Half-written note');
 await ev.locator('input[name=photo]').setInputFiles({ name:'draft.png', mimeType:'image/png', buffer:png });
 // Switch sections by hash: a full navigation is a reload, which cannot keep a chosen file
 // (on Cloudflare /portal/index.html redirects to /portal/, so goto() would reload).
-await section(staff, 'settings');
+await section(staff, 'settings/services');
 await staff.locator('[data-action=services] [name=minutes]').fill('45');
 await staff.locator('[data-action=services] [name=price]').fill('32');
 await staff.locator('[data-action=services] button[type=submit]').click();
@@ -389,7 +391,7 @@ if (!await book.locator('[name=service]:checked').locator('xpath=..').filter({ h
 }
 
 // Staff downloads a backup from the settings page.
-await section(staff,'settings');
+await section(staff,'settings/backups');
 await staff.reload();
 const [download] = await Promise.all([staff.waitForEvent('download'), staff.click('a:has-text("Download backup")')]);
 const archive = JSON.parse(gunzipSync(await readFile(await download.path())));

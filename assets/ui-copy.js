@@ -1,6 +1,18 @@
 // @ts-check
 // Shared customer-facing copy. English phrases are stable translation keys.
 export const en = {
+  "All settings": "All settings",
+  "Settings": "Settings",
+  "Hours & dates": "Hours & dates",
+  "Weekly hours, closed dates and extra appointment windows.": "Weekly hours, closed dates and extra appointment windows.",
+  "Services & prices": "Services & prices",
+  "What you offer and what it costs.": "What you offer and what it costs.",
+  "Booking rules": "Booking rules",
+  "Vaccine requirements and the service agreement.": "Vaccine requirements and the service agreement.",
+  "Team": "Team",
+  "Staff accounts and roles.": "Staff accounts and roles.",
+  "Backups": "Backups",
+  "Download everything and check daily backups.": "Download everything and check daily backups.",
   "Enter your password again": "Enter your password again",
   "Cancel": "Cancel",
   "Continue": "Continue",
@@ -772,6 +784,18 @@ export const en = {
 
 /** @type {Record<keyof typeof en, string>} */
 export const es = {
+  "All settings": "Toda la configuración",
+  "Settings": "Configuración",
+  "Hours & dates": "Horario y fechas",
+  "Weekly hours, closed dates and extra appointment windows.": "Horario semanal, fechas cerradas y horarios adicionales de citas.",
+  "Services & prices": "Servicios y precios",
+  "What you offer and what it costs.": "Lo que ofreces y cuánto cuesta.",
+  "Booking rules": "Reglas de reserva",
+  "Vaccine requirements and the service agreement.": "Vacunas requeridas y el acuerdo de servicio.",
+  "Team": "Equipo",
+  "Staff accounts and roles.": "Cuentas del personal y sus funciones.",
+  "Backups": "Copias de seguridad",
+  "Download everything and check daily backups.": "Descarga todo y revisa las copias diarias.",
   "Enter your password again": "Vuelve a escribir tu contraseña",
   "Cancel": "Cancelar",
   "Continue": "Continuar",

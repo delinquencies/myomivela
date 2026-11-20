@@ -146,6 +146,20 @@ try {
       } else {
         await page.goto(server.base+'/portal/index.html#settings/hours');
         await page.locator('#settings:visible').waitFor();
+        // Settings is grouped (audit UX-03): a group shows only its own forms, and #settings lists the groups.
+        await page.locator('[data-action="schedule"]:visible').waitFor();
+        assert.equal(await page.locator('#settings [data-action="services"]:visible, #settings [data-staff-panel]:visible').count(),0,'hours shows only hours');
+        assert.equal(await page.locator('#settings h2').innerText(),'Hours & dates');
+        const height = await page.locator('#settings').evaluate(element => element.getBoundingClientRect().height);
+        assert.ok(height < 3000,'the hours group is a fraction of the old 4,770px page: '+height);
+        console.log('settings/hours height at 390px: '+Math.round(height));
+        await page.goto(server.base+'/portal/index.html#settings');
+        await page.locator('[data-settings-index]:visible').waitFor();
+        assert.equal(await page.locator('#settings form:visible').count(),0,'the settings index has no forms');
+        await page.locator('[data-settings-index] a[href="#settings/team"]').click();
+        await page.locator('[data-staff-panel] .staff-list').waitFor();
+        await page.locator('#settings').getByRole('link',{name:'All settings'}).click();
+        await page.locator('[data-settings-index]:visible').waitFor();
       }
     } finally {
       await context.close();
