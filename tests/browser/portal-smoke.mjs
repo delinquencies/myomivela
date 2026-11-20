@@ -58,7 +58,7 @@ await staff.getByRole('button',{name:'Next day'}).click();
 await staff.getByText('Day 2 of 7',{exact:true}).waitFor();
 await staff.getByRole('button',{name:'Previous day'}).click();
 await staff.getByText('Day 1 of 7',{exact:true}).waitFor();
-await staff.locator('#staff-home').getByRole('link',{ name:'Services & availability' }).click();
+await section(staff,'settings'); // Today no longer repeats the menu as tiles (audit UX-02)
 await staff.locator('#settings [data-settings-index]').waitFor();
 await staff.locator('#settings').getByRole('link',{ name:/Services & prices/ }).click(); // Settings is grouped (audit UX-03)
 await staff.locator('[data-action=services] input[value="Dog walking"]').locator('xpath=..').click();
@@ -196,17 +196,21 @@ await cust.goto(server.base + '/portal/index.html#upcoming');
 // Staff: view the queue, approve both, reschedule one, start one
 await section(staff,'staff-home');
 await staff.reload();
-const visitsCard = staff.locator('#staff-home .dashboard-action').first();
-if (!(await visitsCard.innerText()).includes('Today & upcoming')) throw new Error('Staff home should name the visits queue');
-await visitsCard.click();
-await staff.locator('#upcoming h2:focus',{ hasText:'Today & upcoming' }).waitFor();
+// Today (audit UX-02) lists the requests waiting, each with Approve and Decline, and links to each booking.
+await staff.locator('#staff-home h2',{ hasText:'Today' }).waitFor();
+const requestRows = staff.locator('#staff-home .today-item').filter({ has:staff.getByRole('button',{ name:'Approve request' }) });
+if (await requestRows.count() !== 2) throw new Error('Today should list both requests, found ' + await requestRows.count());
+if (!/^#visit\/\d+$/.test(await requestRows.first().locator('a').first().getAttribute('href'))) throw new Error('Today rows should open the booking');
+if (await staff.locator('#staff-home .dashboard-action').count() !== 0) throw new Error('Today should not repeat the menu as tiles');
+await section(staff,'upcoming');
+await staff.locator('#upcoming h2:focus',{ hasText:'Bookings' }).waitFor();
 await staff.locator('#upcoming article').first().waitFor();
 const staffDialog = staff.locator('#cancel-booking');
 await staff.getByRole('button',{ name:'Decline request' }).first().click();
 await staffDialog.getByRole('heading',{ name:'Decline this request?' }).waitFor();
 await staffDialog.getByRole('button',{ name:'Keep request' }).click();
 for (let i = 0; i < 2; i++) {
-  await staff.locator('button:has-text("Approve request")').first().click();
+  await staff.locator('#upcoming button:has-text("Approve request")').first().click();
   await waitSaved(staff,/^Request approved\.$/);
 }
 await staff.getByRole('button',{ name:'Cancel booking' }).first().click();
@@ -307,6 +311,14 @@ await homeTab.locator('#client-home .home-card').filter({ hasText:'Care in progr
 await homeTab.locator('#client-home .home-card').filter({ hasText:'Latest update' }).filter({ hasText:'Great walk' }).waitFor();
 await homeTab.close();
 log('client home shows the visit in progress and its latest update');
+// Staff Today puts the visit in progress first, above today's other visits and the requests.
+const todayTab = await staff.context().newPage();
+await todayTab.goto(server.base + '/portal/index.html#staff-home');
+await todayTab.locator('#staff-home .today-list').first().waitFor();
+const firstHeading = await todayTab.locator('#staff-home h3').first().innerText();
+if (firstHeading !== 'In progress') throw new Error('Today should start with the visit in progress, found ' + firstHeading);
+await todayTab.close();
+log('staff Today leads with the visit in progress');
 // Report card (C2.4): an update with structured answers, published through the API (the form's fields are Codex X2.4).
 await staff.evaluate(async () => {
   const data = await fetch('/api/portal').then(r => r.json());

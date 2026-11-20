@@ -20,8 +20,8 @@ test('roles come from the session', () => {
 test('each role gets its own menu, and Care details appears once for customers only', () => {
   const ids = session => routesFor(session).map(route => route.id);
   assert.deepEqual(ids(customer), ['client-home','upcoming','book','pets','care','diary']);
-  assert.deepEqual(ids(owner), ['upcoming','diary','staff-home','history','clients','settings','financials']);
-  assert.deepEqual(ids(sitter), ['upcoming','diary','staff-home','history','clients']);
+  assert.deepEqual(ids(owner), ['staff-home','upcoming','diary','history','clients','settings','financials']);
+  assert.deepEqual(ids(sitter), ['staff-home','upcoming','diary','history','clients']);
   assert.deepEqual(ids(signedOut), []);
   assert.equal(ids(customer).filter(id => id === 'care').length, 1);
   assert.ok(routesFor(customer).every(route => route.href.startsWith('#') && route.labelKey));

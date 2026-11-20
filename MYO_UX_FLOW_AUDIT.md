@@ -282,3 +282,15 @@ Tasks 1–4 change only the screens and keep every existing route working. Task 
 - Every flow that matters works.
 
 The smallest first changes are a Today list for Myomi, a single visit workspace, and settings split into groups. None of them needs a backend API change.
+
+---
+
+## Progress (November 20, 2026)
+
+Done, with Node and the full Chromium suite passing after each:
+
+- **Task 3 / UX-03, Settings by group** (`4954d46`): `#settings` lists five groups; `#settings/<group>` shows only its forms; "Adjust hours" opens `#settings/hours`. The hours group is 2,295 px at 390 px wide, down from 4,770 px. That's still above the ~1,200 px target, because the weekly-hours form itself is long.
+- **Task 4 / UX-04, Client Home** (`78dd9e7`): care in progress, latest update and next booking (with any deposit due) first, then a short to-do list and one "Book a visit" action. The menu tiles are gone.
+- **Task 1 / UX-02, Staff Today**: in progress, then today's visits in time order (with "Ready to start"), then requests with Approve/Decline, then money to settle. Every row opens `#visit/<id>`. Today is first in the staff menu. The bookings list is now labelled "Bookings" (was "Today & upcoming").
+
+Not started: Task 2 (visit workspace), Task 5 (menus to four).

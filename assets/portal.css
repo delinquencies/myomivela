@@ -13,6 +13,12 @@
 .home-cards .home-card { margin: 0; }
 .home-card .eyebrow { margin: 0; font-size: .85rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #842b16; }
 .home-card h3 { margin: .2rem 0 .35rem; }
+.today-list { list-style: none; margin: 0 0 1.2rem; padding: 0; max-width: 48rem; }
+.today-item { background: var(--cream); border: 1px solid #e6c7b8; border-radius: 1rem; padding: .75rem 1rem; margin: .5rem 0; }
+.today-item > a { display: block; color: inherit; text-decoration: none; min-height: 44px; }
+.today-item > a strong { margin-right: .35rem; color: #842b16; }
+.today-item > small { display: block; margin-top: .2rem; color: #562a1d; }
+.portal .today-item form { display: inline-block; margin: .4rem .4rem 0 0; padding: 0; background: none; border: 0; }
 .dashboard-action {
   display: flex;
   align-items: center;

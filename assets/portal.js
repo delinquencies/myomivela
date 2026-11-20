@@ -8,7 +8,7 @@ import {myoConfig} from './myo-config.js';
 import {routesFor,resolveLocation,roleOf,homeFor,hrefFor} from './portal-route-state.js';
 import {syncIntake,updateIntakeProgress,showIntakeErrors} from './intake-ui.js';
 import {createBookingJourney} from './booking-journey-ui.js';
-import {customerSummary,nextSteps} from './visit-state.js';
+import {customerSummary,nextSteps,staffWorkQueue} from './visit-state.js';
 import {intakeStatus} from './intake-model.js';
 const uiLocale = locale;
 const checkoutReturn = new URLSearchParams(location.search).get('payment');
@@ -28,7 +28,7 @@ const portalMenu = document.querySelector('.portal-menu');
 const portalLinks = document.querySelector('#portal-links');
 const cancelDialog = document.querySelector('#cancel-booking');
 const reauthDialog = document.querySelector('#reauth');
-const staffVisitsLabel = () => t('Today & upcoming');
+const staffVisitsLabel = () => t('Bookings');
 const find = (rows,id) => rows.find(row => row.id === id);
 const money = cents => formatMoney(cents, uiLocale());
 // Mirrors quote() in lib/pricing.mjs; the server re-prices every hold and request and refuses a stale total.
@@ -905,20 +905,37 @@ function clientHome() {
   return invitation+(cards.length || todoList ? '<div class="home-cards">'+cards.join('')+todoList+'</div>' : '<p>'+text(t("No appointments here yet."))+'</p>')+
     book+weekCalendar();
 }
-function staffHome(bookings) {
-  // Requests and change requests both wait on Myomi.
-  const pending = bookings.filter(booking => booking.status === 'Requested' || booking.pending_change).length;
-  const active = bookings.filter(booking => booking.status === 'In Progress').length;
-  const tasks = [
-    ['upcoming',staffVisitsLabel(),'📅',pending ? t(pending === 1 ? '{count} request to review' : '{count} requests to review', {count:pending}) : t("Review requests and manage visits.")],
-    ['diary',t("Publish updates"),'🐾',active ? t(active === 1 ? '{count} visit in progress' : '{count} visits in progress', {count:active}) : t("Share activity notes and photos.")],
-    ['settings',t("Services & availability"),'🗓️',t("Set prices and publish appointment times.")],
-    ['history',t("Booking history"),'📖',t("Find past visits and their details.")],
-    ['financials',t("Financials"),'📊',t("See visit totals and service breakdowns.")],
-    ['clients',t('Clients'),'👥',t('Find customer records and private notes.')],
-  ].filter(([id]) => isOwner() || !['settings','financials'].includes(id));
-  const keys=data.keys_to_return||[];
-  return dashboardActions(tasks)+weekCalendar()+(keys.length?'<aside><h3>'+text(t('Keys to return'))+'</h3>'+keys.map(client=>'<button type="button" data-client="'+client.owner+'">'+text(client.customer)+'</button>').join('')+'</aside>':'');
+// Staff Today (audit UX-02): what needs Myomi now, most urgent first. The queue comes from staffWorkQueue() in
+// assets/visit-state.js; every row opens that booking (#visit/<id>), and requests can be decided right here.
+function staffHome() {
+  const now = Date.now();
+  const today = day(now);
+  const owner = isOwner();
+  const early = (data.schedule?.earlyStart ?? 30) * 60_000;
+  const { workQueue } = staffWorkQueue({ bookings:data.bookings, role:owner ? 'owner' : 'sitter', now, earlyStartMinutes:data.schedule?.earlyStart ?? 30 });
+  const petNames = booking => booking.pet_ids.map(id => find(data.pets,id)?.name).filter(Boolean).join(', ');
+  const row = (booking, when, note = '', actions = '') => '<li class="today-item"><a href="'+hrefFor('visit',{ booking:booking.id })+'">'+
+    '<strong>'+text(when)+'</strong> '+emoji(serviceIcons[booking.service_name])+text(translateLabel(booking.service_name))+' · '+text(booking.customer)+
+    (petNames(booking) ? ' · '+text(petNames(booking)) : '')+'</a>'+(note ? '<small>'+text(note)+'</small>' : '')+actions+'</li>';
+  const list = (title, rows, empty) => '<h3>'+text(title)+'</h3>'+(rows.length ? '<ul class="today-list">'+rows.join('')+'</ul>' : '<p>'+text(empty)+'</p>');
+  const items = type => workQueue.filter(item => item.type === type).map(item => find(data.bookings,item.booking)).filter(Boolean);
+  const active = items('in_progress');
+  const later = data.bookings.filter(booking => booking.status === 'Confirmed' && day(booking.starts) === today).sort((a,b) => a.starts-b.starts);
+  let html = '';
+  if (active.length) html += list(t("In progress"),active.map(booking =>
+    row(booking,booking.arrived ? t("Started {time}",{ time:appointmentTime.format(booking.arrived) }) : appointmentTime.format(booking.starts),'',
+      tapLink('#diary',t("Publish a diary update"),'🐾'))),'');
+  html += list(t("Today"),later.map(booking => row(booking,appointmentTime.format(booking.starts),now >= booking.starts-early ? t("Ready to start") : '')),t("No visits today."));
+  if (owner) {
+    const requests = items('request').map(booking => row(booking,date(booking.starts),'',statusForm(booking,'Confirmed',t("Approve request"))+statusForm(booking,'Cancelled',t("Decline request"))));
+    const changes = items('change').map(booking => row(booking,date(booking.starts),t("Customer asked to move to ")+date(booking.pending_change.starts)));
+    html += list(t("Requests"),[...requests,...changes],t("No requests waiting."));
+    const settle = [...items('refund_due').map(booking => row(booking,date(booking.starts),t("Refund due"))),
+      ...items('payment_due').map(booking => row(booking,date(booking.starts),t('Balance {amount}',{ amount:money(booking.payment.balance_cents) })))];
+    if (settle.length) html += list(t("Money to settle"),settle,'');
+  }
+  const keys = data.keys_to_return || [];
+  return html+weekCalendar()+(keys.length?'<aside><h3>'+text(t('Keys to return'))+'</h3>'+keys.map(client=>'<button type="button" data-client="'+client.owner+'">'+text(client.customer)+'</button>').join('')+'</aside>':'');
 }
 // The daily scheduled backup's state, loaded when Settings opens.
 async function showBackupStatus() {
@@ -990,7 +1007,7 @@ function render() {
   }).join('');
   const staffNotice = !admin && new URLSearchParams(location.search).get('staff') === '1'
     ? ("<p>" + t("You’re signed in as a client. Sign out to switch to your staff account.") + "</p>") : '';
-  app.innerHTML = staffNotice+(admin ? section('staff-home',t("Staff home"),staffHome(bookings)) : section('client-home',t("Client home"),clientHome()))+
+  app.innerHTML = staffNotice+(admin ? section('staff-home',t("Today"),staffHome()) : section('client-home',t("Client home"),clientHome()))+
     section('upcoming',main,admin ? cards(bookings.filter(b=>b.status === 'In Progress' || day(b.starts) === today)) +
       ("<h3>" + t("Other upcoming bookings") + "</h3>")+cards(bookings.filter(b=>b.status !== 'In Progress' && day(b.starts) !== today))
       : ("<h3>" + t("Upcoming visits") + "</h3>")+cards(bookings)+("<h3>" + t("Past visits") + "</h3>")+cards(history)+older)+

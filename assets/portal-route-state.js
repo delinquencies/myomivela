@@ -24,6 +24,7 @@ export const routes = [
   { id:'recover', pattern:/^recover$/, roles:['signed_out'], parent:'sign-in' },
   // Customers
   { id:'client-home', pattern:/^client-home$/, roles:customer, parent:null, labelKey:'Home', menu:customer },
+  { id:'staff-home', pattern:/^staff-home$/, roles:staff, parent:null, labelKey:'Today', menu:staff },
   { id:'upcoming', pattern:/^upcoming$/, roles:[...customer, ...staff], parent:null, labelKey:'My bookings', menu:[...customer, ...staff] },
   { id:'book', pattern:/^book$/, roles:['signed_out', ...customer], parent:null, labelKey:'Book a visit', menu:customer },
   // The booking flow's steps (CUX-02). Choosing care and seeing a price work signed out; the rest need an account.
@@ -39,7 +40,6 @@ export const routes = [
   // Customers and staff: one visit.
   { id:'visit', pattern:/^visit\/(\d+)$/, params:['booking'], roles:[...customer, ...staff], parent:'upcoming' },
   // Staff
-  { id:'staff-home', pattern:/^staff-home$/, roles:staff, parent:null, labelKey:'Staff home', menu:staff },
   { id:'history', pattern:/^history$/, roles:staff, parent:null, labelKey:'Booking history', menu:staff },
   { id:'clients', pattern:/^clients$/, roles:staff, parent:null, labelKey:'Clients', menu:staff },
   { id:'client', pattern:/^client\/(\d+)$/, params:['client'], roles:staff, parent:'clients' },
